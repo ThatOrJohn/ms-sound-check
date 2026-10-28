@@ -19,18 +19,16 @@ Honest framing: ~15 seasons. Treat anything here as a hint, not a model.
 A feature only "counts" if it beats the climatology baseline out of sample.
 
 Usage
-  pip install pandas numpy requests gsw matplotlib
+  pip install pandas numpy dataretrieval gsw matplotlib
   python scripts/probe_shrimp_signal.py            # real data
   python scripts/probe_shrimp_signal.py --synthetic # offline smoke test
 
-Data source note: this uses the legacy waterservices.usgs.gov "dv" service,
-which USGS plans to retire in Q1 2027. Fine for a one-off probe; the live
-pipeline should use api.waterdata.usgs.gov (OGC API) instead.
+Data source note: daily values come from the new USGS API (dataretrieval's
+waterdata.get_daily), the same one the live pipeline uses.
 """
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -59,52 +57,37 @@ NODATA = -999999.0
 
 
 # ---------------------------------------------------------------- download
-def fetch_dv(site: str) -> dict:
-    """Daily values JSON for one site, cached under data/raw/."""
+def fetch_dv(site: str) -> pd.DataFrame:
+    """Daily values for one site from the new USGS API (waterdata.get_daily), cached under data/raw/."""
     RAW.mkdir(parents=True, exist_ok=True)
-    cache = RAW / f"dv_{site}.json"
+    cache = RAW / f"daily_{site}_{START}_{END}.csv"
     if cache.exists():
-        return json.loads(cache.read_text())
-    import requests
+        return pd.read_csv(cache, dtype={"parameter_code": str, "statistic_id": str, "time_series_id": str})
+    from dataretrieval import waterdata
 
-    url = "https://waterservices.usgs.gov/nwis/dv/"
-    params = {
-        "format": "json",
-        "sites": site,
-        "parameterCd": "00095,00010,00060",
-        "startDT": START,
-        "endDT": END,
-        "siteStatus": "all",
-    }
-    r = requests.get(url, params=params, timeout=120)
-    r.raise_for_status()
-    cache.write_text(r.text)
-    return r.json()
+    df, _ = waterdata.get_daily(
+        monitoring_location_id=f"USGS-{site}",
+        parameter_code=["00095", "00010", "00060"],
+        time=f"{START}/{END}",
+    )
+    df = pd.DataFrame(df)[["parameter_code", "statistic_id", "time_series_id", "time", "value"]]
+    df.to_csv(cache, index=False)
+    return df
 
 
-def dv_to_frame(payload: dict) -> pd.DataFrame:
-    """Flatten NWIS dv JSON into date x '<param>_<stat>' columns.
+def dv_to_frame(df: pd.DataFrame) -> pd.DataFrame:
+    """Flatten daily rows into date x '<param>_<stat>' columns.
 
-    Stations with top/bottom sondes return several value blocks per series;
+    Stations with top/bottom sondes have several series per parameter;
     those are averaged together, which is the right call for a coarse probe.
     """
     cols: dict[str, list[pd.Series]] = {}
-    for ts in payload.get("value", {}).get("timeSeries", []):
-        param = ts["variable"]["variableCode"][0]["value"]
-        stat = "x"
-        for opt in ts["variable"].get("options", {}).get("option", []):
-            if opt.get("name") == "Statistic":
-                stat = opt.get("optionCode", "x")
-        for block in ts.get("values", []):
-            vals = block.get("value", [])
-            if not vals:
-                continue
-            s = pd.Series(
-                [float(v["value"]) for v in vals],
-                index=pd.to_datetime([v["dateTime"][:10] for v in vals]),
-            )
-            s = s.where(s != NODATA)
-            cols.setdefault(f"{param}_{stat}", []).append(s)
+    for (param, stat, _), g in df.groupby(["parameter_code", "statistic_id", "time_series_id"]):
+        s = pd.Series(
+            pd.to_numeric(g["value"], errors="coerce").values,
+            index=pd.to_datetime(g["time"]).dt.normalize(),
+        )
+        cols.setdefault(f"{param}_{stat}", []).append(s.where(s != NODATA))
     if not cols:
         return pd.DataFrame()
     return pd.DataFrame(

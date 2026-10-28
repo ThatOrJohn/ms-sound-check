@@ -87,7 +87,7 @@ Worth adding later: the Grand Bay NERR water-quality sondes (east of
 Pascagoula) via NOAA's NERRS data system, and NOAA tide and buoy stations for
 wind and water level. Neither is needed for v1.
 
-**API migration.** USGS will decommission `waterservices.usgs.gov` in Q1 2027,
+**API migration (done: `backfill` now uses `waterdata.get_daily`; the experiment scripts still call the old service).** USGS will decommission `waterservices.usgs.gov` in Q1 2027,
 with removal work running from November 2026 through February 2027. The
 replacement is `api.waterdata.usgs.gov/ogcapi/`, which has `latest-continuous`,
 `continuous`, `daily`, and `time-series-metadata` collections. It accepts free

@@ -16,8 +16,6 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **Share previews**: generated Open Graph images per page (for Bluesky and X).
 - **Weekly digest**: Bluesky post + RSS from the same build.
 
-- **Move `backfill` to the new USGS API** before the old one retires in early 2027 (daily runs already use the new one).
-
 ## Later
 - **MDMR shellfish areas on the oyster map**: the molluscan shellfish and oyster growing waters classification areas as a map layer (I-B, II-A and so on), so the closure table's area names point at places. Look for a public MDMR feature service first, like the beach layer, and don't work around bot checks.
 - Custom domain (about $12/yr) and Cloudflare Web Analytics.

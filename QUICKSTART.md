@@ -127,7 +127,6 @@ as they're done, write the outcome, update `docs/ROADMAP.md` and `CHANGELOG.md`.
 | Every spring (March to May) | The Shrimp page shows a season "lean" from spring water temperature. When MDMR announces the opening date, add a row to `data/shrimp_openings.csv` and note in the roadmap whether the lean was right. |
 | Monthly (automatic) | CI recomputes normals and retrains the virtual sensors. Glance at that run's log if you're curious. |
 | If MDMR revises its shellfish plan | Update the oyster watch's thresholds and `plan_url` in `regions/ms.yaml`, and add a decision record. |
-| Early 2027 | USGS retires its old "waterservices" API, which `backfill` uses for history. Daily runs use the new API and won't notice, but a re-backfill will fail until `usgs.backfill_daily` moves to `waterdata.get_daily`. It's on the roadmap. |
 
 ## When something breaks
 

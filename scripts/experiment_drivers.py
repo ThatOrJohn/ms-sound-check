@@ -45,16 +45,15 @@ RIVERS = {"pearl": "USGS-02489500", "pasc": "USGS-02479000"}
 
 
 def mississippi() -> pd.Series:
-    cache = RAW / f"miss_{MISS}.json"
+    cache = RAW / f"miss_{MISS}.csv"
     if not cache.exists():
-        import requests
-        r = requests.get("https://waterservices.usgs.gov/nwis/dv/", timeout=300, params={
-            "format": "json", "sites": MISS, "parameterCd": "00060", "statCd": "00003",
-            "startDT": "1998-01-01", "endDT": pd.Timestamp.today().strftime("%Y-%m-%d")})
-        r.raise_for_status()
-        cache.write_text(r.text)
-    ts = json.loads(cache.read_text())["value"]["timeSeries"][0]["values"][0]["value"]
-    s = pd.Series([float(v["value"]) for v in ts], index=pd.to_datetime([v["dateTime"][:10] for v in ts]))
+        from dataretrieval import waterdata
+        df, _ = waterdata.get_daily(
+            monitoring_location_id=f"USGS-{MISS}", parameter_code="00060", statistic_id="00003",
+            time=f"1998-01-01/{pd.Timestamp.today().strftime('%Y-%m-%d')}")
+        pd.DataFrame(df)[["time", "value"]].to_csv(cache, index=False)
+    d = pd.read_csv(cache, parse_dates=["time"])
+    s = pd.Series(pd.to_numeric(d["value"], errors="coerce").values, index=d["time"].dt.normalize()).sort_index()
     return s.where(s > 0)
 
 
