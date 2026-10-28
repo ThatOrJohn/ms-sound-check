@@ -51,3 +51,9 @@ test("oyster page shows the closure watch with MDMR's criteria", async ({ page }
   await expect(page.getByRole("heading", { name: "Oyster closure watch" })).toBeVisible();
   await expect(page.getByRole("link", { name: "management plan" })).toHaveAttribute("href", /dmr\.ms\.gov/);
 });
+
+test("shrimp page shows MDMR's season notices and the wind outlook", async ({ page }) => {
+  await page.goto("for/shrimp/");
+  await expect(page.getByRole("heading", { name: "Shrimp season", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "MDMR shrimp information" })).toHaveAttribute("href", /dmr\.ms\.gov/);
+});

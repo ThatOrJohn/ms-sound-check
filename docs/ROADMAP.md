@@ -4,7 +4,7 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Now
 **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)** (to 2026-11-04): oyster closure
-watch, fishing weekend outlook, wind data, shrimp in-season notices.
+watch, fishing weekend outlook, wind data, shrimp in-season notices (done).
 
 ## Done
 - **[Sprint 2: Map and first ML](sprints/2026-10-28-s02-map-and-ml.md)**: MapLibre map with NOAA depth, virtual sensors, forecast experiments, beach status.
@@ -25,6 +25,8 @@ watch, fishing weekend outlook, wind data, shrimp in-season notices.
 - A second region (Alabama via ARCOS, or a Texas bay): new YAML, maybe one adapter.
 - Publish virtual-sensor models to Hugging Face with a model card once they're stable.
 - Harmful algal bloom notices beyond beaches.
+- Oyster reef opening notices from MDMR (same adapter, an `oyster` topic in the region file).
+- Check `shrimp_openings.csv` against MDMR's "season opens" notices so the spring update can't be missed.
 
 ## Parked
 - **Salinity forecast**: no edge over persistence during the events that matter ([0008](decisions/0008-no-salinity-forecast.md)).
@@ -32,7 +34,7 @@ watch, fishing weekend outlook, wind data, shrimp in-season notices.
 - **Dock price tracker**: needs committed contributors ([seed.md](seed.md)).
 
 ## Known issues
-- First live beach fetch and first live NWPS stage fetch not yet verified in CI.
+- First live beach, NWPS stage and MDMR notice fetches not yet verified in CI.
 - Oyster rainfall is an estimate (Open-Meteo point), not MDMR's Hancock County Utility Authority gauge.
 - Round Island's "possibly a sensor problem" caveat may be wrong (see Next).
 - East Ship Island can't be estimated (held-out error ~7 ppt), so it shows as offline.

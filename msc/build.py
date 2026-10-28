@@ -188,7 +188,7 @@ def _beaches(region, asof):
     return section, geo
 
 
-def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch=None, fishing=None):
+def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch=None, fishing=None, shrimp=None):
     """Lead with anything serious; otherwise describe the overall picture in plain words."""
     focus = persona["focus"]
     season = season_phrase(asof)
@@ -204,6 +204,11 @@ def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch
         fh = fishing_model.headline(fishing)
         if fh:
             parts.append(fh)
+    if focus[0] == "shrimp":             # a fresh MDMR notice (opening, closure, area change) beats everything
+        from .models import shrimp as shrimp_model
+        sh = shrimp_model.headline(shrimp, asof)
+        if sh:
+            parts.append(sh)
     if serious:
         parts.append(serious[0]["text"])
     if own_model:
@@ -252,19 +257,21 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                                 for d, v in zip(pd.to_datetime(g.date), g.value)],
                        "total": fmt("rain", g.value.sum(), region.units)}
     beach_section, beach_geo = _beaches(region, asof)
-    from .models import fishing, oyster
+    from .models import fishing, oyster, shrimp
     oyster_section = oyster.section(region, daily, asof)
     fishing_section = fishing.section(region, daily, asof, cards, forecast)
+    shrimp_section = shrimp.section(region, asof)
     latest = {
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
         "beaches": beach_section,
         "oyster_watch": oyster_section,
         "fishing_outlook": fishing_section,
+        "shrimp_season": shrimp_section,
         "generated_at": (generated_at or pd.Timestamp.now(tz="UTC")).isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),
         "personas": region.personas,
-        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section, oyster_section, fishing_section) for p in region.personas},
+        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section, oyster_section, fishing_section, shrimp_section) for p in region.personas},
         "findings": findings,
         "cards": cards,
         "rain_forecast": fc,

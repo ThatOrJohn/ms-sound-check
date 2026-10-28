@@ -26,13 +26,19 @@
       six wind features added to the virtual sensors
   - [ ] After the next backfill, compare the `train` log's scores with the numbers in architecture.md and
         record the result here
-- [ ] **Shrimp in-season**: MDMR notices (check whether their WordPress API is readable), 3-day wind outlook
+- [x] **Shrimp in-season** ([0014](../decisions/0014-mdmr-notices-from-wordpress-api.md)): MDMR's shrimp notices from its
+      public WordPress API (last year, newest five, linked), 3-day day/night wind outlook from the NWS forecast; a
+      notice from the past week leads the Shrimp headline
+  - [ ] Verify the first live MDMR fetch in CI
 
 - [x] **UI refresh** ([0013](../decisions/0013-instrument-panel-design.md)): Geist, new palette, readout strip, signals rail,
       percentile meters, segmented controls. Axe passes on every page in both themes. Sample data for review:
       `python scripts/dev_fixtures.py apply` (and `clear` afterward).
 
 ## Notes
+- 2026-10-28: MDMR's WordPress API (`dmr.ms.gov/wp-json/wp/v2/posts`) is open, with no bot challenge. Category 6 plus the title
+  filter `shrimp season|shrimping` returned 19 clean notices for 2021-2026. The notices could also check
+  `data/shrimp_openings.csv` ("shrimp season opens <date>" titles); not done yet.
 - 2026-10-28: Wind verdict bands (NWS forecast's upper sustained mph): light ≤10, moderate ≤15, breezy ≤20,
   windy above. Muddy-water risk is a stated heuristic: 3-day coast rain (≥0.5 / ≥1 in), rivers above normal,
   forecast rain ≥1 in.

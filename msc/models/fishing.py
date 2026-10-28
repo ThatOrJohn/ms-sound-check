@@ -42,6 +42,15 @@ def _verdict(mph: int | None):
     return None, None
 
 
+def wind_text(p: dict | None) -> str | None:
+    """'SE 10–15 mph' from one NWS forecast period."""
+    if not p or p.get("wind_mph_hi") is None:
+        return None
+    if p.get("wind_mph_lo") is not None and p["wind_mph_lo"] != p["wind_mph_hi"]:
+        return f"{p['wind_dir']} {p['wind_mph_lo']}–{p['wind_mph_hi']} mph"
+    return f"{p['wind_dir']} {p['wind_mph_hi']} mph"
+
+
 def _muddy(region: Region, daily: pd.DataFrame, asof: pd.Timestamp, rain_fc_in: float | None) -> dict:
     """Heuristic runoff risk: local rain in the last 3 days, rivers vs. normal, and rain in the forecast."""
     def rain_in(site, days):
@@ -76,9 +85,7 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp, cards: list
         tl = [t for t in tide_rows if t["time"][:10] == key]
         out_days.append({
             "date": key, "label": d.strftime("%A"),
-            "wind": (f"{day['wind_dir']} {day['wind_mph_lo']}–{day['wind_mph_hi']} mph"
-                     if day and day.get("wind_mph_lo") is not None and day["wind_mph_lo"] != day["wind_mph_hi"]
-                     else f"{day['wind_dir']} {day['wind_mph_hi']} mph" if day and day.get("wind_mph_hi") is not None else None),
+            "wind": wind_text(day),
             "wind_mph_hi": day["wind_mph_hi"] if day else mph,
             "sky": day["short"] if day else (night["short"] if night else None),
             "rain_pct": max([p["rain_pct"] or 0 for p in ps], default=None) if ps else None,

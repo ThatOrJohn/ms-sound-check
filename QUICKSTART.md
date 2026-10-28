@@ -19,7 +19,8 @@ Separate views for the general public, oyster folks, shrimpers and anglers.
  NWS weather          ┤   ───────►     1. ingest  (adapters pull new data)  ──►  Astro builds
  Open-Meteo rain/wind ┤                2. build   (indicators, headlines,        static pages
  NOAA tides           ┤                            JSON for the site)            from the JSON
- MDEQ beaches         ┘                3. save store to the `data` branch
+ MDEQ beaches         ┤
+ MDMR notices         ┘                3. save store to the `data` branch
                                        4. build + test + deploy the site
 ```
 

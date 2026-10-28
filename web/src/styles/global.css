@@ -330,7 +330,7 @@ select, .btn {
 .fish-day[data-verdict="moderate"]::before { background: var(--brackish); }
 .fish-day[data-verdict="breezy"]::before { background: var(--amber); }
 .fish-day[data-verdict="windy"]::before { background: var(--marker-red); }
-.fish-day h3 { font: 500 0.7rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 8px; }
+.fish-day h3, .fish-day h4 { font: 500 0.7rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 8px; }
 .fish-wind { font: 600 1.4rem/1.2 var(--sans); letter-spacing: -0.02em; margin: 0; }
 .fish-verdict { margin: 6px 0 10px; font-weight: 500; font-size: 0.9rem; }
 .fish-sky, .fish-tides { margin: 4px 0; font-size: 0.84rem; color: var(--ink-soft); }
@@ -339,6 +339,17 @@ select, .btn {
 .fish-more table { border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
 .fish-more th, .fish-more td { text-align: left; padding: 7px 12px 7px 0; border-top: 1px solid var(--hair); vertical-align: top; }
 .fish-more th { font: 500 0.68rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* ---------- shrimp season ---------- */
+.shrimp-season > p { max-width: var(--measure); color: var(--ink-soft); }
+.shrimp-sub { font: 500 0.7rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 22px 0 10px; }
+.notices { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: var(--block); }
+.notices li { display: grid; grid-template-columns: 7.5em 1fr; gap: 14px; align-items: start; background: var(--paper);
+  border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+.notices time { font: 500 0.78rem/1.6 var(--mono); color: var(--ink-soft); white-space: nowrap; }
+.notices a { font-weight: 500; }
+.notices p { margin: 4px 0 0; color: var(--ink-soft); font-size: 0.88rem; }
+@media (max-width: 560px) { .notices li { grid-template-columns: 1fr; gap: 4px; } }
 
 /* ---------- station page ---------- */
 .crumbs { padding-top: 26px; font: 500 0.72rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }

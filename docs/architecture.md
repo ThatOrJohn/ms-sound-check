@@ -44,6 +44,7 @@ build a region picker until a second region exists.
 | NOAA CO-OPS | tide predictions (highs and lows) at Bay Waveland, Gulfport Harbor, Pascagoula | `tides.fetch`, every run | free, no key |
 | Open-Meteo (wind) | daily wind over mid-Sound: east/north components and peak; ERA5 history at backfill | `openmeteo.wind_*` | free, non-commercial |
 | MDEQ Beach Monitoring (public ArcGIS feature service) | beach advisories and closures (bacteria, debris, algal blooms) and beach segments | `beaches.fetch`, every run | free, no key |
+| MDMR WordPress REST API | shrimp season notices (press releases, filtered by title) for the Shrimp page | `mdmr.fetch`, every run | free, no key |
 | Open-Meteo | observed and forecast daily rain, local and basin-averaged | `openmeteo.*` | free, no key, **non-commercial terms**; revisit if sponsorship happens |
 
 Salinity is computed from specific conductance (PSS-78 via `gsw`), not taken

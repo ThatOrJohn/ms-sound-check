@@ -1,0 +1,57 @@
+---
+import type { ShrimpSeason } from "../lib/types";
+import { fmtDate } from "../lib/format";
+
+interface Props { season: ShrimpSeason }
+const { season } = Astro.props;
+const verdictText: Record<string, string> = {
+  light: "Light wind", moderate: "Moderate wind, some chop", breezy: "Breezy, rough in open water", windy: "Windy",
+};
+const mdmrLink = season.link ?? "https://dmr.ms.gov/";
+---
+<section class="group shrimp-season" aria-labelledby="g-shrimp">
+  <h2 id="g-shrimp">Shrimp season</h2>
+  <p>MDMR opens and closes shrimping waters by area through the season. Below are its latest notices and the wind for
+    the next three days. MDMR's notice is the rule, so read it before you go.</p>
+
+  {season.days.length > 0 && (
+    <>
+      <h3 class="shrimp-sub">Wind, next three days</h3>
+      <div class="fish-days">
+        {season.days.map((d) => (
+          <article class="fish-day" data-verdict={d.verdict ?? "unknown"}>
+            <h4>{d.label}</h4>
+            <p class="fish-wind">{d.day_wind ?? d.night_wind ?? "No forecast yet"}</p>
+            {d.verdict && <p class="fish-verdict">{verdictText[d.verdict]}</p>}
+            {d.day_wind && d.night_wind && <p class="fish-sky">{`Overnight ${d.night_wind}`}</p>}
+            {!d.day_wind && d.night_wind && <p class="fish-sky">Overnight</p>}
+            <p class="fish-sky">{[d.sky, d.rain_pct ? `${d.rain_pct}% chance of rain` : null].filter(Boolean).join(", ")}</p>
+          </article>
+        ))}
+      </div>
+    </>
+  )}
+
+  <h3 class="shrimp-sub">Latest from MDMR</h3>
+  {!season.notices_available ? (
+    <p class="quiet-note">{"MDMR's notices couldn't be checked in the last two days. "}<a href={mdmrLink}>See MDMR's shrimp page</a>.</p>
+  ) : season.notices.length === 0 ? (
+    <p class="quiet-note">{"No shrimp season notices from MDMR in the past year. "}<a href={mdmrLink}>See MDMR's shrimp page</a>.</p>
+  ) : (
+    <ol class="notices">
+      {season.notices.map((n) => (
+        <li>
+          <time datetime={n.date}>{fmtDate(n.date, { month: "short", day: "numeric", year: "numeric" })}</time>
+          <div>
+            <a href={n.link}>{n.title}</a>
+            {n.summary && <p>{n.summary}</p>}
+          </div>
+        </li>
+      ))}
+    </ol>
+  )}
+  <p class="fish-src">{"Notices: MDMR press releases (title and opening lines; the full notice has the boundaries). "}
+    {"Wind: National Weather Service forecast for the Gulfport waterfront; the color goes by the windier of day and night "}
+    {"(light up to 10 mph, moderate to 15, breezy to 20). Not for navigation or harvest decisions. "}
+    <a href={mdmrLink}>MDMR shrimp information</a>.</p>
+</section>

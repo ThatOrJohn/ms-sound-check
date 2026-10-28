@@ -87,6 +87,10 @@ def cmd_ingest(region, args):
     snap = _try("beaches", beaches.fetch, region)
     if snap:
         beaches.save(region, snap)
+    from .adapters import mdmr
+    notices = _try("mdmr notices", mdmr.fetch, region)
+    if notices:
+        mdmr.save(region, notices)
     res = _try("rain", openmeteo.recent_and_forecast, region)
     if res is not None:
         obs, fc = res

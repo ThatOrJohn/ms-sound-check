@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Sample data for local design work: fills the sections that only exist with live feeds
-(beaches, oyster watch, fishing outlook) so every part of the page can be seen and styled.
+(beaches, oyster watch, fishing outlook, shrimp notices) so every part of the page can be seen and styled.
 
     python scripts/dev_fixtures.py apply    # write samples into data/<region>/, then: python -m msc build
     python scripts/dev_fixtures.py clear    # remove them again, then: python -m msc build
@@ -20,10 +20,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from msc import store                          # noqa: E402
-from msc.adapters import beaches, nws, tides   # noqa: E402
+from msc.adapters import beaches, mdmr, nws, tides   # noqa: E402
 from msc.config import load_region             # noqa: E402
 
-SNAPSHOTS = ["beaches.json", "beaches.geojson", "weather_forecast.json", "tides.json", "stage_forecast.parquet"]
+SNAPSHOTS = ["beaches.json", "beaches.geojson", "weather_forecast.json", "tides.json", "stage_forecast.parquet",
+             "mdmr_notices.json"]
 
 
 def apply(region):
@@ -73,6 +74,10 @@ def apply(region):
                         "endTime": (day + pd.Timedelta(hours=18)).isoformat(), "isDaytime": True, "temperature": 74 - k,
                         "windSpeed": f"{lo} to {hi} mph", "windDirection": dr, "shortForecast": sky,
                         "probabilityOfPrecipitation": {"value": pop}})
+        periods.append({"name": day.strftime("%A") + " Night", "startTime": (day + pd.Timedelta(hours=18)).isoformat(),
+                        "endTime": (day + pd.Timedelta(hours=30)).isoformat(), "isDaytime": False, "temperature": 62 - k,
+                        "windSpeed": f"{max(0, lo - 5)} to {hi - 5} mph", "windDirection": dr, "shortForecast": "Clear",
+                        "probabilityOfPrecipitation": {"value": pop // 2}})
         for sid in ("8747437", "8745557", "8741533"):
             preds.append({"station": sid, "name": {"8747437": "Bay Waveland Yacht Club", "8745557": "Gulfport Harbor",
                                                    "8741533": "Pascagoula NOAA Lab"}[sid],
@@ -81,7 +86,16 @@ def apply(region):
                           "time": (day + pd.Timedelta(hours=17, minutes=30 + 40 * k)).strftime("%Y-%m-%d %H:%M"), "type": "low", "ft": 0.2})
     nws.save_forecast(region, nws.parse_forecast(region.site("NWS-KGPT"), {"properties": {"periods": periods}}))
     tides.save(region, preds)
-    for name in ("beaches.json", "weather_forecast.json", "tides.json"):
+    # MDMR shrimp notices: one from today (leads the Shrimp headline) and an older one.
+    mdmr.save(region, {"fetched_at": now.isoformat(), "source": "MDMR (sample data)", "topics": {"shrimp": [
+        {"id": 1, "date": local.strftime("%Y-%m-%d"), "title": "Shrimp season to close north of ICW on January 1",
+         "summary": "Sample notice: all waters north of the Intracoastal Waterway will close at 12:01 a.m. Jan. 1, as provided by law.",
+         "link": "https://dmr.ms.gov/shrimp/"},
+        {"id": 2, "date": (local - pd.Timedelta(days=40)).strftime("%Y-%m-%d"),
+         "title": "Certain waters for commercial and recreational shrimping to open, re-establish shrimping line",
+         "summary": "Sample notice: in addition to waters previously opened, waters south and west of a line in Biloxi Bay open.",
+         "link": "https://dmr.ms.gov/shrimp/"}]}})
+    for name in ("beaches.json", "weather_forecast.json", "tides.json", "mdmr_notices.json"):
         p = d / name
         js = json.loads(p.read_text())
         js["fixture"] = True

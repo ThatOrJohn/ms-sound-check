@@ -1,6 +1,7 @@
-"""Shrimp season lean (early / normal / late) from spring water temperature.
+"""Shrimp: in-season notices and wind (section), and the season lean (early / normal / late) from spring
+water temperature.
 
-Evidence and caveats: docs/feasibility.md ("Probe results"). In short:
+Season lean evidence and caveats: docs/feasibility.md ("Probe results"). In short:
 warmer Mar-Apr water -> earlier MDMR opening, about 6 days per standard
 deviation; typical leave-one-out miss ~6 days vs 8.5 for guessing the mean;
 some years (2025) miss by weeks. Published as a lean, never a date.
@@ -31,6 +32,61 @@ def _window_z(daily, sites, asof):
     df = pd.DataFrame(per_site)
     z = (df - df.mean()) / df.std()
     return z.mean(axis=1, skipna=True), end_md
+
+
+NOTICE_DAYS = 365      # notices older than this drop off the list
+NOTICE_COUNT = 5
+HEADLINE_DAYS = 7      # a notice this recent leads the Shrimp headline
+WIND_DAYS = 3
+
+
+def _wind_days(region, asof):
+    """Today and the next two days, day and night wind from the NWS forecast. Shrimpers work both, so the
+    verdict goes by the windier of the two."""
+    from ..adapters import nws
+    from .fishing import _verdict, wind_text
+    periods = nws.load_forecast(region)
+    out = []
+    for i in range(WIND_DAYS):
+        d = asof + pd.Timedelta(days=i)
+        key = d.strftime("%Y-%m-%d")
+        ps = [p for p in periods if p["start"][:10] == key]
+        day = next((p for p in ps if p["is_day"]), None)
+        night = next((p for p in ps if not p["is_day"]), None)
+        if not ps:
+            continue
+        mph = max([p["wind_mph_hi"] for p in ps if p.get("wind_mph_hi") is not None], default=None)
+        vkey, _ = _verdict(mph)
+        out.append({"date": key, "label": "Today" if i == 0 else d.strftime("%A"),
+                    "day_wind": wind_text(day), "night_wind": wind_text(night), "wind_mph_hi": mph,
+                    "sky": day["short"] if day else night["short"] if night else None,
+                    "rain_pct": max([p["rain_pct"] or 0 for p in ps]), "verdict": vkey})
+    return out
+
+
+def section(region, asof):
+    """MDMR's recent shrimp notices plus a 3-day wind outlook. None if neither source has anything current."""
+    from ..adapters import mdmr
+    cfg = (region.extras or {}).get("mdmr_notices") or {}
+    notices = mdmr.load(region, "shrimp")
+    cutoff = (asof - pd.Timedelta(days=NOTICE_DAYS)).strftime("%Y-%m-%d")
+    recent = [n for n in notices or [] if cutoff <= n["date"] <= asof.strftime("%Y-%m-%d")][:NOTICE_COUNT]
+    days = _wind_days(region, asof)
+    if notices is None and not days:
+        return None
+    return {"notices": recent, "notices_available": notices is not None,
+            "link": cfg.get("topics", {}).get("shrimp", {}).get("link"), "source": cfg.get("name"),
+            "days": days}
+
+
+def headline(sec, asof) -> str | None:
+    """A notice from the past week leads: it's the one thing a shrimper can't see from the water."""
+    if not sec or not sec["notices"]:
+        return None
+    n = sec["notices"][0]
+    if n["date"] < (asof - pd.Timedelta(days=HEADLINE_DAYS)).strftime("%Y-%m-%d"):
+        return None
+    return f"MDMR, {pd.Timestamp(n['date']).strftime('%b %-d')}: {n['title'].rstrip('.')}."
 
 
 def season_lean(region, cfg, daily, normals, asof):

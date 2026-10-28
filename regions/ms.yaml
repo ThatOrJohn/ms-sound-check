@@ -175,6 +175,15 @@ beaches:
   stations_layer: 0
   segments_layer: 1
 
+# MDMR press releases from its public WordPress API, filtered by title to season notices.
+# Category 6 is News & Updates; Public Notices (7) repeats the same orders as legal text.
+mdmr_notices:
+  name: Mississippi Department of Marine Resources
+  api: https://dmr.ms.gov/wp-json/wp/v2/posts
+  categories: [6]
+  topics:
+    shrimp: {search: shrimp, title: "shrimp season|shrimping", link: "https://dmr.ms.gov/shrimp/"}
+
 # Tide predictions (NOAA CO-OPS), west to east.
 tides:
   - {id: "8747437", name: Bay Waveland Yacht Club}
@@ -199,7 +208,7 @@ personas:
     label: Shrimp
     blurb: Spring water temperature drives when brown shrimp reach legal size; fresh water pushes them offshore.
     focus: [shrimp, general]
-    card_order: [sound, weather, river, rain, estuary, beaches]
+    card_order: [shrimp_season, sound, weather, river, rain, estuary, beaches]
     map_layers: [depth, contours, rivers]
   - id: fish
     label: Fishing

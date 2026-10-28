@@ -3,7 +3,7 @@
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
 export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind";
-export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook";
+export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season";
 export type Kind2 = Kind | "gauge";
 
 export interface Persona {
@@ -104,8 +104,18 @@ export interface FishingOutlook {
   tide_stations: { id: string; name: string }[];
 }
 
+export interface ShrimpNotice { id: number; date: string; title: string; summary: string; link: string }
+export interface ShrimpWindDay {
+  date: string; label: string; day_wind: string | null; night_wind: string | null; wind_mph_hi: number | null;
+  sky: string | null; rain_pct: number | null; verdict: string | null;
+}
+export interface ShrimpSeason {
+  notices: ShrimpNotice[]; notices_available: boolean; link: string | null; source: string | null; days: ShrimpWindDay[];
+}
+
 export interface Latest {
   fishing_outlook?: FishingOutlook | null;
+  shrimp_season?: ShrimpSeason | null;
   oyster_watch?: OysterWatch | null;
   beaches?: BeachSection | null;
   region: { id: string; name: string; units: Record<string, string>; map: { center: [number, number]; zoom: number } };
