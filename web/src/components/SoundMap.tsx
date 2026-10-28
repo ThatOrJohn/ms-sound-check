@@ -5,7 +5,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 
 export interface MapStation {
   id: string; short: string; kind: string; lon: number; lat: number; href: string;
-  salinity: number | null; display: string; status: "live" | "suspect" | "quiet"; alert: boolean;
+  salinity: number | null; display: string; status: "live" | "suspect" | "quiet" | "estimate"; alert: boolean;
 }
 export interface MapRiver { name: string; osmNames: string[]; display: string; band?: string; percentile?: number }
 
@@ -194,7 +194,8 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
             type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [s.lon, s.lat] },
             properties: {
               href: s.href, label: `${s.short}\n${s.display}${s.status === "suspect" ? " (check)" : ""}`,
-              color: s.status === "live" && s.salinity !== null ? css(salinityRGB(s.salinity, t)) : t.rule, alert: s.alert,
+              color: (s.status === "live" || s.status === "estimate") && s.salinity !== null ? css(salinityRGB(s.salinity, t)) : t.rule,
+              est: s.status === "estimate", alert: s.alert,
             },
           })),
         };
@@ -202,7 +203,11 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
         map.addLayer({ id: "station-ring", type: "circle", source: "stations", filter: ["==", ["get", "alert"], true],
           paint: { "circle-radius": 15, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": t.red, "circle-stroke-width": 3 } });
         map.addLayer({ id: "stations", type: "circle", source: "stations",
-          paint: { "circle-radius": 9, "circle-color": ["get", "color"], "circle-stroke-color": t.paper, "circle-stroke-width": 2.5 } });
+          // Estimates are hollow rings in the estimated color; measured stations are solid.
+          paint: { "circle-radius": ["case", ["get", "est"], 7.5, 9],
+            "circle-color": ["case", ["get", "est"], t.paper, ["get", "color"]],
+            "circle-stroke-color": ["case", ["get", "est"], ["get", "color"], t.paper],
+            "circle-stroke-width": ["case", ["get", "est"], 3.5, 2.5] } });
         map.addLayer({ id: "station-labels", type: "symbol", source: "stations",
           layout: { "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 12.5, "text-anchor": "left",
             "text-offset": [1.1, 0], "text-justify": "left", "text-line-height": 1.25, "text-allow-overlap": false },

@@ -118,7 +118,8 @@ RULES = {"vs_normal": vs_normal, "run_below": run_below, "custom": custom}
 
 
 def evaluate(region: Region, daily: pd.DataFrame, normals: pd.DataFrame,
-             asof: pd.Timestamp) -> list[dict]:
+             asof: pd.Timestamp, suspect: set | None = None) -> list[dict]:
+    """suspect: {(site, var)} whose latest readings failed QC; they never produce findings."""
     findings = []
     for cfg in region.indicators:
         if not _in_season(cfg, asof):
@@ -127,6 +128,8 @@ def evaluate(region: Region, daily: pd.DataFrame, normals: pd.DataFrame,
             findings += RULES[cfg["type"]](region, cfg, daily, normals, asof)
         except Exception:  # one broken indicator must not take down the page
             log.exception("indicator %s failed", cfg.get("id"))
+    if suspect:
+        findings = [f for f in findings if (f.get("site"), f.get("var")) not in suspect]
     findings.sort(key=lambda f: -SEVERITY.get(f["severity"], 0))
     # Drop a plain "unusual vs normal" notice when a stronger finding already
     # covers the same site and variable (e.g. the oyster stress alert).

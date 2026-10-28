@@ -19,6 +19,8 @@ export interface Panel {
   points: SeriesPoint[];
   threshold?: { value: number; label: string };
   log?: boolean;          // log scale (river flow spans orders of magnitude)
+  /** Virtual sensor: [date, expected, lo90, hi90] */
+  expected?: [string, number | null, number | null, number | null][];
 }
 
 const RANGES = [
@@ -48,7 +50,7 @@ function fmtVal(v: number | null | undefined, unit: string) {
 
 function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: number) {
   // Show only the selected range so each axis scales to what's on screen.
-  const panels = allPanels.map((p) => ({ ...p, points: p.points.slice(-days) }));
+  const panels = allPanels.map((p) => ({ ...p, points: p.points.slice(-days), expected: p.expected?.slice(-days) }));
   const last = panels[0]?.points.at(-1)?.[0];
   const end = last ? new Date(`${last}T12:00:00`).getTime() : Date.now();
   const start = end - (days - 1) * 86400_000;
@@ -75,6 +77,22 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
       series.push({
         type: "line", xAxisIndex: i, yAxisIndex: i, symbol: "none", z: 2, silent: true,
         lineStyle: { color: t.soft, width: 1, type: [4, 4] }, data: p.points.map((q) => [ts(q[0]), q[3]]),
+      });
+    }
+    const ex = (p.expected ?? []).filter((q) => q[2] !== null && q[3] !== null);
+    if (ex.length > 2) {
+      series.push({
+        type: "custom", xAxisIndex: i, yAxisIndex: i, silent: true, z: 2, tooltip: { show: false },
+        data: ex.flatMap((q) => [[ts(q[0]), q[2]], [ts(q[0]), q[3]]]),
+        renderItem: (params: any, api: any) => {
+          if (params.dataIndex !== 0) return null;
+          const top = ex.map((q) => api.coord([ts(q[0]), q[3]]));
+          const bot = ex.slice().reverse().map((q) => api.coord([ts(q[0]), q[2]]));
+          return { type: "polygon", shape: { points: [...top, ...bot] }, style: { fill: t.soft, opacity: 0.12 }, silent: true };
+        },
+      }, {
+        type: "line", xAxisIndex: i, yAxisIndex: i, symbol: "none", z: 2, silent: true, connectNulls: false,
+        lineStyle: { color: t.ink, width: 1.2, type: [2, 3], opacity: 0.7 }, data: (p.expected ?? []).map((q) => [ts(q[0]), q[1]]),
       });
     }
     series.push({
@@ -122,7 +140,9 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
           const pt = p.points.find((q) => `${q[0]}T12:00:00` === items[0].axisValueLabel || new Date(`${q[0]}T12:00:00`).getTime() === items[0].axisValue);
           const val = fmtVal(pt?.[1], p.unit);
           const typ = pt && pt[3] !== null ? ` <span style="color:${t.soft}">(typical ${fmtVal(pt[3], p.unit)})</span>` : "";
-          return `<div>${p.title}: <b>${val}</b>${typ}</div>`;
+          const exp = p.expected?.find((q) => new Date(`${q[0]}T12:00:00`).getTime() === items[0].axisValue);
+          const expTxt = exp && exp[1] !== null ? ` <span style="color:${t.soft}">(neighbors suggest ${fmtVal(exp[1], p.unit)})</span>` : "";
+          return `<div>${p.title}: <b>${val}</b>${typ}${expTxt}</div>`;
         });
         return `<div style="font-weight:600;margin-bottom:4px">${date}</div>${rows.join("")}`;
       },
@@ -131,7 +151,7 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
   };
 }
 
-export default function StationCharts({ panels }: { panels: Panel[] }) {
+export default function StationCharts({ panels, note }: { panels: Panel[]; note?: string }) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<echarts.ECharts | null>(null);
   const [days, setDays] = useState(120);
@@ -171,6 +191,7 @@ export default function StationCharts({ panels }: { panels: Panel[] }) {
       <p className="chart-note">
         Shaded band: the middle 80% of past readings for that time of year. Dashed line: typical.
         Charts share one time axis, upstream first: rain, then the river, then this station. Hover or tap for values.
+        {note && <> {note}</>}
       </p>
     </section>
   );

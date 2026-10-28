@@ -70,6 +70,25 @@ a plain-language sentence. Stale data (more than 3 days old) never fires an
 indicator. A plain notice is dropped when a stronger finding already covers the
 same site and variable. One broken indicator can't take down the build.
 
+**Virtual sensors** (`msc/models/virtual.py`) are LightGBM quantile models, one set per salinity
+station. Each predicts what that station *should* read from same-day salinity at the other live
+stations, river flow (today and 7/30-day means), basin rain and season. They're trained by
+`python -m msc train` at backfill and monthly; models live in the data store (`models/`). Each
+training run scores the model on the station's most recent two years before refitting on everything,
+then calibrates the ranges on that held-out period (conformalized quantile regression) so a "90% range"
+really covers about 90%. The build uses them three ways:
+
+| Use | Rule |
+|---|---|
+| Estimate for a retired or quiet station | Only where held-out error is ≤ 3.5 ppt (today: Gulfport Light, Pearl River mouth). Shown with its likely range, labeled as an estimate. |
+| "Reads saltier/fresher than nearby stations suggest" | Live reading outside the calibrated 90% range. A note only. |
+| Suspect: alerts paused | Outside the calibrated 98% range (+0.5 ppt) on 2 of the last 3 days. On the last 400 days this fired on 0 readings that passed the 36 ppt ceiling, so it catches gross failures, not slow drift. |
+| Charts | Dotted "expected from neighbors" line with its 90% band. |
+
+First run (2026-10-28), held-out MAE in ppt (vs. averaging the neighbors): Gulfport Light 2.3 (9.0),
+Pearl River mouth 2.7 (11.8), Back Bay 3.7 (4.4), Round Island 4.0 (10.4), Merrill Shell 5.0 (6.2),
+East Ship Island 7.1 (12.1).
+
 **Build** (`msc/build.py`) writes `web/public/data/<region>/latest.json` (cards,
 findings, one headline per persona, rain forecast) and
 `web/public/data/<region>/sites/<id>.json` (a year of daily values with normal bands)

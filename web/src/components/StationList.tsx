@@ -14,14 +14,16 @@ export default function StationList({ cards, findings, siteHref }: Props) {
       {items.map((c) => {
         const isRiver = c.kind === "river";
         const v = (isRiver ? c.vars.flow : c.vars.salinity) ?? {};
-        const live = v.value !== undefined && !v.stale;
-        const chip = isRiver ? "var(--fresh)" : live && v.value !== undefined ? salinityFill(v.value) : "var(--rule)";
-        const sub = !live
-          ? v.date ? `quiet since ${fmtDate(v.date, { month: "short", day: "numeric" })}` : "no data"
+        const live = v.value !== undefined && !v.stale && !c.retired;
+        const est = !live && v.estimate ? v.estimate : null;
+        const chip = isRiver ? "var(--fresh)" : live && v.value !== undefined ? salinityFill(v.value) : est ? salinityFill(est.value) : "var(--rule)";
+        const sub = est ? `~${est.display}, estimated`
+          : c.retired ? "sensor offline"
+          : !live ? v.date ? `quiet since ${fmtDate(v.date, { month: "short", day: "numeric" })}` : "no data"
           : isRiver ? `${v.display}${v.band ? `, ${FLOW_WORDS[v.band]}` : ""}` : `${v.display}${v.suspect ? " (check)" : ""}`;
         return (
-          <li key={c.id} className={isRiver ? "is-river" : undefined}>
-            <span className="chip" style={{ background: chip }} aria-hidden="true" />
+          <li key={c.id} className={[isRiver ? "is-river" : "", est ? "is-est" : ""].join(" ").trim() || undefined}>
+            <span className="chip" style={est ? { borderColor: chip } : { background: chip }} aria-hidden="true" />
             <a href={siteHref(c.slug)}>{c.short}</a>
             <span className="sub">{sub}{alerting.has(c.id) ? ", alert" : ""}</span>
           </li>

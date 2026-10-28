@@ -64,10 +64,13 @@ jobs:
         run: |
           python -m msc backfill --region "$REGION"
           python -m msc normals --region "$REGION"
+          python -m msc train --region "$REGION"
 
-      - name: Recompute normals (monthly)
+      - name: Recompute normals and retrain virtual sensors (monthly)
         if: github.event.schedule == '43 7 1 * *'
-        run: python -m msc normals --region "$REGION"
+        run: |
+          python -m msc normals --region "$REGION"
+          python -m msc train --region "$REGION"
 
       - name: Ingest and build data
         env: { API_USGS_PAT: "${{ secrets.API_USGS_PAT }}" }

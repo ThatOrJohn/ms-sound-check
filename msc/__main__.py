@@ -2,6 +2,7 @@
 
   python -m msc backfill  --region ms     one-time history pull (USGS + rain)
   python -m msc normals   --region ms     recompute normals from history
+  python -m msc train     --region ms     retrain virtual-sensor models (QC + estimates)
   python -m msc ingest    --region ms     pull recent data from every source
   python -m msc build     --region ms     write site/data/<region>/*.json
   python -m msc run       --region ms     ingest + build (what the schedule runs)
@@ -105,7 +106,7 @@ def cmd_check(region, args) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="msc")
-    ap.add_argument("command", choices=["backfill", "normals", "ingest", "build", "run", "check", "basemap"])
+    ap.add_argument("command", choices=["backfill", "normals", "train", "ingest", "build", "run", "check", "basemap"])
     ap.add_argument("--region", default="ms")
     ap.add_argument("--start", default="1998-01-01", help="backfill start date")
     ap.add_argument("--days", type=int, default=7, help="ingest lookback days")
@@ -115,6 +116,13 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     region = load_region(args.region)
+    if args.command == "train":
+        from .models import virtual
+        meta = virtual.train(region, store.read_daily(region))
+        for sid, m in meta.items():
+            log.info("virtual %-22s mae=%s (neighbors avg %s) estimate=%s", sid, m["metrics"].get("mae"),
+                     m["metrics"].get("mae_neighbors_avg"), "yes" if m["publish_estimate"] else "no")
+        return 0
     if args.command == "basemap":
         from .basemap import build as build_basemap
         meta = build_basemap(stride=args.stride)

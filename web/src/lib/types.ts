@@ -38,7 +38,16 @@ export interface Reading {
   normal?: Normal;
   percentile?: number;
   band?: Band;
+  suspect_reason?: "ceiling" | "neighbors" | null;
+  /** What nearby stations and river flow imply right now (virtual sensor). */
+  expected?: Estimate;
+  /** Live reading falls outside the virtual sensor's 90% range. */
+  vs_neighbors?: "high" | "low";
+  /** Published estimate for a station with no live reading. */
+  estimate?: Estimate;
 }
+
+export interface Estimate { value: number; lo: number; hi: number; display: string; mae: number | null; published: boolean }
 
 export interface Card {
   id: string;
@@ -51,6 +60,7 @@ export interface Card {
   lon: number;
   drains_from?: string[] | null;
   osm_names?: string[] | null;
+  retired?: boolean;
   vars: Record<string, Reading>;
   findings: number[];
 }
@@ -77,5 +87,10 @@ export interface SiteFile {
   name: string;
   drains_from: string[];
   note?: string | null;
-  series: Record<string, { unit: string; label: string; points: SeriesPoint[] }>;
+  series: Record<string, {
+    unit: string; label: string; points: SeriesPoint[];
+    /** [date, expected, lo90, hi90] from the virtual sensor */
+    expected?: [string, number | null, number | null, number | null][];
+    expected_mae?: number | null;
+  }>;
 }

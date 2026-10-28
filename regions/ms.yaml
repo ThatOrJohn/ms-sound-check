@@ -54,6 +54,32 @@ sites:
     note: Lower East Pearl near the Sound. Usually fresh; salt here means the river is low.
     drains_from: [USGS-02489500]
 
+  # --- retired stations: salinity sensors stopped in 2024. Shown as virtual-sensor estimates only. ---
+  - id: USGS-301912088583300
+    name: Gulfport Light
+    short: Gulfport Light
+    kind: sound
+    source: usgs
+    retired: true
+    lat: 30.3203
+    lon: -88.9758
+    vars: [salinity]
+    salinity_from: conductance
+    note: Off Gulfport Harbor. The salinity sensor stopped reporting in August 2024; readings here are estimated from nearby stations and river flow.
+    drains_from: [USGS-02489500]
+  - id: USGS-301527088521500
+    name: East Ship Island Light
+    short: East Ship Island
+    kind: sound
+    source: usgs
+    retired: true
+    lat: 30.2575
+    lon: -88.8708
+    vars: [salinity]
+    salinity_from: conductance
+    note: Near the Ship Island pass, where Gulf water enters the Sound. The salinity sensor stopped reporting in December 2024; readings here are estimated.
+    drains_from: [USGS-02479000]
+
   # --- rivers ---
   - id: USGS-02489500
     name: Pearl River near Bogalusa
@@ -175,6 +201,9 @@ indicators:
     alert_days: 14
     topics: [oyster, general]
     text: "{site} has been under {threshold} ppt for {days} straight days. Past two weeks, oyster reefs start dying."
+
+  # Virtual-sensor QC: every salinity station checked against what its neighbors and the rivers imply.
+  # (Configured here so another region can tune or drop it; the model lives in msc/models/virtual.py.)
 
   # Shrimp season lean from spring water temperature (see docs/feasibility.md).
   - id: shrimp_season_lean

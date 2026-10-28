@@ -24,6 +24,39 @@ def _r(v, nd=2):
     return None if v is None or (isinstance(v, float) and not np.isfinite(v)) else round(float(v), nd)
 
 
+def _virtual(region, daily, asof):
+    """Virtual-sensor expectations and QC. Missing models or a model error never break the build."""
+    try:
+        from .models import virtual
+        expected = virtual.predict(region, daily, asof - pd.Timedelta(days=HISTORY_DAYS), asof)
+        return expected, virtual.qc(region, daily, expected, asof)
+    except Exception as e:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning("virtual sensors skipped: %s", e)
+        return pd.DataFrame(), {}
+
+
+def _with_virtual(region, card: dict, q: dict | None, var: str, site: dict) -> dict:
+    """Attach neighbor-based expectation, QC verdict, and (where earned) an estimate."""
+    if var != "salinity" or not q:
+        return card
+    exp = {"value": _r(q["q50"], 1), "lo": _r(q["lo90"], 1), "hi": _r(q["hi90"], 1),
+           "display": fmt("salinity", q["q50"], region.units), "mae": _r(q.get("mae"), 1),
+           "published": q["publish"]}
+    card["expected"] = exp
+    live = card.get("status") != "no_data" and not card.get("stale")
+    if live and card.get("value") is not None:
+        v = card["value"]
+        if v > q["hi90"] or v < q["lo90"]:
+            card["vs_neighbors"] = "high" if v > q["hi90"] else "low"
+        if q["suspect"]:
+            card["suspect"] = True
+            card["suspect_reason"] = "neighbors"
+    elif q["publish"]:
+        card["estimate"] = exp
+    return card
+
+
 def slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
@@ -41,6 +74,7 @@ def _card_var(region, daily, normals, site, var, asof):
         "date": last.date.strftime("%Y-%m-%d"),
         "stale": age > 3,
         "suspect": bool(is_suspect(var, last.value)),
+        "suspect_reason": "ceiling" if is_suspect(var, last.value) else None,
         "age_days": int(age),
     }
     spark = s[s.date > asof - pd.Timedelta(days=SPARK_DAYS)]
@@ -147,13 +181,17 @@ def _headline(region, findings, persona, asof, cards):
 
 def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.Timestamp,
           forecast: pd.DataFrame | None = None, generated_at: pd.Timestamp | None = None) -> dict:
-    findings = evaluate(region, daily, normals, asof)
+    expected, qcs = _virtual(region, daily, asof)
+    suspect = {(sid, "salinity") for sid, q in qcs.items() if q["suspect"]}
+    findings = evaluate(region, daily, normals, asof, suspect=suspect)
     cards = []
     for site in region.sites:
         cards.append({
             **{k: site.get(k) for k in ("id", "name", "short", "kind", "note", "lat", "lon", "drains_from", "osm_names")},
             "slug": site.get("slug") or slugify(site["short"]),
-            "vars": {v: _card_var(region, daily, normals, site, v, asof) for v in site["vars"]},
+            "retired": bool(site.get("retired")),
+            "vars": {v: _with_virtual(region, _card_var(region, daily, normals, site, v, asof), qcs.get(site["id"]), v, site)
+                     for v in site["vars"]},
             "findings": [i for i, f in enumerate(findings) if f.get("site") == site["id"]],
         })
     fc = {}
@@ -201,6 +239,12 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                               if nrm is not None and min(d.dayofyear, 365) in nrm.index else [None] * 3)]
                            for d in rows],
             }
+        if "salinity" in series and not expected.empty:
+            e = expected[(expected.site == site["id"]) & (expected.date > start)].sort_values("date")
+            if len(e):
+                series["salinity"]["expected"] = [[d.strftime("%Y-%m-%d"), _r(q50), _r(lo), _r(hi)]
+                                                  for d, q50, lo, hi in zip(e.date, e.q50, e.lo90, e.hi90)]
+                series["salinity"]["expected_mae"] = _r(e.mae.iloc[-1], 1)
         (out / "sites" / f"{site['id']}.json").write_text(json.dumps(
             {"id": site["id"], "slug": site.get("slug") or slugify(site["short"]), "name": site["name"], "drains_from": site.get("drains_from", []),
              "note": site.get("note"), "series": series}, separators=(",", ":")))

@@ -120,7 +120,7 @@ def recent(region: Region, days: int = 7) -> pd.DataFrame:
     """Last N days of continuous (15-min) values from the new USGS API."""
     from dataretrieval import waterdata
 
-    sites = region.sites_by(source="usgs")
+    sites = [s for s in region.sites_by(source="usgs") if not s.get("retired")]
     df, _ = waterdata.get_continuous(
         monitoring_location_id=[s["id"] for s in sites],
         parameter_code=list(PCODES),

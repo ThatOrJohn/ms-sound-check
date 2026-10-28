@@ -19,9 +19,12 @@ const siteHref = (slug: string) => href(`station/${slug}/`);
 const alerting = new Set(data.findings.filter((f) => f.site && SEV_RANK[f.severity] >= 2).map((f) => f.site));
 const mapStations: MapStation[] = data.cards.filter((c) => c.kind === "sound" || c.kind === "estuary").map((c) => {
   const v = c.vars.salinity ?? {};
-  const status = v.value === undefined || v.stale ? "quiet" : v.suspect ? "suspect" : "live";
+  const live = v.value !== undefined && !v.stale && !c.retired;
+  const status: MapStation["status"] = live ? (v.suspect ? "suspect" : "live") : v.estimate ? "estimate" : "quiet";
+  const salinity = status === "live" ? v.value ?? null : status === "estimate" ? v.estimate!.value : null;
+  const display = status === "estimate" ? `~${v.estimate!.display} est.` : c.retired ? "offline" : v.display ?? "no data";
   return { id: c.id, short: c.short, kind: c.kind, lon: c.lon, lat: c.lat, href: siteHref(c.slug),
-    salinity: status === "live" ? v.value ?? null : null, display: v.display ?? "no data", status, alert: alerting.has(c.id) };
+    salinity, display, status, alert: alerting.has(c.id) };
 });
 const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((c) => ({
   name: c.short, osmNames: c.osm_names ?? [c.short], display: c.vars.flow?.display ?? "no data",
@@ -74,7 +77,7 @@ const groups = persona.card_order
           <h3><a href={siteHref(c.slug)}>{c.short}</a></h3>
           <p class="where">{c.name}</p>
           {Object.entries(c.vars).map(([vn, r]) => (
-            <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[c.id]?.total : undefined} />
+            <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[c.id]?.total : undefined} retired={c.retired} />
           ))}
         </article>
       ))}

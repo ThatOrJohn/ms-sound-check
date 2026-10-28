@@ -122,6 +122,7 @@ select, .btn {
   background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 4px 14px; }
 .station-list li { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--rule); }
 .station-list .chip { width: 14px; height: 14px; border-radius: 50%; }
+.station-list .is-est .chip { background: transparent; border: 3px solid; width: 15px; height: 15px; }
 .station-list .is-river .chip { border-radius: 3px; width: 6px; height: 22px; justify-self: center; }
 .station-list a { font-weight: 600; text-decoration: none; }
 .station-list a:hover { text-decoration: underline; }
@@ -153,6 +154,7 @@ select, .btn {
 .card .reading:first-of-type { border-top: 0; padding-top: 0; }
 .reading .what { font-size: 0.8rem; color: var(--ink-soft); grid-column: 1 / -1; }
 .reading .val { font: 500 1.65rem/1.1 var(--serif); }
+.reading .val.est { font-style: italic; color: var(--ink-soft); }
 .reading .band { font-size: 0.85rem; grid-column: 1 / -1; }
 .reading .band[data-band="low"], .reading .band[data-band="high"] { font-weight: 600; }
 .reading .caveat { font-size: 0.85rem; color: var(--marker-red); grid-column: 1 / -1; }

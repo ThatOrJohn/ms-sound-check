@@ -42,6 +42,21 @@ const data = loadLatest();
         It's a lean, not a forecast. MDMR sets the date from its own trawl sampling.</li>
     </ul>
 
+    <h2>Estimates and sensor checks</h2>
+    <p>For every salinity station, a model learns what that spot usually reads given the other stations
+      and the rivers on the same day. We call it a virtual sensor. It's retrained monthly and scored on the most recent two
+      years of data it hasn't seen, and its ranges are adjusted so a "likely range" really holds about 90% of readings.</p>
+    <ul>
+      <li><strong>Estimates</strong> appear only where that held-out error is small: today, Gulfport Light (typically
+        within about 2 ppt), whose sensor stopped in 2024, and the Pearl River mouth when its sensor is quiet. Estimates are
+        shown in italics with a tilde and a likely range, and hollow markers on the map.</li>
+      <li><strong>"Reads saltier than nearby stations suggest"</strong> means a live reading falls outside its likely range.
+        It's a note, not an alarm: the model's ranges at some stations are wide.</li>
+      <li><strong>Possibly a sensor problem</strong> means a reading is far outside even a 98% range for two of the last
+        three days, or saltier than the open Gulf. Those readings never trigger alerts.</li>
+    </ul>
+    <p>East Ship Island, near the Gulf pass, isn't estimated: nothing we measure predicts it well enough.</p>
+
     <h2>Caveats</h2>
     <p>Readings are provisional until USGS reviews them, and instruments foul or drift. Readings that are physically implausible for
       the Sound, such as water saltier than the open Gulf, are shown with a caveat and never trigger alerts. If a station stops

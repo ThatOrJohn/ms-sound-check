@@ -31,11 +31,16 @@ for (const c of [...upstream, card]) {
       kind: vn === "rain" ? "bar" : "line",
       log: vn === "flow",
       points: s.points,
+      expected: c.id === card.id ? s.expected : undefined,
       threshold: vn === "salinity" && c.id === card.id && (c.kind === "sound" || c.kind === "estuary")
         ? { value: 2, label: "2 ppt: oyster stress line" } : undefined,
     });
   }
 }
+const ownSal = loadSite(card.id)?.series.salinity;
+const chartNote = ownSal?.expected?.length
+  ? `Dotted line and gray band: what nearby stations and river flow suggest for this spot (typically within ±${Math.round(ownSal.expected_mae ?? 0)} ppt). A sensor drifting away from it is a hint something's wrong.`
+  : undefined;
 const own = data.findings.filter((f) => f.site === card.id);
 const dates = Object.values(card.vars).map((v) => v.date).filter(Boolean).sort() as string[];
 const usgsUrl = card.id.startsWith("USGS-") ? `https://waterdata.usgs.gov/monitoring-location/${card.id}/` : null;
@@ -58,12 +63,12 @@ const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.disp
   <section class="now" aria-label="Current readings">
     {Object.entries(card.vars).map(([vn, r]) => (
       <article class="card">
-        <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[card.id]?.total : undefined} />
+        <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[card.id]?.total : undefined} retired={card.retired} />
       </article>
     ))}
   </section>
 
-  {panels.length > 0 && <StationCharts client:visible panels={panels} />}
+  {panels.length > 0 && <StationCharts client:visible panels={panels} note={chartNote} />}
 
   <section class="upstream">
     {upstream.length > 0 && (<>
