@@ -8,7 +8,7 @@
 - [x] Step detector and event matching ([0016](../decisions/0016-step-events-need-matching-stations.md)), `msc/models/steps.py`
 - [x] `salinity_steps` indicator in `regions/ms.yaml`; the stations involved show it on their pages
 - [x] Tuned on 1998-2026: about 5 events a year; catches Ida, the 2019 spillway closing, Francine, Zeta and October 2026
-- [ ] Wind explanation for each event (next roadmap item)
+- [x] Wind and river context for each event ([0017](../decisions/0017-step-events-describe-wind-and-rivers.md)): not a cause, because the 1998-2026 history doesn't support one
 - [x] Events across three or more stations lead the Oysters and Fishing headlines (short form); two-station events stay in Signals
 - [ ] Settle the Round Island caveat (see notes)
 

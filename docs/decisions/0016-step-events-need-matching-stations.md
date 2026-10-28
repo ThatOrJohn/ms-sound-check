@@ -26,7 +26,7 @@ Round Island's readings were past the QC ceiling, so masking removed it as a wit
 ## Consequences
 - Detection lags onset by about two days (it needs three days of "after" data), and longer when a station has gaps.
 - Nothing is stored: events are not kept, and a step older than a week disappears.
-- No cause is attached yet. Wind (and river flow) explanations are the next roadmap item.
+- No cause is attached; each event describes the wind and rivers beforehand instead ([0017](0017-step-events-describe-wind-and-rivers.md)).
 - Thresholds are specific to salinity, and the 6 ppt lead is a judgment from this history. Revisit them if the
   event rate drifts, or if Gulfport Light and East Ship Island return as stations.
 - A pair of stations is the minimum, and a pair can be a coincidence, so only three or more reach a headline.

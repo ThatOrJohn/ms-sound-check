@@ -11,7 +11,7 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
-- **Event explanations from wind**: attach the likely wind cause to step events.
+- **Better event explanations**: wind and rivers explain under half of the events ([0017](decisions/0017-step-events-describe-wind-and-rivers.md)). Candidates: Mississippi River flow and Bonnet Carré openings, tides at the Gulf passes.
 - **Revisit Round Island's caveat**: Merrill Shell's matching step suggests the 37 ppt may be real.
 - **Share previews**: generated Open Graph images per page (for Bluesky and X).
 - **Weekly digest**: Bluesky post + RSS from the same build.

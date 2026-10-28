@@ -12,6 +12,7 @@ Stateless: every build recomputes from the daily table, so no event history is s
 """
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from ..config import VARIABLES, Region
@@ -64,6 +65,47 @@ def events(per_site: dict[str, pd.DataFrame], lead: float = 0) -> list[dict]:
     return sorted(out, key=lambda e: e["onset"])
 
 
+COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
+MPS_TO_MPH = 2.237
+STEADY_WIND_MPS = 3.0         # a 3-day mean wind vector at least this strong is worth mentioning (about 7 mph)
+RIVER_RISE, RIVER_FALL = 0.5, -0.25
+
+
+def context(daily: pd.DataFrame, cfg: dict, onset: pd.Timestamp) -> str | None:
+    """What the wind and the rivers were doing in the days before an event, as plain facts.
+
+    Not a cause: across 1998-2026 only about 44% of freshening events followed a river rise of 50% or more
+    (decision 0017), so we describe the conditions and say when nothing stands out.
+    """
+    days = pd.date_range(onset - pd.Timedelta(days=AFTER - 1), onset)
+    wind = daily[(daily.site == cfg.get("wind_site")) & daily["var"].isin(["wind_u", "wind_v"]) & daily.date.isin(days)]
+    wind = wind.pivot_table(index="date", columns="var", values="value")
+    flows = daily[daily.site.isin(cfg.get("river_sites", [])) & (daily["var"] == "flow")]
+    flows = flows.pivot_table(index="date", columns="site", values="value")
+    now = flows.reindex(days).mean()
+    prior = flows.reindex(pd.date_range(onset - pd.Timedelta(days=BEFORE + AFTER - 1), onset - pd.Timedelta(days=AFTER))).mean()
+    change = ((now / prior) - 1).dropna()
+    if len(wind) < AFTER - 1 and change.empty:
+        return None
+    parts = []
+    if len(wind) >= AFTER - 1:
+        u, v = float(wind.wind_u.mean()), float(wind.wind_v.mean())       # direction the wind blows toward
+        if np.hypot(u, v) >= STEADY_WIND_MPS:
+            toward = np.degrees(np.arctan2(u, v)) % 360
+            parts.append(f"winds averaged about {np.hypot(u, v) * MPS_TO_MPH:.0f} mph from the "
+                         f"{COMPASS[int(round(((toward + 180) % 360) / 45)) % 8]}")
+    if not change.empty:
+        r = float(change.mean())
+        label = cfg.get("river_label", "the rivers")
+        if r >= RIVER_RISE:
+            parts.append(f"{label} rose about {round(r * 100, -1):.0f}%")
+        elif r <= RIVER_FALL:
+            parts.append(f"{label} fell about {round(-r * 100, -1):.0f}%")
+    if parts:
+        return "In the days before, " + " and ".join(parts) + "."
+    return "Winds were light and river flow didn't change much in the days before, so our data doesn't point to a cause."
+
+
 def step_events(region: Region, cfg: dict, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.Timestamp):
     var = cfg["var"]
     ceiling = VARIABLES.get(var, {}).get("suspect_above")
@@ -89,7 +131,8 @@ def step_events(region: Region, cfg: dict, daily: pd.DataFrame, normals: pd.Data
         way = "up" if e["dir"] > 0 else "down"
         finding = {"indicator": cfg["id"], "site": None, "var": var, "severity": "notice",
                    "topics": cfg.get("topics", []), "date": e["onset"].strftime("%Y-%m-%d"),
-                   "sites": list(e["sites"]), "text": cfg[f"{way}_text"].format(**fill),
+                   "sites": list(e["sites"]), "text": " ".join(filter(None, [cfg[f"{way}_text"].format(**fill),
+                                                                        context(daily, cfg, e["onset"])])),
                    "short": cfg[f"{way}_short"].format(**fill)}
         # "lead" marks a finding that reaches a headline only by being promoted here, never as a persona's own model
         finding["lead"] = cfg.get("lead_topics", []) if len(e["sites"]) >= cfg.get("lead_min_stations", 99) else []
