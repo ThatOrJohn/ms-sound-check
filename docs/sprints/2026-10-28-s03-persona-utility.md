@@ -16,7 +16,9 @@
   - [x] Wording only ever says what MDMR's criteria indicate; never "is closed"
   - [ ] Verify the first live NWPS fetch and the PERL1 backfill in CI
   - [ ] Confirm the oyster information line (228-374-5167 comes from MDMR notices; check it's current)
-  - [ ] With history in hand: how often each threshold is crossed per year (context line for the section)
+  - [x] With history in hand: how often each threshold is crossed per year (context line for the section). Daily
+        means since 1998: at or above 10 ft on ~145 days a year in ~6.6 rises, mostly Jan-Apr; 11 ft on ~125 days.
+        Daily means run under peak readings, and the line says "daily average".
 - [x] **Fishing weekend outlook** (Fishing page): per-day wind with a plain verdict, sky, rain chance, tides at
       Gulfport Harbor (all three stations in a table), water temperature trend, saltiest/freshest station,
       muddy-water risk; best day becomes the Fishing headline. Shows this weekend, or the next three days

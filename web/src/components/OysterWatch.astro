@@ -20,6 +20,17 @@ const nowText = (x: NonNullable<OysterWatch["groups"]>[number]) =>
 const thresholds = (watch.groups ?? []).map((x) => x.stage_ft);
 const top = Math.max(14, ...(g ? [g.stage + 1] : []), ...(watch.forecast?.max ? [watch.forecast.max + 1] : []), ...thresholds.map((t) => t + 2));
 const pct = (v: number) => `${Math.max(0, Math.min(100, (v / top) * 100)).toFixed(1)}%`;
+const month = (m: number) => new Date(2000, m - 1, 1).toLocaleString("en-US", { month: "long" });
+// One sentence covering every closure level, built as a string (inline whitespace gets dropped under compressHTML).
+const levels = [...new Map((watch.groups ?? []).filter((x) => x.history).map((x) => [x.stage_ft, x.history!])).entries()]
+  .sort((a, b) => a[0] - b[0]);
+const historyLine = levels.length === 0 ? "" :
+  `Since ${levels[0][1].since}, the river's daily average has reached ` +
+  levels.map(([ft, h]) => {
+    const pm = h.peak_months;
+    const peak = pm.length === 2 && pm[1] > pm[0] ? `${month(pm[0])} to ${month(pm[1])}` : pm.map(month).join(", ");
+    return `${ft} ft on about ${h.days_per_year} days in a typical year (most often ${peak}; ${h.this_month_pct}% of days in ${month(h.month)})`;
+  }).join(" and ") + ". High water is common here, so these levels say how often the river is up, not how often areas close.";
 const trend = g?.change_24h == null ? "" : Math.abs(g.change_24h) < 0.1 ? "steady" : g.change_24h > 0 ? `up ${g.change_24h.toFixed(1)} ft in 24 hours` : `down ${Math.abs(g.change_24h).toFixed(1)} ft in 24 hours`;
 ---
 <section class="group oyster-watch" aria-labelledby="g-oyster">
@@ -66,6 +77,7 @@ const trend = g?.change_24h == null ? "" : Math.abs(g.change_24h) < 0.1 ? "stead
           ))}
         </tbody>
       </table>
+      {historyLine && <p class="oyster-notes">{historyLine}</p>}
       <p class="oyster-notes">
         {watch.rain?.yesterday_in != null && <>Rain in Hancock County yesterday: about {watch.rain.yesterday_in.toFixed(2)} in. </>}
         Our rain figure is an estimate; MDMR measures at the Hancock County Utility Authority gauge. Areas reopen once the

@@ -12,6 +12,8 @@ from ..config import Region
 
 NEAR_FT = 2.0
 MM_PER_IN = 25.4
+MIN_HISTORY_DAYS = 365 * 5     # don't describe "a typical year" from less than five years of readings
+PEAK_SHARE = 0.75              # a month is "peak" if it's within 75% of the busiest month's share of days
 
 
 def _cfg(region: Region) -> dict | None:
@@ -20,6 +22,31 @@ def _cfg(region: Region) -> dict | None:
 
 def _areas(xs: list[str]) -> str:
     return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " and " + xs[-1]
+
+
+def history(daily: pd.DataFrame, gid: str, thresholds: list[float], asof: pd.Timestamp) -> dict[float, dict]:
+    """How often the gauge's daily stage has reached each threshold, from complete years before this one.
+
+    Daily values are USGS daily means, so these counts run a little under what peak readings would show.
+    """
+    s = daily[(daily.site == gid) & (daily["var"] == "stage") & (daily.date.dt.year < asof.year)]
+    s = s.drop_duplicates("date").set_index("date").value.sort_index()
+    if s.index.nunique() < MIN_HISTORY_DAYS:
+        return {}
+    s = s.reindex(pd.date_range(s.index.min(), s.index.max()))
+    seen, years = s.notna(), s.notna().sum() / 365
+    out = {}
+    for thr in thresholds:
+        over = (s >= thr) & seen
+        month = (over.groupby(s.index.month).sum() / seen.groupby(s.index.month).sum()).fillna(0)
+        peak = [m for m in range(1, 13) if month[m] >= PEAK_SHARE * month.max()]
+        out[thr] = {
+            "since": int(s.index.min().year), "days_per_year": int(round(over.sum() / years / 5) * 5),
+            "rises_per_year": round(float((over & ~over.shift(fill_value=False)).sum() / years), 1),
+            "peak_months": [peak[0], peak[-1]] if peak == list(range(peak[0], peak[-1] + 1)) else peak,
+            "month": int(asof.month), "this_month_pct": int(round(month[asof.month] * 100)),
+        }
+    return out
 
 
 def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | None:
@@ -65,6 +92,7 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | N
         if len(r) and (asof - r.date.iloc[-1]).days <= 2:
             rain_in = round(float(r.value.iloc[-1]) / MM_PER_IN, 2)
 
+    hist = history(daily, gid, sorted({float(g["stage_ft"]) for g in cfg["groups"]}), asof)
     groups = []
     for g in cfg["groups"]:
         thr = float(g["stage_ft"])
@@ -78,7 +106,7 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | N
         rain_hits = [a for a, t in (g.get("rain_in") or {}).items() if rain_in is not None and rain_in >= t]
         groups.append({"areas": g["areas"], "names": g.get("names"), "stage_ft": thr, "status": status,
                        "crossing_time": crossing.isoformat() if crossing is not None else None,
-                       "rain_in": g.get("rain_in"), "rain_triggered": rain_hits})
+                       "rain_in": g.get("rain_in"), "rain_triggered": rain_hits, "history": hist.get(thr)})
     return {
         "available": True, "stale": bool(stale),
         "gauge": {"id": gid, "name": gauge["name"], "lid": gauge.get("nws_lid"), "stage": round(stage, 2),

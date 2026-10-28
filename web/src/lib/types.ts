@@ -87,6 +87,10 @@ export interface Card {
 export interface OysterGroup {
   areas: string[]; names: string | null; stage_ft: number; status: "above" | "forecast" | "near" | "clear";
   crossing_time: string | null; rain_in: Record<string, number> | null; rain_triggered: string[];
+  history: OysterHistory | null;
+}
+export interface OysterHistory {
+  since: number; days_per_year: number; rises_per_year: number; peak_months: number[]; month: number; this_month_pct: number;
 }
 export interface OysterWatch {
   available: boolean; stale?: boolean;

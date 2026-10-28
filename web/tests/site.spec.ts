@@ -63,6 +63,13 @@ test("oyster page shows the closure watch with MDMR's criteria", async ({ page }
   await expect(page.getByRole("link", { name: "management plan" })).toHaveAttribute("href", /dmr\.ms\.gov/);
 });
 
+test("oyster page puts the river level in typical-year context", async ({ page }) => {
+  await page.goto("for/oyster/");
+  const line = page.getByText(/daily average has reached/);
+  test.skip(await line.count() === 0, "no PERL1 history in this build's data");
+  await expect(line).toContainText("not how often areas close");
+});
+
 test("shrimp page shows MDMR's season notices and the wind outlook", async ({ page }) => {
   await page.goto("for/shrimp/");
   await expect(page.getByRole("heading", { name: "Shrimp season", exact: true })).toBeVisible();
