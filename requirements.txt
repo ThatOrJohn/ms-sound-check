@@ -5,4 +5,4 @@ pyyaml
 requests
 gsw
 dataretrieval>=1.4
-lightgbm
+lightgbm        # macOS: also `brew install libomp`

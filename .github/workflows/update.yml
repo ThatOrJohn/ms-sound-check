@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: "run (normal update) or backfill (first-time history pull + normals)"
+        description: "run (normal update), backfill (first-time history pull + normals + models), or experiment (ML experiments, results in the run summary)"
         default: run
         type: choice
-        options: [run, backfill]
+        options: [run, backfill, experiment]
   pull_request:              # build + test only; never touches data or deploys
 
 permissions:
@@ -30,6 +30,7 @@ env:
 
 jobs:
   update:
+    if: github.event.inputs.task != 'experiment'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -132,10 +133,31 @@ jobs:
   # The page itself still deploys and shows its own staleness warning.
   health:
     needs: [update, deploy]
-    if: always() && github.event_name != 'pull_request'
+    if: always() && github.event_name != 'pull_request' && github.event.inputs.task != 'experiment'
     runs-on: ubuntu-latest
     steps:
       - name: Data freshness
         run: |
           echo "${{ needs.update.outputs.message }}"
           test "${{ needs.update.outputs.healthy }}" = "true"
+
+  # Manual ML experiments against the data store. Read-only: never saves data or deploys.
+  experiment:
+    if: github.event.inputs.task == 'experiment'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out the data store (read-only)
+        run: |
+          git fetch --depth 1 origin data
+          git worktree add store FETCH_HEAD
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Drivers experiment (Mississippi River + wind)
+        run: |
+          python scripts/experiment_drivers.py | tee experiment.txt
+          { echo '## Drivers experiment'; echo '```'; cat experiment.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with: { name: experiment-results, path: "data/probe/*.csv", retention-days: 30 }

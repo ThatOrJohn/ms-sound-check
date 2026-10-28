@@ -173,6 +173,7 @@ that if the schedule moves to hourly.
 
 ```sh
 pip install -r requirements-dev.txt                # requirements.txt + basemap tools
+brew install libomp                                # macOS only: LightGBM needs the OpenMP runtime
 python -m msc basemap                              # one time: depth layers for the map (commit web/public/basemap/)
 python -m msc backfill && python -m msc normals   # one time
 python -m msc run                                  # ingest + write web/public/data
