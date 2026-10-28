@@ -1,6 +1,7 @@
 import type { Reading } from "../lib/types";
 import { bandWords, fmtDate, typical } from "../lib/format";
 import Sparkline from "./Sparkline";
+import Meter from "./Meter";
 
 interface Props {
   varName: string;
@@ -65,7 +66,10 @@ export default function ReadingRow({ varName, label, r, forecast, retired }: Pro
       ) : r.stale && r.date ? (
         <span className="caveat">Station quiet since {fmtDate(r.date, { month: "short", day: "numeric", year: "numeric" })}</span>
       ) : r.band ? (
-        <span className="band" data-band={r.band}>{bandWords(varName, r.band)}{t && ` (typical ${t})`}</span>
+        <span className="band" data-band={r.band}>
+          <Meter percentile={r.percentile} />
+          <span>{bandWords(varName, r.band)}{t && ` (typical ${t})`}</span>
+        </span>
       ) : null}
       {!r.suspect && !r.stale && r.vs_neighbors && r.expected && (
         <span className="extra">

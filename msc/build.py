@@ -193,19 +193,21 @@ def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch
     focus = persona["focus"]
     season = season_phrase(asof)
     rel = [f for f in findings if set(f["topics"]) & set(focus)]
+    # Ties on severity go to whatever this persona cares about most (its focus order).
+    focus_rank = lambda f: min((focus.index(t) for t in f["topics"] if t in focus), default=99)
     serious = sorted([f for f in rel if SEVERITY.get(f["severity"], 0) >= SEVERITY["watch"]],
-                     key=lambda f: -SEVERITY.get(f["severity"], 0))
+                     key=lambda f: (-SEVERITY.get(f["severity"], 0), focus_rank(f)))
     own_model = [f for f in rel if f.get("site") is None and focus[0] in f["topics"] and focus[0] != "general"]
     parts: list[str] = []
-    if serious:
-        parts.append(serious[0]["text"])
-    if own_model:
-        parts.append(own_model[0].get("short", own_model[0]["text"]))
-    if not parts and focus[0] == "fish":
+    if focus[0] == "fish":               # anglers' question is "should I go?": the outlook leads
         from .models import fishing as fishing_model
         fh = fishing_model.headline(fishing)
         if fh:
             parts.append(fh)
+    if serious:
+        parts.append(serious[0]["text"])
+    if own_model:
+        parts.append(own_model[0].get("short", own_model[0]["text"]))
     if not parts:
         parts.append(_conditions(cards, season))
         if focus[0] in ("shrimp", "fish"):

@@ -1,26 +1,26 @@
 ---
-// Theme picker: plain HTML + a few lines of script (no framework on content pages).
+// Theme: a three-way segmented control (Auto / Light / Dark), remembered in the browser.
 ---
-<label class="ctl">
-  Theme
-  <select data-theme-picker>
-    <option value="auto">Auto</option>
-    <option value="light">Light</option>
-    <option value="dark">Dark</option>
-  </select>
-</label>
+<div class="seg seg-sm" role="radiogroup" aria-label="Theme" data-theme-picker>
+  <button type="button" role="radio" data-value="auto" aria-checked="true">Auto</button>
+  <button type="button" role="radio" data-value="light" aria-checked="false">Light</button>
+  <button type="button" role="radio" data-value="dark" aria-checked="false">Dark</button>
+</div>
 <script>
-  const sel = document.querySelector<HTMLSelectElement>("[data-theme-picker]");
-  if (sel) {
+  const group = document.querySelector<HTMLElement>("[data-theme-picker]");
+  if (group) {
+    const buttons = [...group.querySelectorAll<HTMLButtonElement>("button")];
+    const show = (v: string) => buttons.forEach((b) => b.setAttribute("aria-checked", String(b.dataset.value === v)));
     let saved = "auto";
     try { saved = localStorage.getItem("sc-theme") || "auto"; } catch {}
-    sel.value = saved === "light" || saved === "dark" ? saved : "auto";
-    sel.addEventListener("change", () => {
-      const t = sel.value;
+    show(saved === "light" || saved === "dark" ? saved : "auto");
+    buttons.forEach((b) => b.addEventListener("click", () => {
+      const t = b.dataset.value!;
       try { localStorage.setItem("sc-theme", t); } catch {}
       if (t === "auto") delete document.documentElement.dataset.theme;
       else document.documentElement.dataset.theme = t;
+      show(t);
       window.dispatchEvent(new CustomEvent("sc-theme-change"));
-    });
+    }));
   }
 </script>

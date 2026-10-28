@@ -1,6 +1,6 @@
 ---
 import type { Latest, Persona } from "../lib/types";
-import { GROUPS, SEV_LABEL, forPersona, href, personaPath } from "../lib/format";
+import { GROUPS, SEV_LABEL, SEV_RANK, forPersona, href, personaPath } from "../lib/format";
 import PersonaPicker from "./PersonaPicker.astro";
 import Freshness from "./Freshness.astro";
 import StationList from "./StationList";
@@ -8,8 +8,9 @@ import BeachStatus from "./BeachStatus.astro";
 import OysterWatch from "./OysterWatch.astro";
 import FishingOutlook from "./FishingOutlook.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
-import { SEV_RANK } from "../lib/format";
 import ReadingRow from "./ReadingRow";
+import Meter from "./Meter";
+import { bandWords } from "../lib/format";
 
 interface Props { data: Latest; persona: Persona }
 const { data, persona } = Astro.props;
@@ -42,48 +43,101 @@ const groups = persona.card_order
   .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
     : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.cards.length);
 const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
+
+// ---------- the readout strip: a handful of numbers that sum up the Sound right now
+type Tile = { label: string; value: string; unit: string; sub: string; percentile?: number; href?: string };
+const split = (d: string) => { const m = d.replace(" past 7 days", "").match(/^(~?[\d.,–-]+)\s*(.*)$/); return m ? [m[1], m[2]] : [d, ""]; };
+const live = (c: (typeof data.cards)[number], vn: string) => {
+  const r = c.vars[vn]; return r && r.display && r.value !== undefined && !r.stale && !r.suspect && !c.retired ? r : null;
+};
+const tiles: Tile[] = [];
+const near = (where: string, vn: string, band?: any) => { const w = bandWords(vn, band); return w ? `${where}, ${w.toLowerCase()}` : where; };
+const sal = data.cards.filter((c) => c.kind === "sound").map((c) => live(c, "salinity")?.value).filter((v): v is number => v !== undefined);
+if (sal.length) {
+  const sorted = [...sal].sort((a, b) => a - b), mid = sorted[Math.floor(sorted.length / 2)];
+  tiles.push({ label: "Sound salinity", value: mid.toFixed(1), unit: "ppt",
+    sub: sal.length > 1 ? `${sorted[0].toFixed(0)}–${sorted.at(-1)!.toFixed(0)} across ${sal.length} stations` : "one station reporting" });
+}
+const wt = data.cards.filter((c) => c.kind === "sound").map((c) => ({ c, r: live(c, "water_temp") })).find((x) => x.r);
+if (wt) { const [v, u] = split(wt.r!.display!); tiles.push({ label: "Water temp", value: v, unit: u, sub: near(wt.c.short, "water_temp", wt.r!.band), percentile: wt.r!.percentile, href: siteHref(wt.c.slug) }); }
+for (const c of data.cards.filter((c) => c.kind === "river")) {
+  const r = live(c, "flow"); if (!r) continue;
+  const [v, u] = split(r.display!);
+  tiles.push({ label: `${c.short} flow`, value: v, unit: u, sub: bandWords("flow", r.band), percentile: r.percentile, href: siteHref(c.slug) });
+}
+const rainCard = data.cards.find((c) => c.kind === "rain" && /biloxi|local/i.test(c.id)) ?? data.cards.find((c) => c.kind === "rain");
+const rr = rainCard && rainCard.vars.rain;
+if (rainCard && rr?.display) { const [v, u] = split(rr.display); const fc = data.rain_forecast[rainCard.id]?.total;
+  tiles.push({ label: "Rain, 7 days", value: v, unit: u, sub: fc ? `${fc} forecast next 7` : bandWords("rain", rr.band), percentile: rr.percentile, href: siteHref(rainCard.slug) }); }
+const wx = data.cards.find((c) => c.kind === "weather");
+const at = wx && live(wx, "air_temp");
+if (wx && at) { const [v, u] = split(at.display!); tiles.push({ label: "Air temp", value: v, unit: u, sub: near(wx.short, "air_temp", at.band), percentile: at.percentile, href: siteHref(wx.slug) }); }
+const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 ---
-<section class="lede" aria-labelledby="headline">
-  <div class="lede-ctl">
+<section class="hero" aria-labelledby="headline">
+  <div class="hero-bar">
     <PersonaPicker personas={data.personas} current={persona.id} paths={paths} />
+    <Freshness newest={newest} generatedAt={data.generated_at} />
   </div>
-  <p class="persona-blurb">{persona.blurb}</p>
+  <p class="eyebrow">{data.region.name} · {persona.label}</p>
   <h1 id="headline">{data.headlines[persona.id]}</h1>
-  <Freshness newest={newest} generatedAt={data.generated_at} />
+  <p class="persona-blurb">{persona.blurb}</p>
 </section>
 
-<figure class="sound" aria-labelledby="sound-cap">
-  <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} basemapBase={href("basemap/")}
-    beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
-    personaId={persona.id} defaultLayers={persona.map_layers} />
-  <figcaption class="sound-foot">
-    <span id="sound-cap">Stations are colored by salinity. River lines widen when the rivers run high.</span>
-    <span class="scale" aria-hidden="true">Fresh <span class="scale-bar" /> Gulf salty</span>
-  </figcaption>
-  <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
-</figure>
+{tiles.length > 0 && (
+  <section class="readouts" aria-label="Key readings right now">
+    {tiles.slice(0, 6).map((t) => (
+      <div class="readout">
+        <p class="readout-label">{t.href ? <a href={t.href}>{t.label}</a> : t.label}</p>
+        <p class="readout-val">{t.value}<span class="unit">{t.unit}</span></p>
+        <p class="readout-sub"><Meter percentile={t.percentile} small /><span>{t.sub}</span></p>
+      </div>
+    ))}
+  </section>
+)}
 
-<section class="findings" aria-labelledby="findings-h">
-  <h2 id="findings-h">Worth knowing</h2>
-  {findings.length ? (
-    <ul>
-      {findings.map((f) => (
-        <li class="finding" data-sev={f.severity}>
-          <span class="sev">{SEV_LABEL[f.severity]}.</span>{" "}{f.text}
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <p class="quiet-note">Nothing stands out for {persona.label.toLowerCase()} right now. Everything is within the normal range for {data.season}.</p>
-  )}
-</section>
+<div class="console">
+  <figure class="sound panel-flat" aria-labelledby="sound-cap">
+    <div class="panel-title">
+      <h2 class="eyebrow">The Sound, live</h2>
+      <span class="scale" aria-hidden="true"><span>Fresh</span><span class="scale-bar"></span><span>Gulf</span></span>
+    </div>
+    <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} basemapBase={href("basemap/")}
+      beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
+      personaId={persona.id} defaultLayers={persona.map_layers} />
+    <figcaption class="sound-foot" id="sound-cap">Stations are colored by salinity. River lines widen when the rivers run high.</figcaption>
+    <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
+  </figure>
 
+  <aside class="rail" aria-labelledby="findings-h">
+    <div class="rail-head">
+      <h2 id="findings-h" class="eyebrow">Signals</h2>
+      <span class="count" data-hot={alertCount > 0 ? "" : undefined}>{findings.length ? `${findings.length} active` : "All quiet"}</span>
+    </div>
+    {findings.length ? (
+      <ul class="signals">
+        {findings.map((f) => (
+          <li class="finding" data-sev={f.severity}>
+            <span class="sev">{SEV_LABEL[f.severity]}</span>
+            <span class="finding-text">{f.text}</span>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="quiet-note">Nothing stands out for {persona.label.toLowerCase()} right now. Everything is within the normal range for {data.season}.</p>
+    )}
+  </aside>
+</div>
+
+<div class="sections">
 {groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} />
   : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} />
   : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} /> : (
   <section class="group" aria-labelledby={`g-${g.kind}`}>
-    <h2 id={`g-${g.kind}`}>{g.title}</h2>
-    {g.blurb && <p>{g.blurb}</p>}
+    <div class="group-head">
+      <h2 id={`g-${g.kind}`}>{g.title}</h2>
+      {g.blurb && <p>{g.blurb}</p>}
+    </div>
     <div class="cards">
       {g.cards.map((c) => (
         <article class="card">
@@ -97,3 +151,4 @@ const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
     </div>
   </section>
 ))}
+</div>

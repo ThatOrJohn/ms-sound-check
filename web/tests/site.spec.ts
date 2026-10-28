@@ -23,7 +23,7 @@ for (const path of PAGES) {
 
 test("persona choice navigates and is remembered", async ({ page }) => {
   await page.goto("");
-  await page.getByLabel("Show conditions for").selectOption("oyster");
+  await page.getByRole("navigation", { name: "Show conditions for" }).getByRole("link", { name: "Oysters" }).click();
   await expect(page).toHaveURL(/\/for\/oyster\/$/);
   await page.goto("");
   await expect(page).toHaveURL(/\/for\/oyster\/$/);
@@ -31,7 +31,7 @@ test("persona choice navigates and is remembered", async ({ page }) => {
 
 test("dark theme applies and persists", async ({ page }) => {
   await page.goto("");
-  await page.getByLabel("Theme").selectOption("dark");
+  await page.getByRole("radiogroup", { name: "Theme" }).getByRole("radio", { name: "Dark" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

@@ -6,7 +6,10 @@ const builtLabel = fmtDate(generatedAt, { month: "short", day: "numeric", hour: 
 ---
 {newest ? (
   <p class="asof" data-freshness data-generated={generatedAt} data-newest={newest}>
-    Latest readings from {fmtDate(newest)}. <span data-updated>Updated {builtLabel}.</span>
+    <span class="pulse" aria-hidden="true"></span>
+    <span>Readings through {fmtDate(newest, { month: "short", day: "numeric" })}</span>
+    <span class="asof-sep" aria-hidden="true">·</span>
+    <span data-updated>Updated {builtLabel}</span>
     <span class="warn" data-warn hidden></span>
   </p>
 ) : <p class="asof">No readings available yet.</p>}
@@ -25,12 +28,13 @@ const builtLabel = fmtDate(generatedAt, { month: "short", day: "numeric", hour: 
       const built = new Date(el.dataset.generated!).getTime();
       const age = Date.now() - built;
       const lag = Math.round((built - new Date(`${el.dataset.newest}T12:00:00`).getTime()) / 86400000);
-      el.querySelector("[data-updated]")!.textContent = `Updated ${ago(age)}.`;
+      el.querySelector("[data-updated]")!.textContent = `Updated ${ago(age)}`;
       const warn = el.querySelector<HTMLElement>("[data-warn]")!;
       const msg = age > 12 * 3600000 ? "This page hasn't refreshed recently, so these readings may be out of date."
         : lag > 2 ? `The newest data is ${lag} days old.` : "";
       warn.textContent = msg ? ` ${msg}` : "";
       warn.hidden = !msg;
+      el.toggleAttribute("data-late", !!msg);
     });
   }
   tick();

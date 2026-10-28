@@ -39,7 +39,7 @@ function tokens() {
   return {
     ink: v("--ink"), soft: v("--ink-soft"), rule: v("--rule"), water: v("--water"), paper: v("--paper"),
     gulf: v("--gulf"), fresh: v("--fresh"), red: v("--marker-red"),
-    sans: v("--sans"), serif: v("--serif"),
+    sans: v("--sans"), mono: v("--mono"), accent: v("--accent"),
   };
 }
 
@@ -107,8 +107,8 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
     }
     series.push({
       name: p.key, type: p.kind, xAxisIndex: i, yAxisIndex: i, symbol: "none", connectNulls: false, z: 3,
-      barMaxWidth: 6, itemStyle: { color: p.kind === "bar" ? t.fresh : t.gulf },
-      lineStyle: { color: t.gulf, width: 2 },
+      barMaxWidth: 6, itemStyle: { color: p.kind === "bar" ? t.fresh : t.accent },
+      lineStyle: { color: t.accent, width: 1.8 },
       data: p.points.map((q) => [ts(q[0]), p.log && q[1] !== null && q[1] <= 0 ? null : q[1]]),
       markLine: (p.threshold || p.thresholds?.length) ? {
         silent: true, symbol: "none", lineStyle: { color: t.red, type: [6, 4], width: 1.2 },

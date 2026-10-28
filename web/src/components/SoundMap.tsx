@@ -244,8 +244,9 @@ export default function SoundMap({ stations, rivers, basemapBase, beachesUrl, pe
 
       const restyle = () => {
         setReady(false);
-        map.setStyle(baseStyle(tokens()));
+        // diff: false forces a full reload so "style.load" fires and the overlays are rebuilt in the new colors.
         map.once("style.load", addOverlays);
+        map.setStyle(baseStyle(tokens()), { diff: false });
       };
       const mq = matchMedia("(prefers-color-scheme: dark)");
       mq.addEventListener("change", restyle);

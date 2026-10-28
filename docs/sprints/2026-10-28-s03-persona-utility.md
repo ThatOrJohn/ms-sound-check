@@ -28,6 +28,10 @@
         record the result here
 - [ ] **Shrimp in-season**: MDMR notices (check whether their WordPress API is readable), 3-day wind outlook
 
+- [x] **UI refresh** ([0013](../decisions/0013-instrument-panel-design.md)): Geist, new palette, readout strip, signals rail,
+      percentile meters, segmented controls. Axe passes on every page in both themes. Sample data for review:
+      `python scripts/dev_fixtures.py apply` (and `clear` afterward).
+
 ## Notes
 - 2026-10-28: Wind verdict bands (NWS forecast's upper sustained mph): light ≤10, moderate ≤15, breezy ≤20,
   windy above. Muddy-water risk is a stated heuristic: 3-day coast rain (≥0.5 / ≥1 in), rivers above normal,

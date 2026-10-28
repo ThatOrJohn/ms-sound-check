@@ -3,6 +3,12 @@
 User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## 2026-10-28
+### Changed
+- New look ([0013](docs/decisions/0013-instrument-panel-design.md)): a single Geist typeface with tabular numbers, a deep marine dark theme and a cool light theme, a sticky translucent header, and segmented controls for persona and theme.
+- Home page reads as a briefing: headline, a strip of key readouts (Sound salinity, water temp, river flows, rain, air temp), the map beside a sticky Signals rail, then numbered sections.
+- Each reading shows a meter for where today sits among past years for the same date.
+- Station charts, beaches, oyster watch and fishing outlook restyled to match.
+
 ### Added
 - Fishing outlook on the Fishing page: wind, sky and rain chances from the NWS forecast with a plain verdict per day, NOAA tides for three stations, water temperature trend, where the saltiest and freshest water is, and muddy-water risk. The best day leads the Fishing headline.
 - Oyster closure watch on the Oysters page: Pearl River stage at the gauge MDMR's management plan uses, the official NWS stage forecast, closure levels by reef area (10 and 11 ft), rainfall criteria, and links to MDMR.
@@ -16,5 +22,6 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 - The site: plain-language headline, findings, readings compared to normal, freshness warnings, light and dark themes.
 
 ### Fixed
+- Switching between light and dark no longer leaves the map without its stations, rivers and beaches.
 - Map is announced to screen readers instead of being hidden while focusable.
 - Missing spaces before links in wrapped text.

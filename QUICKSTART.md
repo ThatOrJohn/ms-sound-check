@@ -101,6 +101,12 @@ workflow with task `backfill` so CI's data store gets its history too.
 `cmd_ingest` in `msc/__main__.py` (wrapped in `_try` so its failure can't break the run), give it a site
 entry in the region file, and add a row to the sources table in `docs/architecture.md`.
 
+**Restyle the site.** Colors, spacing and type are tokens at the top of `web/src/styles/global.css`; the
+map and charts read them too. To see every section filled in (beach advisories, a rising river, a fishing
+forecast) without waiting for real events: `python scripts/dev_fixtures.py apply && python -m msc build`.
+**Always** finish with `python scripts/dev_fixtures.py clear && python -m msc build` so sample data never
+reaches a commit. Design rules: [docs/decisions/0013](docs/decisions/0013-instrument-panel-design.md).
+
 **Retrain the models.** `python -m msc train` locally, or it happens monthly in CI. The log prints each
 station's held-out error; estimates are only published where it's 3.5 ppt or better.
 

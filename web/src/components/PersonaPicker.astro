@@ -2,21 +2,15 @@
 import type { Persona } from "../lib/types";
 interface Props { personas: Persona[]; current: string; paths: Record<string, string> }
 const { personas, current, paths } = Astro.props;
+const short: Record<string, string> = { general: "Coast", oyster: "Oysters", shrimp: "Shrimp", fish: "Fishing" };
 ---
-<label class="ctl">
-  Show conditions for
-  <select data-persona-picker data-paths={JSON.stringify(paths)}>
-    {personas.map((p) => <option value={p.id} selected={p.id === current}>{p.label}</option>)}
-  </select>
-</label>
+<nav class="seg" aria-label="Show conditions for">
+  {personas.map((p) => (
+    <a href={paths[p.id]} data-persona={p.id} aria-current={p.id === current ? "page" : undefined}>{short[p.id] ?? p.label}</a>
+  ))}
+</nav>
 <script>
-  // Switching persona goes to that persona's page and remembers the choice.
-  const sel = document.querySelector<HTMLSelectElement>("[data-persona-picker]");
-  if (sel) {
-    const paths: Record<string, string> = JSON.parse(sel.dataset.paths || "{}");
-    sel.addEventListener("change", () => {
-      try { localStorage.setItem("sc-persona", sel.value); } catch {}
-      if (paths[sel.value]) window.location.assign(paths[sel.value]);
-    });
-  }
+  // Remember the choice so the home page opens on it next time.
+  document.querySelectorAll<HTMLAnchorElement>("a[data-persona]").forEach((a) =>
+    a.addEventListener("click", () => { try { localStorage.setItem("sc-persona", a.dataset.persona!); } catch {} }));
 </script>
