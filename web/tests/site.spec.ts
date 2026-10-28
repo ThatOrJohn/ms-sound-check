@@ -73,7 +73,7 @@ test("oyster page puts the river level in typical-year context", async ({ page }
 test("shrimp page shows MDMR's season notices and the wind outlook", async ({ page }) => {
   await page.goto("for/shrimp/");
   await expect(page.getByRole("heading", { name: "Shrimp season", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "MDMR shrimp information" })).toHaveAttribute("href", /dmr\.ms\.gov/);
+  await expect(page.getByRole("link", { name: "MDMR shrimp information" }).first()).toHaveAttribute("href", /dmr\.ms\.gov/);
 });
 
 test("air temp refreshes from the latest observation on load", async ({ page }) => {
@@ -94,4 +94,15 @@ test("air temp keeps the built reading when the live request fails", async ({ pa
   await page.waitForLoadState("networkidle");
   await expect(tile.locator("[data-live-value]")).toHaveText(String(Math.round(built.value)));
   await expect(tile).not.toHaveAttribute("data-live-updated", "");
+});
+
+test("home page flags the not-official notice and expands to links to the agencies", async ({ page }) => {
+  await page.goto("");
+  const notice = page.locator("details.official:not(.official-inline)");
+  await expect(notice.locator("summary")).toBeVisible();
+  await expect(notice.getByRole("link", { name: "MDMR shellfish" })).toBeHidden();
+  await notice.locator("summary").click();
+  await expect(notice.getByRole("link", { name: "MDMR shellfish" })).toHaveAttribute("href", /dmr\.ms\.gov/);
+  await expect(notice.getByRole("link", { name: "MDEQ beach monitoring" })).toHaveAttribute("href", /beaches\.mdeq\.ms\.gov/);
+  await expect(page.getByRole("link", { name: "How the data gets here" })).toHaveAttribute("href", /about\/#official/);
 });

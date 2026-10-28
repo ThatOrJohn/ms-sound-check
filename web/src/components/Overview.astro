@@ -8,6 +8,7 @@ import BeachStatus from "./BeachStatus.astro";
 import OysterWatch from "./OysterWatch.astro";
 import FishingOutlook from "./FishingOutlook.astro";
 import ShrimpSeason from "./ShrimpSeason.astro";
+import OfficialSources from "./OfficialSources.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import ReadingRow from "./ReadingRow";
 import Meter from "./Meter";
@@ -90,6 +91,8 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
   <p class="persona-blurb">{persona.blurb}</p>
 </section>
 
+<OfficialSources data={data} />
+
 {tiles.length > 0 && (
   <section class="readouts" aria-label="Key readings right now">
     {tiles.slice(0, 6).map((t) => (
@@ -136,10 +139,10 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 </div>
 
 <div class="sections">
-{groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} />
-  : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} />
-  : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} />
-  : g.kind === "shrimp_season" ? <ShrimpSeason season={data.shrimp_season!} /> : (
+{groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} data={data} />
+  : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} data={data} />
+  : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} data={data} />
+  : g.kind === "shrimp_season" ? <ShrimpSeason season={data.shrimp_season!} data={data} /> : (
   <section class="group" aria-labelledby={`g-${g.kind}`}>
     <div class="group-head">
       <h2 id={`g-${g.kind}`}>{g.title}</h2>

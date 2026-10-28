@@ -1,9 +1,10 @@
 ---
-import type { BeachSection, BeachStation } from "../lib/types";
+import type { BeachSection, BeachStation, Latest } from "../lib/types";
 import { fmtDate } from "../lib/format";
+import OfficialSources from "./OfficialSources.astro";
 
-interface Props { beaches: BeachSection }
-const { beaches } = Astro.props;
+interface Props { beaches: BeachSection; data: Latest }
+const { beaches, data } = Astro.props;
 const flagged = beaches.stations.filter((s) => s.status !== "clear");
 const byCounty = Object.entries(
   beaches.stations.reduce<Record<string, BeachStation[]>>((acc, s) => {
@@ -31,6 +32,7 @@ const summary = flagged.length === 0
 ---
 <section class="group beaches" aria-labelledby="g-beaches">
   <h2 id="g-beaches">Beaches</h2>
+  <OfficialSources data={data} only="beaches" />
   <p>{beaches.latest_sample ? `${summary} Most recent sample ${short(beaches.latest_sample)}.` : summary}</p>
 
   {flagged.length > 0 && (

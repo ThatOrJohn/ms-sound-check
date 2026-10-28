@@ -383,6 +383,34 @@ select, .btn {
 .prose h2 { font-size: 1.25rem; }
 .prose p, .prose li { color: color-mix(in oklab, var(--ink) 88%, var(--ink-soft)); }
 
+/* ---------- official-source notices ---------- */
+.official { margin: 14px 0 0; max-width: var(--block); }
+.official > summary {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; max-width: 100%;
+  padding: 6px 12px 6px 8px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper);
+  color: var(--ink-soft); font-size: 0.84rem; line-height: 1.3;
+}
+.official > summary::-webkit-details-marker { display: none; }
+.official > summary:hover { color: var(--ink); border-color: var(--accent); }
+.official-icon {
+  flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: var(--paper); font: 700 0.72rem/1 var(--mono);
+}
+.official-more { flex: none; width: 7px; height: 7px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) translateY(-2px); transition: transform .15s; }
+.official[open] > summary .official-more { transform: rotate(-135deg) translate(-1px, -1px); }
+.official[open] > summary { color: var(--ink); }
+.official[open] > :not(summary) { padding-left: 4px; }
+.official-lede { margin: 12px 0 0; }
+.official-lede { max-width: var(--measure); }
+.official-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 14px 32px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.official-what { font-weight: 600; }
+.official-who, .official-how, .official-foot { color: var(--ink-soft); font-size: 0.86rem; }
+.official-how { margin-top: 4px; }
+.official-foot { margin-top: 14px; }
+.official-inline { margin: 0 0 14px; }
+.official-inline > summary { font-size: 0.8rem; }
+.official-inline > .official-how { margin: 8px 0 0; max-width: var(--measure); }
+
 /* ---------- footer ---------- */
 .foot { border-top: 1px solid var(--hair); margin-top: 72px; padding: 28px clamp(16px, 3vw, 32px) 48px; color: var(--ink-soft); font-size: 0.82rem; }
 .foot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px 48px; }

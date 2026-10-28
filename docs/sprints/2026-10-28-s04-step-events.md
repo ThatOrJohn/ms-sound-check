@@ -11,6 +11,7 @@
 - [x] Wind and river context for each event ([0017](../decisions/0017-step-events-describe-wind-and-rivers.md)): not a cause, because the 1998-2026 history doesn't support one
 - [x] Events across three or more stations lead the Oysters and Fishing headlines (short form); two-station events stay in Signals
 - [x] Settle the Round Island caveat: keep it. Merrill Shell's step is real but lands at about 25 ppt, not 37 (see notes)
+- [x] Official-source notices up front on the home page and in each section; About provenance ([0018](../decisions/0018-official-source-notices-up-front.md))
 
 ## Notes
 - 2026-10-28: Round Island went from 17.6 ppt to 36.2 ppt on Oct 14-15 and then read 37-40 ppt. Merrill Shell Bank

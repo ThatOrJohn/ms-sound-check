@@ -11,6 +11,31 @@ const data = loadLatest();
       the water is, how hard the rivers are running, how much rain has fallen upstream, and whether any of it is unusual for
       the time of year. It updates every three hours.</p>
 
+    <h2 id="official">Official sources and what Sound Check is</h2>
+    <p>Sound Check is a free hobby project. It is not the system of record for anything on this site, and no agency
+      reviews or endorses it. Closures, advisories, seasons and marine forecasts are decided and published by the agencies
+      below, and where we differ from them, they are right.</p>
+    <table>
+      <thead><tr><th>Topic</th><th>Who decides</th><th>How it reaches this page</th></tr></thead>
+      <tbody>
+        <tr><td>Beach advisories and closures</td>
+          <td><a href="https://beaches.mdeq.ms.gov/">MDEQ Beach Monitoring Program</a></td>
+          <td>Every three hours our pipeline reads the public map service behind MDEQ's site and republishes each beach's status. We do not interpret sample results or issue advisories. A beach showing clear can have had no recent sample.</td></tr>
+        <tr><td>Oyster reef closures and openings</td>
+          <td><a href="https://dmr.ms.gov/shellfish/">MDMR shellfish</a>, oyster information line 228-374-5167</td>
+          <td>We have no feed of MDMR's open or closed status. We read the Pearl River stage and forecast from the National Weather Service, estimate rain from Open-Meteo, and compare both with the criteria in MDMR's <a href="https://dmr.ms.gov/wp-content/uploads/2026/01/Molluscan-Shellfish-Growing-Waters-Management-Plan_12.2025-edits.pdf">management plan</a>. We never say an area is closed.</td></tr>
+        <tr><td>Shrimp seasons</td>
+          <td><a href="https://dmr.ms.gov/shrimp/">MDMR shrimp information</a></td>
+          <td>We copy the title, date and opening lines of MDMR press releases that mention shrimp seasons. We do not work out which waters are open. The full notice is the rule.</td></tr>
+        <tr><td>Wind, waves and marine weather</td>
+          <td><a href="https://www.weather.gov/mob/">National Weather Service, Mobile</a></td>
+          <td>Our outlooks simplify the NWS point forecast. They are not a marine forecast and not for navigation.</td></tr>
+      </tbody>
+    </table>
+    <p>Every figure here is a copy that is at least a few hours old, and the sources revise their own data. If a source can't be
+      reached or its data is too old, the section hides instead of showing old numbers. If this site and an agency disagree,
+      go with the agency. Do not use Sound Check to decide whether to swim, harvest or head out on the water.</p>
+
     <h2>Where the numbers come from</h2>
     <table>
       <thead><tr><th>What</th><th>Source</th></tr></thead>
@@ -63,7 +88,7 @@ const data = loadLatest();
     <p>Readings are provisional until USGS reviews them, and instruments foul or drift. Readings that are physically implausible for
       the Sound, such as water saltier than the open Gulf, are shown with a caveat and never trigger alerts. If a station stops
       reporting, its card says so rather than showing old numbers as current.</p>
-    <p>This is a hobby project, not an official source. For closures, seasons and regulations, go to
-      <a href="https://dmr.ms.gov/">MDMR</a>. Station details are on each <a href={href()}>station page</a>.</p>
+    <p>This is a hobby project, not an official source; see <a href="#official">the official sources above</a> for closures,
+      advisories, seasons and regulations. Station details are on each <a href={href()}>station page</a>.</p>
   </article>
 </Base>

@@ -1,9 +1,10 @@
 ---
-import type { OysterWatch } from "../lib/types";
+import type { Latest, OysterWatch } from "../lib/types";
 import { href } from "../lib/format";
+import OfficialSources from "./OfficialSources.astro";
 
-interface Props { watch: OysterWatch; gaugeSlug?: string }
-const { watch, gaugeSlug } = Astro.props;
+interface Props { watch: OysterWatch; gaugeSlug?: string; data: Latest }
+const { watch, gaugeSlug, data } = Astro.props;
 const tz = "America/Chicago";
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", timeZone: tz });
@@ -35,6 +36,7 @@ const trend = g?.change_24h == null ? "" : Math.abs(g.change_24h) < 0.1 ? "stead
 ---
 <section class="group oyster-watch" aria-labelledby="g-oyster">
   <h2 id="g-oyster">Oyster closure watch</h2>
+  <OfficialSources data={data} only="oyster" />
   <p>MDMR closes the conditionally approved reefs in the western Sound when the Pearl River runs high or after heavy
     rain. This compares today's readings with the criteria in its <a href={watch.plan_url}>management plan</a>.
     Only MDMR decides closures.</p>

@@ -1,9 +1,10 @@
 ---
-import type { ShrimpSeason } from "../lib/types";
+import type { Latest, ShrimpSeason } from "../lib/types";
 import { fmtDate } from "../lib/format";
+import OfficialSources from "./OfficialSources.astro";
 
-interface Props { season: ShrimpSeason }
-const { season } = Astro.props;
+interface Props { season: ShrimpSeason; data: Latest }
+const { season, data } = Astro.props;
 const verdictText: Record<string, string> = {
   light: "Light wind", moderate: "Moderate wind, some chop", breezy: "Breezy, rough in open water", windy: "Windy",
 };
@@ -11,6 +12,7 @@ const mdmrLink = season.link ?? "https://dmr.ms.gov/";
 ---
 <section class="group shrimp-season" aria-labelledby="g-shrimp">
   <h2 id="g-shrimp">Shrimp season</h2>
+  <OfficialSources data={data} only="shrimp" />
   <p>MDMR opens and closes shrimping waters by area through the season. Below are its latest notices and the wind for
     the next three days. MDMR's notice is the rule, so read it before you go.</p>
 

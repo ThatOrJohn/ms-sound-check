@@ -1,0 +1,65 @@
+---
+import type { Latest } from "../lib/types";
+import { fmtDate, fmtTime, href } from "../lib/format";
+
+type Topic = "beaches" | "oyster" | "shrimp" | "weather";
+interface Props { data: Latest; only?: Topic }
+const { data, only } = Astro.props;
+
+const asOf = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  return `${fmtDate(iso, { month: "short", day: "numeric" })} at ${fmtTime(iso)}`;
+};
+const pulled = asOf(data.generated_at);
+const watch = data.oyster_watch;
+const hotline = watch?.hotline;
+
+const rows: { topic: Topic; what: string; who: string; href: string; link: string; how: string }[] = [
+  {
+    topic: "beaches", what: "Beach advisories and closures", who: "Mississippi Department of Environmental Quality (MDEQ)",
+    href: data.beaches?.link ?? "https://beaches.mdeq.ms.gov/", link: "MDEQ beach monitoring",
+    how: `We copy the status MDEQ publishes on its public map, as of ${asOf(data.beaches?.fetched_at) || pulled}. An advisory posted or lifted since then won't show here, and a beach marked clear isn't a guarantee: results come from periodic samples.`,
+  },
+  {
+    topic: "oyster", what: "Oyster reef closures and openings", who: "Mississippi Department of Marine Resources (MDMR)",
+    href: watch?.status_url ?? "https://dmr.ms.gov/shellfish/", link: "MDMR shellfish",
+    how: `We never learn whether an area is open or closed. We compare river stage (National Weather Service) and an estimated rain total with the criteria in MDMR's management plan, so a reading past a level means MDMR may close, and one below it doesn't mean open.${hotline ? ` MDMR's oyster information line is ${hotline}.` : ""}`,
+  },
+  {
+    topic: "shrimp", what: "Shrimp season dates and areas", who: "Mississippi Department of Marine Resources (MDMR)",
+    href: data.shrimp_season?.link ?? "https://dmr.ms.gov/shrimp/", link: "MDMR shrimp information",
+    how: "We repeat the title and opening lines of MDMR's press releases. Boundaries and dates are in the full notice, which is the rule. A notice we missed or a title we filter out won't appear.",
+  },
+  {
+    topic: "weather", what: "Wind, waves and getting around on the water", who: "National Weather Service, Mobile",
+    href: "https://www.weather.gov/mob/", link: "NWS Mobile forecast",
+    how: "Our wind and rain outlooks reuse the NWS forecast in simplified words. They are not a marine forecast or a substitute for one.",
+  },
+];
+const shown = only ? rows.filter((r) => r.topic === only) : rows;
+---
+{only ? (
+  shown.map((r) => (
+    <details class="official official-inline">
+      <summary><span class="official-icon" aria-hidden="true">i</span>{`Official source: ${r.who}`}<span class="official-more" aria-hidden="true"></span></summary>
+      <p class="official-how">{r.how}{" "}<a href={r.href}>{r.link}</a>.</p>
+    </details>
+  ))
+) : (
+  <details class="official">
+    <summary><span class="official-icon" aria-hidden="true">i</span>Not the official record: where to check closures, advisories and seasons<span class="official-more" aria-hidden="true"></span></summary>
+    <p class="official-lede">We republish public data in plain language, and we can be late or wrong. Beach advisories,
+      shellfish closures, shrimp seasons and marine conditions are decided by the agencies below. Check them before you swim,
+      harvest or head out; this site is not for navigation or harvest decisions.</p>
+    <ul class="official-list">
+      {shown.map((r) => (
+        <li>
+          <p class="official-what">{r.what}</p>
+          <p class="official-who">{`Decided by ${r.who}. `}<a href={r.href}>{r.link}</a></p>
+          <p class="official-how">{r.how}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="official-foot">{`Our numbers were last rebuilt ${pulled}. `}<a href={href("about/#official")}>How the data gets here</a></p>
+  </details>
+)}

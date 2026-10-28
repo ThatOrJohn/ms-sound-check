@@ -1,8 +1,9 @@
 ---
-import type { FishingOutlook, Tide } from "../lib/types";
+import type { FishingOutlook, Latest, Tide } from "../lib/types";
+import OfficialSources from "./OfficialSources.astro";
 
-interface Props { outlook: FishingOutlook }
-const { outlook } = Astro.props;
+interface Props { outlook: FishingOutlook; data: Latest }
+const { outlook, data } = Astro.props;
 const title = outlook.weekend ? "Weekend outlook" : "Next few days";
 // One tide station up front (the middle of the coast), the rest one click away.
 const main = outlook.tide_stations[Math.floor(outlook.tide_stations.length / 2)];
@@ -20,6 +21,7 @@ const muddyText = {
 ---
 <section class="group fishing" aria-labelledby="g-fishing">
   <h2 id="g-fishing">{title}</h2>
+  <OfficialSources data={data} only="weather" />
   <div class="fish-days">
     {outlook.days.map((d) => (
       <article class="fish-day" data-verdict={d.verdict ?? "unknown"}>

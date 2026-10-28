@@ -56,8 +56,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         <p><span class="eyebrow">Sources</span>USGS and Mississippi Department of Marine Resources monitoring stations, the National Weather
           Service, NOAA tides, MDEQ beach monitoring and Open-Meteo. Readings are provisional and can be revised. "Typical" means the
           middle of what each station has recorded for this time of year since monitoring began.</p>
-        <p><span class="eyebrow">Not official</span>A hobby project, not an official source. Not for navigation or harvest decisions; check
-          <a href="https://dmr.ms.gov/">MDMR</a> for closures and seasons.</p>
+        <p><span class="eyebrow">Not the official record</span>A hobby project, not an official source, and not for navigation or harvest
+          decisions. Check <a href="https://beaches.mdeq.ms.gov/">MDEQ</a> for beach advisories and
+          <a href="https://dmr.ms.gov/">MDMR</a> for shellfish closures and seasons. <a href={href("about/#official")}>Where our data comes from</a>.</p>
       </div>
     </footer>
   </body>
