@@ -1,0 +1,25 @@
+{
+  "bounds": [
+    -90.0,
+    29.9,
+    -88.1,
+    30.72
+  ],
+  "size": [
+    2280,
+    984
+  ],
+  "mask_size": [
+    570,
+    246
+  ],
+  "contours_ft": [
+    6,
+    10,
+    15,
+    20,
+    30,
+    40
+  ],
+  "attribution": "Depth: NOAA NCEI U.S. Coastal Relief Model"
+}

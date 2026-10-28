@@ -1,0 +1,4 @@
+# Local, one-off tools (not needed by the scheduled job)
+-r requirements.txt
+pillow          # basemap: read elevation TIFFs, write depth images
+matplotlib      # basemap: depth contours

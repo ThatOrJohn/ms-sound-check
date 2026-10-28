@@ -50,6 +50,7 @@ export interface Card {
   lat: number;
   lon: number;
   drains_from?: string[] | null;
+  osm_names?: string[] | null;
   vars: Record<string, Reading>;
   findings: number[];
 }

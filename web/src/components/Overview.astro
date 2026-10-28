@@ -3,7 +3,9 @@ import type { Latest, Persona } from "../lib/types";
 import { GROUPS, SEV_LABEL, forPersona, href, personaPath } from "../lib/format";
 import PersonaPicker from "./PersonaPicker.astro";
 import Freshness from "./Freshness.astro";
-import SoundStrip from "./SoundStrip";
+import StationList from "./StationList";
+import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
+import { SEV_RANK } from "../lib/format";
 import ReadingRow from "./ReadingRow";
 
 interface Props { data: Latest; persona: Persona }
@@ -14,6 +16,17 @@ const dates = data.cards.flatMap((c) => Object.values(c.vars)).map((v) => v.date
 const newest = dates.at(-1) ?? null;
 const paths = Object.fromEntries(data.personas.map((p) => [p.id, personaPath(p.id)]));
 const siteHref = (slug: string) => href(`station/${slug}/`);
+const alerting = new Set(data.findings.filter((f) => f.site && SEV_RANK[f.severity] >= 2).map((f) => f.site));
+const mapStations: MapStation[] = data.cards.filter((c) => c.kind === "sound" || c.kind === "estuary").map((c) => {
+  const v = c.vars.salinity ?? {};
+  const status = v.value === undefined || v.stale ? "quiet" : v.suspect ? "suspect" : "live";
+  return { id: c.id, short: c.short, kind: c.kind, lon: c.lon, lat: c.lat, href: siteHref(c.slug),
+    salinity: status === "live" ? v.value ?? null : null, display: v.display ?? "no data", status, alert: alerting.has(c.id) };
+});
+const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((c) => ({
+  name: c.short, osmNames: c.osm_names ?? [c.short], display: c.vars.flow?.display ?? "no data",
+  band: c.vars.flow?.band, percentile: c.vars.flow?.percentile,
+}));
 const groups = persona.card_order
   .map((kind) => ({ kind, ...GROUPS[kind], cards: data.cards.filter((c) => c.kind === kind) }))
   .filter((g) => g.cards.length);
@@ -27,7 +40,14 @@ const groups = persona.card_order
   <Freshness newest={newest} generatedAt={data.generated_at} />
 </section>
 
-<SoundStrip cards={data.cards} findings={data.findings} siteHref={siteHref} />
+<figure class="sound" aria-labelledby="sound-cap">
+  <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} basemapBase={href("basemap/")} />
+  <figcaption class="sound-foot">
+    <span id="sound-cap">Stations are colored by salinity. River lines widen when the rivers run high.</span>
+    <span class="scale" aria-hidden="true">Fresh <span class="scale-bar" /> Gulf salty</span>
+  </figcaption>
+  <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
+</figure>
 
 <section class="findings" aria-labelledby="findings-h">
   <h2 id="findings-h">Worth knowing</h2>

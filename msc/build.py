@@ -151,7 +151,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     cards = []
     for site in region.sites:
         cards.append({
-            **{k: site.get(k) for k in ("id", "name", "short", "kind", "note", "lat", "lon", "drains_from")},
+            **{k: site.get(k) for k in ("id", "name", "short", "kind", "note", "lat", "lon", "drains_from", "osm_names")},
             "slug": site.get("slug") or slugify(site["short"]),
             "vars": {v: _card_var(region, daily, normals, site, v, asof) for v in site["vars"]},
             "findings": [i for i, f in enumerate(findings) if f.get("site") == site["id"]],

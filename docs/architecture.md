@@ -97,7 +97,14 @@ HTML with the current numbers already in it.
 - **Persona.** Picking one goes to its page and is remembered. Opening `/` with a remembered persona goes
   straight to that persona's page.
 - **Theme.** Auto, light or dark, remembered and applied before first paint.
-- **Phones.** The Sound strip becomes a west-to-east list with the same salinity color chips.
+- **The map** (`SoundMap.tsx`, MapLibre, loaded only in the browser): OpenStreetMap coastline from OpenFreeMap
+  vector tiles (free, no key) styled in the site palette, NOAA Coastal Relief Model depth shading and contours
+  in feet (static files from `python -m msc basemap`, committed in `web/public/basemap/`), river lines widened by
+  flow percentile, and stations colored by salinity. The layers (depth, contours, river flow, salinity sketch)
+  are toggleable and remembered. The salinity sketch is an inverse-distance estimate between live stations,
+  clipped to water and fading out with distance; it's off by default and labeled as a sketch. Two-finger or
+  Ctrl+scroll gestures keep the map from trapping page scroll. A west-to-east station list sits under the map
+  as the accessible version.
 - **Honesty states.** Every reading can show as normal, unusual, stale ("station quiet since…") or suspect
   ("possibly a sensor problem"). The freshness line warns if the page itself hasn't refreshed in 12 hours.
 - **Fonts** are self-hosted (Fontsource), so there are no third-party requests.
@@ -146,7 +153,8 @@ that if the schedule moves to hourly.
 ## Local development
 
 ```sh
-pip install -r requirements.txt
+pip install -r requirements-dev.txt                # requirements.txt + basemap tools
+python -m msc basemap                              # one time: depth layers for the map (commit web/public/basemap/)
 python -m msc backfill && python -m msc normals   # one time
 python -m msc run                                  # ingest + write web/public/data
 python -m msc build --asof 2019-06-02              # or replay a date (the 2019 spillway year is a good test)

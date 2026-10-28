@@ -63,6 +63,7 @@ sites:
     lat: 30.7932
     lon: -89.8209
     vars: [flow]
+    osm_names: [Pearl River, East Pearl River, West Pearl River]   # river lines to highlight on the map
     drains_from: [basin-pearl]
   - id: USGS-02479000
     name: Pascagoula River at Merrill
@@ -72,6 +73,7 @@ sites:
     lat: 30.9774
     lon: -88.7259
     vars: [flow]
+    osm_names: [Pascagoula River, East Pascagoula River, West Pascagoula River]
     drains_from: [basin-pascagoula]
 
   # --- weather ---
