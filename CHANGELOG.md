@@ -4,6 +4,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 
 ## 2026-10-28
 ### Changed
+- Beach segments on the map no longer rely on color alone: clear beaches are solid, advisories dashed and closures dotted, flagged beaches are labeled "Advisory" or "Closed", and the Layers panel shows a key when the beach layer is on. The Layers panel has a chevron again to show it opens and closes.
 - Footer and About page now link to the project's GitHub issues for reporting wrong numbers or confusing wording, and say the code is open source (MIT).
 - A small "Not the official record" chip under the headline expands to show, for beach advisories, oyster closures, shrimp seasons and marine weather it says who decides, links to them (MDEQ, MDMR, the National Weather Service and the MDMR oyster line), how our copy is made and when it was last pulled. The same note, collapsed to one line, heads the Beaches, Oyster, Shrimp and Fishing sections, and About the data has the full provenance ([0018](docs/decisions/0018-official-source-notices-up-front.md)).
 - Air temp on the home page is now the latest airport reading with its time and today's low and high, not the day's average so far. The page fetches the newest reading from the weather service when it loads, so it isn't hours behind. The station page labels the daily value as an average.

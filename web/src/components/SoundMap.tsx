@@ -242,12 +242,24 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             "text-offset": [1.1, 0], "text-justify": "left", "text-line-height": 1.25, "text-allow-overlap": false },
           paint: { "text-color": t.ink, "text-halo-color": t.paper, "text-halo-width": 1.6 } });
         if (beachesUrl) {
-          // Beach segments colored by status; drawn wide so they read at Sound-wide zoom.
+          // Beach segments by status; drawn wide so they read at Sound-wide zoom. Color plus a line pattern
+          // (solid clear, dashed advisory, dotted closed) and a word on flagged ones, so color isn't the only cue.
           map.addSource("beaches", { type: "geojson", data: beachesUrl });
           const color = ["match", ["get", "status"], "closure", t.red, "advisory", getComputedStyle(document.documentElement).getPropertyValue("--amber").trim(), getComputedStyle(document.documentElement).getPropertyValue("--marker-green").trim()];
           map.addLayer({ id: "beaches", type: "line", source: "beaches",
             layout: { "line-cap": "round" },
-            paint: { "line-color": color as any, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 4, 12, 8], "line-opacity": 0.95 } }, "station-ring");
+            paint: { "line-color": color as any, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 4, 12, 8], "line-opacity": 0.95,
+              "line-dasharray": ["match", ["get", "status"], "closure", ["literal", [0.01, 1.6]], "advisory", ["literal", [1.6, 1.1]], ["literal", [1, 0]]] as any } }, "station-ring");
+          // Label flagged segments at their midpoints: most are shorter than the word, so line placement drops it.
+          const segs: any = await fetch(beachesUrl).then((r) => r.json()).catch(() => null);
+          const mid = (c: [number, number][]) => c[Math.floor((c.length - 1) / 2)].map((v, i) => (v + c[Math.ceil((c.length - 1) / 2)][i]) / 2);
+          map.addSource("beach-points", { type: "geojson", data: { type: "FeatureCollection", features: (segs?.features ?? [])
+            .filter((f: any) => f.properties.status !== "clear" && f.geometry?.type === "LineString")
+            .map((f: any) => ({ type: "Feature", properties: f.properties, geometry: { type: "Point", coordinates: mid(f.geometry.coordinates) } })) } });
+          map.addLayer({ id: "beach-labels", type: "symbol", source: "beach-points",
+            layout: { "text-field": ["match", ["get", "status"], "closure", "Closed", "Advisory"],
+              "text-font": ["Noto Sans Bold"], "text-size": 11, "text-anchor": "top", "text-offset": [0, 0.7] },
+            paint: { "text-color": t.ink, "text-halo-color": t.paper, "text-halo-width": 1.6 } });
         }
         applyLayers(map, readLayers(personaId, defaultLayers));
         setReady(true);
@@ -277,6 +289,7 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     const set = (id: string, on: boolean) => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(on)); };
     set("depth", l.depth); set("contours", l.contours); set("contour-labels", l.contours);
     set("salinity", l.salinity); set("rivers", l.rivers); set("rivers-ungauged", l.rivers); set("beaches", l.beaches);
+    set("beach-labels", l.beaches);
   }
   function toggle(key: LayerKey) {
     const next = { ...layers, [key]: !layers[key] };
@@ -302,6 +315,13 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             </label>
           );
         })}
+        {layers.beaches && beachesUrl && (
+          <ul className="beach-key" aria-label="Beach status key">
+            <li><span className="swatch" data-status="clear" />Clear</li>
+            <li><span className="swatch" data-status="advisory" />Advisory</li>
+            <li><span className="swatch" data-status="closure" />Closed</li>
+          </ul>
+        )}
         {layers.salinity && !noBasemap && <p className="map-note">Estimated between a handful of stations. A sketch, not a measurement.</p>}
         {noBasemap && <p className="map-note">Depth layers need the one-time basemap prep.</p>}
       </details>

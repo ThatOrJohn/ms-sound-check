@@ -177,8 +177,17 @@ select, .btn {
   box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.35);
 }
 .map-layers { position: absolute; top: 12px; right: 12px; margin: 0; padding: 9px 12px 10px; max-width: 230px; font-size: 0.82rem; display: grid; gap: 2px; }
-.map-layers summary { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; min-height: 24px; display: flex; align-items: center; }
+.map-layers summary { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; min-height: 24px; display: flex; align-items: center; gap: 7px; list-style: none; }
+.map-layers summary::-webkit-details-marker { display: none; }
+/* display: flex drops the native disclosure triangle, so draw our own chevron. */
+.map-layers summary::before { content: ""; width: 5px; height: 5px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform 0.15s; flex: none; }
+.map-layers[open] summary::before { transform: rotate(45deg) translate(-1px, -1px); }
 .map-layers[open] summary { margin-bottom: 4px; }
+.beach-key { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; font-size: 0.75rem; color: var(--ink-soft); }
+.beach-key li { display: flex; align-items: center; gap: 8px; }
+.beach-key .swatch { width: 22px; height: 0; border-top: 4px solid var(--marker-green); flex: none; }
+.beach-key .swatch[data-status="advisory"] { border-top-style: dashed; border-color: var(--amber); }
+.beach-key .swatch[data-status="closure"] { border-top-style: dotted; border-color: var(--marker-red); }
 .map-layers label { display: flex; gap: 9px; align-items: center; cursor: pointer; min-height: 28px; }
 .map-layers label.off { color: var(--ink-soft); cursor: default; }
 .map-layers input { accent-color: var(--accent); width: 15px; height: 15px; }
