@@ -4,6 +4,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 
 ## 2026-10-28
 ### Changed
+- Footer and About page now link to the project's GitHub issues for reporting wrong numbers or confusing wording, and say the code is open source (MIT).
 - A small "Not the official record" chip under the headline expands to show, for beach advisories, oyster closures, shrimp seasons and marine weather it says who decides, links to them (MDEQ, MDMR, the National Weather Service and the MDMR oyster line), how our copy is made and when it was last pulled. The same note, collapsed to one line, heads the Beaches, Oyster, Shrimp and Fishing sections, and About the data has the full provenance ([0018](docs/decisions/0018-official-source-notices-up-front.md)).
 - Air temp on the home page is now the latest airport reading with its time and today's low and high, not the day's average so far. The page fetches the newest reading from the weather service when it loads, so it isn't hours behind. The station page labels the daily value as an average.
 - New look ([0013](docs/decisions/0013-instrument-panel-design.md)): a single Geist typeface with tabular numbers, a deep marine dark theme and a cool light theme, a sticky translucent header, and segmented controls for persona and theme.
