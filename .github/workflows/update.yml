@@ -25,7 +25,8 @@ concurrency:
 env:
   REGION: ms
   MSC_DATA_DIR: ${{ github.workspace }}/store
-  API_USGS_PAT: ${{ secrets.API_USGS_PAT }}   # optional; free key raises USGS rate limits
+  # API_USGS_PAT (optional repo secret; free key raises USGS rate limits) is passed only to the
+  # steps that call USGS, so dependency installs and tests never see it.
 
 jobs:
   update:
@@ -58,6 +59,7 @@ jobs:
 
       - name: Backfill history and normals
         if: github.event.inputs.task == 'backfill'
+        env: { API_USGS_PAT: "${{ secrets.API_USGS_PAT }}" }
         run: |
           python -m msc backfill --region "$REGION"
           python -m msc normals --region "$REGION"
@@ -67,6 +69,7 @@ jobs:
         run: python -m msc normals --region "$REGION"
 
       - name: Ingest and build data
+        env: { API_USGS_PAT: "${{ secrets.API_USGS_PAT }}" }
         run: python -m msc run --region "$REGION"
 
       - name: Health check
