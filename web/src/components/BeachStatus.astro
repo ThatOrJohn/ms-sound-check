@@ -1,0 +1,72 @@
+---
+import type { BeachSection, BeachStation } from "../lib/types";
+import { fmtDate } from "../lib/format";
+
+interface Props { beaches: BeachSection }
+const { beaches } = Astro.props;
+const flagged = beaches.stations.filter((s) => s.status !== "clear");
+const byCounty = Object.entries(
+  beaches.stations.reduce<Record<string, BeachStation[]>>((acc, s) => {
+    (acc[s.county ?? "Other"] ??= []).push(s);
+    return acc;
+  }, {}),
+);
+const reason = (s: BeachStation) => {
+  const e = (s.event ?? "").toLowerCase();
+  return e.includes("hab") || e.includes("algal") ? "algal bloom" : e.includes("debris") ? "debris" : "high bacteria";
+};
+const label = { clear: "Clear", advisory: "Advisory", closure: "Closed" } as const;
+const short = (iso: string | null) => (iso ? fmtDate(iso, { month: "short", day: "numeric" }) : null);
+const detail = (s: BeachStation) => {
+  let t = `${s.status === "closure" ? "Closed" : "Swimming advisory"} for ${reason(s)}`;
+  if (s.since) t += ` since ${short(s.since)}`;
+  if (s.days_flagged && s.days_flagged > 1) t += ` (${s.days_flagged} days so far)`;
+  t += ".";
+  if (s.from && s.to) t += ` Covers ${s.from} to ${s.to}.`;
+  return t;
+};
+const summary = flagged.length === 0
+  ? `All ${beaches.total} monitored beaches are clear for swimming.`
+  : `${flagged.length} of ${beaches.total} beaches ${flagged.length === 1 ? "has" : "have"} an advisory or closure. The rest are clear.`;
+---
+<section class="group beaches" aria-labelledby="g-beaches">
+  <h2 id="g-beaches">Beaches</h2>
+  <p>{beaches.latest_sample ? `${summary} Most recent sample ${short(beaches.latest_sample)}.` : summary}</p>
+
+  {flagged.length > 0 && (
+    <ul class="beach-flags">
+      {flagged.map((s) => (
+        <li data-status={s.status}>
+          <span class="beach-badge">{label[s.status]}</span>
+          <div>
+            <strong>{s.name}</strong>{s.location && <span class="beach-where">, {s.location}</span>}
+            <p>{detail(s)}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  <details class="beach-all">
+    <summary>All {beaches.total} beaches</summary>
+    {byCounty.map(([county, list]) => (
+      <div class="beach-county">
+        <h3>{county} County</h3>
+        <ul>
+          {list.map((s) => (
+            <li data-status={s.status}>
+              <span class="beach-dot" aria-hidden="true"></span>
+              <span class="beach-name">{s.name}</span>
+              <span class="beach-sub">{label[s.status]}{s.last_sample && <>, sampled {short(s.last_sample)}</>}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </details>
+  <p class="beach-src">
+    From the <a href={beaches.link ?? "https://beaches.mdeq.ms.gov/"}>{beaches.source ?? "MDEQ Beach Monitoring Program"}</a>,
+    which samples for Enterococcus bacteria and posts advisories, debris and algal bloom notices. Advisories are lifted
+    when re-sampling comes back clean.
+  </p>
+</section>

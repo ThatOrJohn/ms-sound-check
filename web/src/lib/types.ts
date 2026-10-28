@@ -3,13 +3,26 @@
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
 export type Kind = "sound" | "estuary" | "river" | "rain" | "weather";
+export type Section = Kind | "beaches";
 
 export interface Persona {
   id: string;
   label: string;
   blurb: string;
   focus: string[];
-  card_order: Kind[];
+  card_order: Section[];
+  map_layers?: string[];
+}
+
+export interface BeachStation {
+  id: string; name: string; location: string | null; county: string | null; from: string | null; to: string | null;
+  lat: number | null; lon: number | null; status: "clear" | "advisory" | "closure"; event: string | null;
+  text: string | null; since: string | null; last_sample: string | null; days_flagged: number | null;
+}
+export interface BeachSection {
+  source: string | null; link: string | null; fetched_at: string | null; total: number;
+  counts: { clear: number; advisory: number; closure: number }; latest_sample: string | null;
+  stations: BeachStation[];
 }
 
 export interface Finding {
@@ -66,6 +79,7 @@ export interface Card {
 }
 
 export interface Latest {
+  beaches?: BeachSection | null;
   region: { id: string; name: string; units: Record<string, string>; map: { center: [number, number]; zoom: number } };
   generated_at: string;
   asof: string;

@@ -63,6 +63,10 @@ def cmd_ingest(region, args):
         new = pd.concat(recent, ignore_index=True)
         store.write_recent(region, new)
         store.upsert_daily(region, store.recent_to_daily(region, new))
+    from .adapters import beaches
+    snap = _try("beaches", beaches.fetch, region)
+    if snap:
+        beaches.save(region, snap)
     res = _try("rain", openmeteo.recent_and_forecast, region)
     if res is not None:
         obs, fc = res

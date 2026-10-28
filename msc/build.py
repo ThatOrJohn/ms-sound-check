@@ -152,7 +152,40 @@ def _water_temp(cards, units) -> str | None:
     return f"Water temperatures are {trend}, around {avg:.0f}{unit}."
 
 
-def _headline(region, findings, persona, asof, cards):
+def _beaches(region, asof):
+    """Beach section for the page, plus segment geometry for the map. None if no beach source."""
+    if not region.extras.get("beaches"):
+        return None, None
+    from .adapters import beaches as src
+    snap, geo = src.load(region)
+    if not snap:
+        return None, None
+    stations = snap["stations"]
+    hist = region.data_dir / "beach_history.parquet"
+    days_flagged = {}
+    if hist.exists():   # how long each current advisory has been showing in our snapshots
+        h = pd.read_parquet(hist)
+        for s in stations:
+            if s["status"] != "clear":
+                hs = h[h.id == s["id"]].sort_values("date")
+                run = 0
+                for st in hs.status.iloc[::-1]:
+                    if st == "clear":
+                        break
+                    run += 1
+                days_flagged[s["id"]] = run
+    counts = {k: sum(s["status"] == k for s in stations) for k in ("clear", "advisory", "closure")}
+    samples = sorted(s["last_sample"] for s in stations if s.get("last_sample"))
+    section = {
+        "source": snap.get("source"), "link": region.extras["beaches"].get("link"),
+        "fetched_at": snap.get("fetched_at"), "total": len(stations), "counts": counts,
+        "latest_sample": samples[-1] if samples else None,
+        "stations": [{**s, "days_flagged": days_flagged.get(s["id"])} for s in stations],
+    }
+    return section, geo
+
+
+def _headline(region, findings, persona, asof, cards, beaches=None):
     """Lead with anything serious; otherwise describe the overall picture in plain words."""
     focus = persona["focus"]
     season = season_phrase(asof)
@@ -171,6 +204,8 @@ def _headline(region, findings, persona, asof, cards):
             wt = _water_temp(cards, region.units)
             if wt:
                 parts.append(wt)
+        if focus[0] == "general" and beaches and beaches["total"] and not (beaches["counts"]["advisory"] or beaches["counts"]["closure"]):
+            parts.append(f"All {beaches['total']} monitored beaches are clear for swimming.")
         if focus[0] == "oyster":
             sal = [r["value"] for r in _live(cards, ("sound",), "salinity")]
             if sal and min(sal) > 5:
@@ -200,13 +235,15 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
             fc[sid] = {"days": [[d.strftime("%Y-%m-%d"), _r(convert("rain", v, region.units))]
                                 for d, v in zip(pd.to_datetime(g.date), g.value)],
                        "total": fmt("rain", g.value.sum(), region.units)}
+    beach_section, beach_geo = _beaches(region, asof)
     latest = {
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
+        "beaches": beach_section,
         "generated_at": (generated_at or pd.Timestamp.now(tz="UTC")).isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),
         "personas": region.personas,
-        "headlines": {p["id"]: _headline(region, findings, p, asof, cards) for p in region.personas},
+        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section) for p in region.personas},
         "findings": findings,
         "cards": cards,
         "rain_forecast": fc,
@@ -214,6 +251,8 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     }
     out = SITE_OUT / region.id
     (out / "sites").mkdir(parents=True, exist_ok=True)
+    if beach_geo:
+        (out / "beaches.geojson").write_text(json.dumps(beach_geo, separators=(",", ":")))
     (out / "latest.json").write_text(json.dumps(latest, default=str, separators=(",", ":")))
 
     start = asof - pd.Timedelta(days=HISTORY_DAYS)

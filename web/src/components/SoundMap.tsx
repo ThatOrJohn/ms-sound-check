@@ -9,16 +9,20 @@ export interface MapStation {
 }
 export interface MapRiver { name: string; osmNames: string[]; display: string; band?: string; percentile?: number }
 
-interface Props { stations: MapStation[]; rivers: MapRiver[]; basemapBase: string }
+interface Props {
+  stations: MapStation[]; rivers: MapRiver[]; basemapBase: string;
+  beachesUrl?: string; personaId?: string; defaultLayers?: string[];
+}
 
-type LayerKey = "depth" | "contours" | "salinity" | "rivers";
+type LayerKey = "depth" | "contours" | "salinity" | "rivers" | "beaches";
 const LAYERS: { key: LayerKey; label: string; note?: string }[] = [
+  { key: "beaches", label: "Beach status" },
   { key: "depth", label: "Depth shading" },
   { key: "contours", label: "Depth contours (ft)" },
   { key: "rivers", label: "River flow" },
   { key: "salinity", label: "Salinity sketch", note: "Estimated between a handful of stations. A sketch, not a measurement." },
 ];
-const DEFAULTS: Record<LayerKey, boolean> = { depth: true, contours: true, rivers: true, salinity: false };
+const DEFAULTS: Record<LayerKey, boolean> = { depth: true, contours: true, rivers: true, salinity: false, beaches: false };
 const VIEW: [[number, number], [number, number]] = [[-89.72, 30.13], [-88.42, 30.5]];
 const OFM = "https://tiles.openfreemap.org";
 const FLOW_WORDS: Record<string, string> = { low: "very low", below: "a bit low", normal: "normal", above: "a bit high", high: "very high" };
@@ -119,21 +123,27 @@ async function salinityImage(meta: Meta, maskUrl: string, stations: MapStation[]
   return cv.toDataURL("image/png");
 }
 
-function readLayers(): Record<LayerKey, boolean> {
-  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem("sc-layers") || "{}") }; } catch { return { ...DEFAULTS }; }
+/** Each persona starts from its own layer set (region config); choices are remembered per persona. */
+function personaDefaults(defaultLayers?: string[]): Record<LayerKey, boolean> {
+  if (!defaultLayers) return { ...DEFAULTS };
+  return Object.fromEntries(LAYERS.map((l) => [l.key, defaultLayers.includes(l.key)])) as Record<LayerKey, boolean>;
+}
+function readLayers(personaId: string | undefined, defaultLayers?: string[]): Record<LayerKey, boolean> {
+  const base = personaDefaults(defaultLayers);
+  try { return { ...base, ...JSON.parse(localStorage.getItem(`sc-layers:${personaId ?? "general"}`) || "{}") }; } catch { return base; }
 }
 
-export default function SoundMap({ stations, rivers, basemapBase }: Props) {
+export default function SoundMap({ stations, rivers, basemapBase, beachesUrl, personaId, defaultLayers }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
-  const [layers, setLayers] = useState<Record<LayerKey, boolean>>(DEFAULTS);
+  const [layers, setLayers] = useState<Record<LayerKey, boolean>>(() => personaDefaults(defaultLayers));
   const [meta, setMeta] = useState<Meta | null | undefined>(undefined);   // undefined = loading, null = no basemap
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   useEffect(() => setPanelOpen(window.matchMedia("(min-width: 900px)").matches), []);
 
-  useEffect(() => setLayers(readLayers()), []);
+  useEffect(() => setLayers(readLayers(personaId, defaultLayers)), [personaId, defaultLayers]);
 
   // Build the map once; restyle on theme change.
   useEffect(() => {
@@ -215,7 +225,15 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
           layout: { "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 12.5, "text-anchor": "left",
             "text-offset": [1.1, 0], "text-justify": "left", "text-line-height": 1.25, "text-allow-overlap": false },
           paint: { "text-color": t.ink, "text-halo-color": t.paper, "text-halo-width": 1.6 } });
-        applyLayers(map, readLayers());
+        if (beachesUrl) {
+          // Beach segments colored by status; drawn wide so they read at Sound-wide zoom.
+          map.addSource("beaches", { type: "geojson", data: beachesUrl });
+          const color = ["match", ["get", "status"], "closure", t.red, "advisory", getComputedStyle(document.documentElement).getPropertyValue("--amber").trim(), getComputedStyle(document.documentElement).getPropertyValue("--marker-green").trim()];
+          map.addLayer({ id: "beaches", type: "line", source: "beaches",
+            layout: { "line-cap": "round" },
+            paint: { "line-color": color as any, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 4, 12, 8], "line-opacity": 0.95 } }, "station-ring");
+        }
+        applyLayers(map, readLayers(personaId, defaultLayers));
         setReady(true);
       };
 
@@ -235,18 +253,18 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
       cleanup = () => { mq.removeEventListener("change", restyle); window.removeEventListener("sc-theme-change", restyle); map.remove(); };
     })().catch(() => setFailed(true));
     return () => { cancelled = true; cleanup(); };
-  }, [stations, rivers, basemapBase]);
+  }, [stations, rivers, basemapBase, beachesUrl, personaId, defaultLayers]);
 
   function applyLayers(map: MLMap, l: Record<LayerKey, boolean>) {
     const vis = (on: boolean) => (on ? "visible" : "none");
     const set = (id: string, on: boolean) => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(on)); };
     set("depth", l.depth); set("contours", l.contours); set("contour-labels", l.contours);
-    set("salinity", l.salinity); set("rivers", l.rivers);
+    set("salinity", l.salinity); set("rivers", l.rivers); set("beaches", l.beaches);
   }
   function toggle(key: LayerKey) {
     const next = { ...layers, [key]: !layers[key] };
     setLayers(next);
-    try { localStorage.setItem("sc-layers", JSON.stringify(next)); } catch { /* private mode */ }
+    try { localStorage.setItem(`sc-layers:${personaId ?? "general"}`, JSON.stringify(next)); } catch { /* private mode */ }
     if (mapRef.current) applyLayers(mapRef.current, next);
   }
 
@@ -258,7 +276,8 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
       <details className="map-layers" open={panelOpen} onToggle={(e) => setPanelOpen((e.target as HTMLDetailsElement).open)}>
         <summary>Layers</summary>
         {LAYERS.map((l) => {
-          const disabled = noBasemap && l.key !== "rivers";
+          if (l.key === "beaches" && !beachesUrl) return null;
+          const disabled = noBasemap && !["rivers", "beaches"].includes(l.key);
           return (
             <label key={l.key} title={l.note} className={disabled ? "off" : undefined}>
               <input type="checkbox" checked={layers[l.key] && !disabled} disabled={disabled || !ready} onChange={() => toggle(l.key)} />

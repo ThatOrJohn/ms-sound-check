@@ -33,6 +33,7 @@ class Region:
     personas: list[dict]
     indicators: list[dict]
     map: dict = field(default_factory=dict)
+    extras: dict = field(default_factory=dict)   # optional region-level sources, e.g. beaches
 
     def site(self, site_id: str) -> dict:
         return next(s for s in self.sites if s["id"] == site_id)
@@ -53,4 +54,5 @@ def load_region(region_id: str) -> Region:
         id=raw["id"], name=raw["name"], timezone=raw.get("timezone", "UTC"),
         units=raw.get("units", {}), sites=raw["sites"], personas=raw.get("personas", []),
         indicators=raw.get("indicators", []), map=raw.get("map", {}),
+        extras={k: raw[k] for k in ("beaches",) if k in raw},
     )

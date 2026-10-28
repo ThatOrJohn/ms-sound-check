@@ -4,6 +4,7 @@ import { GROUPS, SEV_LABEL, forPersona, href, personaPath } from "../lib/format"
 import PersonaPicker from "./PersonaPicker.astro";
 import Freshness from "./Freshness.astro";
 import StationList from "./StationList";
+import BeachStatus from "./BeachStatus.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import { SEV_RANK } from "../lib/format";
 import ReadingRow from "./ReadingRow";
@@ -11,7 +12,9 @@ import ReadingRow from "./ReadingRow";
 interface Props { data: Latest; persona: Persona }
 const { data, persona } = Astro.props;
 
-const findings = forPersona(data.findings, persona);
+const showsBeaches = !!data.beaches && persona.card_order.includes("beaches");
+// Beach advisories get their own section; don't list them twice.
+const findings = forPersona(data.findings, persona).filter((f) => !(showsBeaches && f.var === "beach"));
 const dates = data.cards.flatMap((c) => Object.values(c.vars)).map((v) => v.date).filter(Boolean).sort() as string[];
 const newest = dates.at(-1) ?? null;
 const paths = Object.fromEntries(data.personas.map((p) => [p.id, personaPath(p.id)]));
@@ -31,8 +34,8 @@ const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((
   band: c.vars.flow?.band, percentile: c.vars.flow?.percentile,
 }));
 const groups = persona.card_order
-  .map((kind) => ({ kind, ...GROUPS[kind], cards: data.cards.filter((c) => c.kind === kind) }))
-  .filter((g) => g.cards.length);
+  .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
+  .filter((g) => g.kind === "beaches" ? !!data.beaches : g.cards.length);
 ---
 <section class="lede" aria-labelledby="headline">
   <div class="lede-ctl">
@@ -44,7 +47,9 @@ const groups = persona.card_order
 </section>
 
 <figure class="sound" aria-labelledby="sound-cap">
-  <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} basemapBase={href("basemap/")} />
+  <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} basemapBase={href("basemap/")}
+    beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
+    personaId={persona.id} defaultLayers={persona.map_layers} />
   <figcaption class="sound-foot">
     <span id="sound-cap">Stations are colored by salinity. River lines widen when the rivers run high.</span>
     <span class="scale" aria-hidden="true">Fresh <span class="scale-bar" /> Gulf salty</span>
@@ -67,7 +72,7 @@ const groups = persona.card_order
   )}
 </section>
 
-{groups.map((g) => (
+{groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} /> : (
   <section class="group" aria-labelledby={`g-${g.kind}`}>
     <h2 id={`g-${g.kind}`}>{g.title}</h2>
     {g.blurb && <p>{g.blurb}</p>}

@@ -163,6 +163,27 @@ select, .btn {
 .spark path { fill: none; stroke: var(--ink-soft); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .spark circle { fill: var(--ink); }
 
+/* ---------- beaches ---------- */
+.beaches > p { max-width: var(--measure); }
+.beach-flags { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; max-width: var(--measure); }
+.beach-flags li { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; background: var(--paper);
+  border: 1px solid var(--rule); border-left: 5px solid var(--amber); border-radius: 0 6px 6px 0; padding: 12px 14px; }
+.beach-flags li[data-status="closure"] { border-left-color: var(--marker-red); }
+.beach-flags p { margin: 4px 0 0; }
+.beach-where { color: var(--ink-soft); }
+.beach-badge { font-weight: 700; font-size: 0.8rem; padding: 2px 8px; border-radius: 999px; background: color-mix(in oklab, var(--amber) 18%, var(--paper)); color: var(--amber); }
+[data-status="closure"] .beach-badge { background: color-mix(in oklab, var(--marker-red) 18%, var(--paper)); color: var(--marker-red); }
+.beach-all { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; max-width: var(--measure); }
+.beach-all summary { cursor: pointer; font-weight: 600; min-height: 28px; }
+.beach-county h3 { font: 600 0.9rem var(--sans); color: var(--ink-soft); margin: 12px 0 4px; }
+.beach-county ul { list-style: none; margin: 0; padding: 0; }
+.beach-county li { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--rule); }
+.beach-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--marker-green); }
+[data-status="advisory"] .beach-dot { background: var(--amber); }
+[data-status="closure"] .beach-dot { background: var(--marker-red); }
+.beach-sub { color: var(--ink-soft); font-size: 0.88rem; text-align: right; }
+.beach-src { font-size: 0.85rem; color: var(--ink-soft); }
+
 /* ---------- station page ---------- */
 .crumbs { padding-top: 22px; font-size: 0.9rem; color: var(--ink-soft); }
 .station-head { padding: 10px 0 6px; max-width: var(--measure); }

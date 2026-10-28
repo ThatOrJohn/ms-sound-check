@@ -1,0 +1,54 @@
+{
+ "stations": [
+  {
+   "id": "1",
+   "name": "Lakeshore Beach",
+   "location": "near Lakeshore Drive, Bay St. Louis",
+   "county": "Hancock",
+   "from": "Silver Slipper Casino",
+   "to": "Pointset Ave",
+   "lat": 30.24653,
+   "lon": -89.42401,
+   "order": 1,
+   "status": "clear",
+   "event": "Enterococci",
+   "text": null,
+   "since": null,
+   "last_sample": "2026-10-26T09:10:00"
+  },
+  {
+   "id": "2",
+   "name": "Buccaneer State Park Beach",
+   "location": "near State Park Road, Waveland",
+   "county": "Hancock",
+   "from": "a",
+   "to": "b",
+   "lat": 30.26064,
+   "lon": -89.40379,
+   "order": 2,
+   "status": "advisory",
+   "event": "Enterococci",
+   "text": "Enterococci exceeded",
+   "since": "2026-10-24T12:00:00",
+   "last_sample": "2026-10-26T09:35:00"
+  },
+  {
+   "id": "3",
+   "name": "Waveland Beach",
+   "location": "near Vacation Lane, Waveland",
+   "county": "Hancock",
+   "from": "Oak",
+   "to": "Favre",
+   "lat": 30.27639,
+   "lon": -89.3736,
+   "order": 3,
+   "status": "advisory",
+   "event": "Enterococci",
+   "text": "x",
+   "since": "2026-10-25T12:00:00",
+   "last_sample": "2026-10-26T09:50:00"
+  }
+ ],
+ "fetched_at": "x",
+ "source": "MDEQ"
+}

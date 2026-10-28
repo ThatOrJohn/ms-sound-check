@@ -136,28 +136,40 @@ sites:
     points: [[31.33, -89.29], [31.69, -89.13], [31.67, -88.65], [31.15, -88.56]]
     vars: [rain]
 
+# Beach water quality (bacteria, debris, harmful algal blooms) from MDEQ's public feature service.
+beaches:
+  name: MDEQ Beach Monitoring Program
+  url: https://mgis19.mdeq.ms.gov/arcgis/rest/services/Hosted/BeachMonitoringView/FeatureServer
+  link: https://beaches.mdeq.ms.gov/
+  stations_layer: 0
+  segments_layer: 1
+
 # Personas re-rank indicators and reorder cards. Add one by adding an entry here.
 personas:
   - id: general
     label: Coast (general)
     blurb: What the Sound is doing this week and whether any of it matters.
     focus: [general, oyster, shrimp, fish]
-    card_order: [sound, river, rain, weather, estuary]
+    card_order: [beaches, sound, river, rain, weather, estuary]
+    map_layers: [depth, rivers, beaches]
   - id: oyster
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
-    card_order: [sound, river, rain, estuary, weather]
+    card_order: [sound, river, rain, estuary, weather, beaches]
+    map_layers: [depth, contours, rivers, salinity]
   - id: shrimp
     label: Shrimp
     blurb: Spring water temperature drives when brown shrimp reach legal size; fresh water pushes them offshore.
     focus: [shrimp, general]
-    card_order: [sound, weather, river, rain, estuary]
+    card_order: [sound, weather, river, rain, estuary, beaches]
+    map_layers: [depth, contours, rivers]
   - id: fish
     label: Fishing
     blurb: Salinity and water temperature shifts that move bait and fish around the Sound.
     focus: [fish, general]
-    card_order: [sound, weather, rain, river, estuary]
+    card_order: [sound, weather, rain, river, estuary, beaches]
+    map_layers: [depth, contours, salinity]
 
 indicators:
   # Unusual vs. normal for this time of year, for every station/variable.
@@ -201,6 +213,12 @@ indicators:
     alert_days: 14
     topics: [oyster, general]
     text: "{site} has been under {threshold} ppt for {days} straight days. Past two weeks, oyster reefs start dying."
+
+  # Beach advisories and closures (data: beaches source above).
+  - id: beach_status
+    type: custom
+    fn: msc.models.beaches:findings
+    topics: [general, fish]
 
   # Virtual-sensor QC: every salinity station checked against what its neighbors and the rivers imply.
   # (Configured here so another region can tune or drop it; the model lives in msc/models/virtual.py.)
