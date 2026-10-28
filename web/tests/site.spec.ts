@@ -3,10 +3,8 @@ import AxeBuilder from "@axe-core/playwright";
 
 const PAGES = ["", "for/oyster/", "for/shrimp/", "about/", "station/west-sound/", "station/pearl-river/"];
 
-test.beforeEach(async ({ page }) => {
-  // Start every test without a remembered persona or theme.
-  await page.addInitScript(() => { try { localStorage.clear(); } catch {} });
-});
+// Each test gets a fresh browser context, so localStorage starts empty. Don't clear it with
+// addInitScript: that runs before every navigation and would wipe the very choices under test.
 
 for (const path of PAGES) {
   test(`/${path} loads cleanly and passes accessibility checks`, async ({ page }) => {
