@@ -101,6 +101,12 @@ def wind_recent(region: Region, past_days: int = 10) -> pd.DataFrame:
 
 def wind_backfill(region: Region, start: str = "1998-01-01", end: str | None = None) -> pd.DataFrame:
     end = end or (pd.Timestamp.today() - pd.Timedelta(days=6)).strftime("%Y-%m-%d")
-    out = [_wind_rows(site, _wind_get(ARCHIVE, site, {"start_date": start, "end_date": end}))
-           for site in region.sites_by(source="openmeteo") if site["kind"] == "wind"]
+    # 28 years of hourly values in one call times out, so fetch in 5-year spans (whole days, so rows don't overlap)
+    first, last = pd.Timestamp(start), pd.Timestamp(end)
+    spans = [(max(first, pd.Timestamp(y, 1, 1)), min(last, pd.Timestamp(y + 4, 12, 31)))
+             for y in range(first.year, last.year + 1, 5)]
+    out = [_wind_rows(site, _wind_get(ARCHIVE, site, {"start_date": a.strftime("%Y-%m-%d"),
+                                                      "end_date": b.strftime("%Y-%m-%d")}))
+           for site in region.sites_by(source="openmeteo") if site["kind"] == "wind"
+           for a, b in spans]
     return pd.concat(out, ignore_index=True) if out else pd.DataFrame()
