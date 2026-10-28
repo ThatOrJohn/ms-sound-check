@@ -141,10 +141,10 @@ def render(grid: pd.DataFrame) -> dict:
         rgba = np.dstack([np.clip(rgb, 0, 255), np.where(water, 255, 0)]).astype(np.uint8)
         Image.fromarray(rgba, "RGBA").save(OUT / f"depth-{theme}.png", optimize=True)
 
-    # Water mask for clipping the salinity sketch (low-res is plenty).
-    small = Image.fromarray(np.where(water, 255, 0).astype(np.uint8), "L")
-    mw, mh = max(1, z.shape[1] // 4), max(1, z.shape[0] // 4)
-    small.resize((mw, mh), Image.BILINEAR).save(OUT / "watermask.png", optimize=True)
+    # Water mask for clipping the salinity sketch, at full resolution so small islands
+    # (Deer Island, the barrier islands' marsh fringes) stay crisp. 1-bit PNG keeps it small.
+    Image.fromarray(water).convert("1").save(OUT / "watermask.png", optimize=True)
+    mw, mh = int(z.shape[1]), int(z.shape[0])
 
     # Contours in feet, from a lightly smoothed grid so lines aren't jagged.
     import matplotlib

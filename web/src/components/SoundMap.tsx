@@ -92,23 +92,27 @@ async function salinityImage(meta: Meta, maskUrl: string, stations: MapStation[]
   const out = ctx.createImageData(w, h);
   const [W, S, E, N] = meta.bounds;
   const kmLon = 111.32 * Math.cos((30.4 * Math.PI) / 180), kmLat = 110.57;
+  const px = pts.map((p) => (p.lon - W) * kmLon), py = pts.map((p) => (N - p.lat) * kmLat), pv = pts.map((p) => p.salinity as number);
+  const cellX = ((E - W) * kmLon) / w, cellY = ((N - S) * kmLat) / h;
+  const colors = new Map<number, number[]>();
   for (let y = 0; y < h; y++) {
-    const lat = N - ((y + 0.5) / h) * (N - S);
+    const yk = (y + 0.5) * cellY;
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      const m = mask.data[i];          // grayscale: 255 water
-      if (m < 128) continue;
-      const lon = W + ((x + 0.5) / w) * (E - W);
+      if (mask.data[i] < 128) continue;              // land
+      const xk = (x + 0.5) * cellX;
       let num = 0, den = 0, dmin = Infinity;
-      for (const p of pts) {
-        const d = Math.hypot((lon - p.lon) * kmLon, (lat - p.lat) * kmLat) + 0.5;
+      for (let k = 0; k < px.length; k++) {
+        const d = Math.hypot(xk - px[k], yk - py[k]) + 0.5;
         const wt = 1 / (d * d);
-        num += wt * (p.salinity as number); den += wt; dmin = Math.min(dmin, d);
+        num += wt * pv[k]; den += wt; if (d < dmin) dmin = d;
       }
-      const c = salinityRGB(num / den, t);
-      const fade = Math.max(0, 1 - dmin / 30);        // fades out ~30 km from the nearest station
+      const key = Math.round((num / den) * 10);      // cache colors at 0.1 ppt steps
+      let c = colors.get(key);
+      if (!c) { c = salinityRGB(key / 10, t); colors.set(key, c); }
+      const fade = Math.max(0, 1 - dmin / 30);       // fades out ~30 km from the nearest station
       out.data[i] = c[0]; out.data[i + 1] = c[1]; out.data[i + 2] = c[2];
-      out.data[i + 3] = Math.round(200 * fade * (m / 255));
+      out.data[i + 3] = Math.round(200 * fade);
     }
   }
   ctx.putImageData(out, 0, 0);
@@ -144,7 +148,8 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
       let t = tokens();
       const map = new ml.Map({
         container: el.current, style: baseStyle(t), bounds: VIEW, fitBoundsOptions: { padding: 12 },
-        maxBounds: [[-90.0, 29.9], [-88.1, 30.72]], minZoom: 8, maxZoom: 14,   // stays inside the depth data
+        // Stay inside the depth data, and stop zooming where one 90 m depth pixel would start to blur.
+        maxBounds: [[-90.0, 29.9], [-88.1, 30.72]], minZoom: 8, maxZoom: 12.5,
         dragRotate: false, pitchWithRotate: false, touchPitch: false, cooperativeGestures: true,
         attributionControl: { compact: true },
       });
