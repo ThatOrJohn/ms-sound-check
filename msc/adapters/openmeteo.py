@@ -5,10 +5,14 @@ which is a rough stand-in for basin rainfall.
 """
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pandas as pd
 
 from ..config import Region
+
+log = logging.getLogger(__name__)
 
 FORECAST = "https://api.open-meteo.com/v1/forecast"
 ARCHIVE = "https://archive-api.open-meteo.com/v1/archive"
@@ -77,11 +81,20 @@ def _wind_get(url: str, site: dict, params: dict):
     import time
     import requests
     lat, lon = site["points"][0]
-    for wait in (30, 90, 0):                       # shared runner IPs hit Open-Meteo's 429 right after the rain call
-        r = requests.get(url, timeout=300, params={"latitude": lat, "longitude": lon,
-                                                    "hourly": "wind_speed_10m,wind_direction_10m",
-                                                    "wind_speed_unit": "ms", "timezone": "America/Chicago", **params})
-        if r.status_code != 429 or not wait:
+    for attempt, wait in enumerate((30, 90, 0), 1):   # shared runner IPs get 429s or stalls from Open-Meteo
+        try:
+            r = requests.get(url, timeout=90, params={"latitude": lat, "longitude": lon,
+                                                       "hourly": "wind_speed_10m,wind_direction_10m",
+                                                       "wind_speed_unit": "ms", "timezone": "America/Chicago", **params})
+            if r.status_code != 429:
+                break
+            problem = "429"
+        except requests.Timeout:
+            r, problem = None, "timeout"
+        log.warning("open-meteo wind %s %s (attempt %d of 3)", problem, params.get("start_date", "recent"), attempt)
+        if not wait:
+            if r is None:
+                raise requests.Timeout(f"open-meteo wind timed out for {params.get('start_date')}")
             break
         time.sleep(wait)
     r.raise_for_status()

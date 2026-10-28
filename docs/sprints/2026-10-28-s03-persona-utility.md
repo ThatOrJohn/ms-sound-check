@@ -1,11 +1,11 @@
 # Sprint 3: Persona utility
 
 - **Dates:** 2026-10-28 to 2026-11-04
-- **Status:** In progress
+- **Status:** Done, except the wind-feature comparison (carried to the roadmap)
 - **Goal:** Each persona's page answers the question that reader shows up with.
 
 ## Checklist
-- [ ] Verify the first live beach fetch in CI (carried from Sprint 2)
+- [x] Verify the first live beach fetch in CI (carried from Sprint 2): `beaches.json` on the data branch has current station status and sample dates
 - [ ] **Oyster closure watch** ([0012](../decisions/0012-oyster-watch-criteria.md))
   - [x] Find MDMR's criteria and the gauge (PERL1 / USGS 02492600, 10 and 11 ft, plus rainfall triggers)
   - [x] Ingest PERL1 observed + NWS forecast stage (`msc/adapters/nwps.py`)
@@ -14,8 +14,8 @@
   - [x] Oyster page section: stage bar with closure levels, table by area group, rain, links to MDMR
   - [x] Gauge station page: stage history with MDMR closure lines and the NWS forecast as a dashed line
   - [x] Wording only ever says what MDMR's criteria indicate; never "is closed"
-  - [ ] Verify the first live NWPS fetch and the PERL1 backfill in CI
-  - [ ] Confirm the oyster information line (228-374-5167 comes from MDMR notices; check it's current)
+  - [x] Verify the first live NWPS fetch and the PERL1 backfill in CI: 2,859 recent readings, a 40-point forecast, and daily history from 1998
+  - [x] Confirm the oyster information line: 228-374-5167 confirmed current on 2026-10-28
   - [x] With history in hand: how often each threshold is crossed per year (context line for the section). Daily
         means since 1998: at or above 10 ft on ~145 days a year in ~6.6 rises, mostly Jan-Apr; 11 ft on ~125 days.
         Daily means run under peak readings, and the line says "daily average".
@@ -23,15 +23,17 @@
       Gulfport Harbor (all three stations in a table), water temperature trend, saltiest/freshest station,
       muddy-water risk; best day becomes the Fishing headline. Shows this weekend, or the next three days
       on Sun/Mon.
-  - [ ] Verify the first live NWS forecast and CO-OPS tide fetches in CI
+  - [x] Verify the first live NWS forecast and CO-OPS tide fetches in CI: forecast periods and tides for all three stations are in the store
 - [x] **Wind in the data**: daily wind over mid-Sound (Open-Meteo: ERA5 history at backfill, recent each run);
       six wind features added to the virtual sensors
-  - [ ] After the next backfill, compare the `train` log's scores with the numbers in architecture.md and
-        record the result here
+  - [ ] Carried: compare the `train` scores with architecture.md once wind history loads. Three backfill runs
+        today all failed at the wind step, so the scores in them are without wind and match the first run. The first
+        failed with a 429, the later two with 300 s read timeouts; the chunked fetch ran fine locally (8 s for 6 years),
+        so Open-Meteo is throttling the GitHub runner. The adapter now logs each attempt and times out at 90 s.
 - [x] **Shrimp in-season** ([0014](../decisions/0014-mdmr-notices-from-wordpress-api.md)): MDMR's shrimp notices from its
       public WordPress API (last year, newest five, linked), 3-day day/night wind outlook from the NWS forecast; a
       notice from the past week leads the Shrimp headline
-  - [ ] Verify the first live MDMR fetch in CI
+  - [x] Verify the first live MDMR fetch in CI: `mdmr_notices.json` holds the shrimp notices, newest 2026-10-15
 
 - [x] **Air temp shows the latest reading**: the readout tile led with today's daily mean (61°F at noon on a cool
       morning that warmed to 77°F). The build now adds the newest NWS observation with its time and today's low/high
