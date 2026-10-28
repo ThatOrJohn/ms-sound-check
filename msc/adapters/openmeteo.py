@@ -74,11 +74,16 @@ def _wind_rows(site: dict, js: dict) -> pd.DataFrame:
 
 
 def _wind_get(url: str, site: dict, params: dict):
+    import time
     import requests
     lat, lon = site["points"][0]
-    r = requests.get(url, timeout=300, params={"latitude": lat, "longitude": lon,
-                                                "hourly": "wind_speed_10m,wind_direction_10m",
-                                                "wind_speed_unit": "ms", "timezone": "America/Chicago", **params})
+    for wait in (30, 90, 0):                       # shared runner IPs hit Open-Meteo's 429 right after the rain call
+        r = requests.get(url, timeout=300, params={"latitude": lat, "longitude": lon,
+                                                    "hourly": "wind_speed_10m,wind_direction_10m",
+                                                    "wind_speed_unit": "ms", "timezone": "America/Chicago", **params})
+        if r.status_code != 429 or not wait:
+            break
+        time.sleep(wait)
     r.raise_for_status()
     return r.json()
 
