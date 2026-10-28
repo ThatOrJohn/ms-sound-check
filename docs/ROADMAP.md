@@ -37,4 +37,3 @@ watch, fishing weekend outlook, wind data, shrimp in-season notices.
 - Round Island's "possibly a sensor problem" caveat may be wrong (see Next).
 - East Ship Island can't be estimated (held-out error ~7 ppt), so it shows as offline.
 - Open-Meteo's free API is non-commercial; revisit if sponsorship happens.
-- Local cleanup: delete `site/` and `_superseded/` (prototype leftovers).
