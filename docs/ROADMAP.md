@@ -11,7 +11,7 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
-- **Better event explanations**: wind and rivers explain under half of the events ([0017](decisions/0017-step-events-describe-wind-and-rivers.md)). Candidates: Mississippi River flow and Bonnet Carré openings, tides at the Gulf passes.
+- **Better event explanations**: wind and rivers explain under half of the events ([0017](decisions/0017-step-events-describe-wind-and-rivers.md)). The Mississippi River added nothing beyond chance ([0020](decisions/0020-mississippi-flow-not-added-to-event-text.md)). Left to test: Gulf water level at Dauphin Island (NOAA CO-OPS 8735180; pull slowly, the API refused a fast bulk request).
 - **Use the Dauphin Island reference data**: DISL salinity is ingested ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)) but not used for flags. Next: show it on the map's east end, or pair it with a closer station such as Grand Bay NERR.
 - **Share previews**: generated Open Graph images per page (for Bluesky and X).
 - **Weekly digest**: Bluesky post + RSS from the same build.
