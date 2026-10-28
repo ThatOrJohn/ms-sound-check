@@ -185,7 +185,7 @@ def _beaches(region, asof):
     return section, geo
 
 
-def _headline(region, findings, persona, asof, cards, beaches=None):
+def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch=None):
     """Lead with anything serious; otherwise describe the overall picture in plain words."""
     focus = persona["focus"]
     season = season_phrase(asof)
@@ -206,6 +206,12 @@ def _headline(region, findings, persona, asof, cards, beaches=None):
                 parts.append(wt)
         if focus[0] == "general" and beaches and beaches["total"] and not (beaches["counts"]["advisory"] or beaches["counts"]["closure"]):
             parts.append(f"All {beaches['total']} monitored beaches are clear for swimming.")
+        if focus[0] == "oyster" and oyster_watch and oyster_watch.get("available") and not oyster_watch.get("stale"):
+            g = oyster_watch["gauge"]
+            lowest = min(x["stage_ft"] for x in oyster_watch["groups"])
+            if all(x["status"] == "clear" for x in oyster_watch["groups"]):
+                parts.append(f"The Pearl River is at {g['stage']:.1f} ft, well below the {lowest:.0f}-ft level "
+                             f"where MDMR closes western reefs.")
         if focus[0] == "oyster":
             sal = [r["value"] for r in _live(cards, ("sound",), "salinity")]
             if sal and min(sal) > 5:
@@ -236,14 +242,17 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                                 for d, v in zip(pd.to_datetime(g.date), g.value)],
                        "total": fmt("rain", g.value.sum(), region.units)}
     beach_section, beach_geo = _beaches(region, asof)
+    from .models import oyster
+    oyster_section = oyster.section(region, daily, asof)
     latest = {
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
         "beaches": beach_section,
+        "oyster_watch": oyster_section,
         "generated_at": (generated_at or pd.Timestamp.now(tz="UTC")).isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),
         "personas": region.personas,
-        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section) for p in region.personas},
+        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section, oyster_section) for p in region.personas},
         "findings": findings,
         "cards": cards,
         "rain_forecast": fc,

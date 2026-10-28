@@ -45,3 +45,9 @@ test("station charts render", async ({ page }) => {
   await page.getByRole("button", { name: "1 year" }).click();
   await expect(page.getByRole("button", { name: "1 year" })).toHaveAttribute("aria-pressed", "true");
 });
+
+test("oyster page shows the closure watch with MDMR's criteria", async ({ page }) => {
+  await page.goto("for/oyster/");
+  await expect(page.getByRole("heading", { name: "Oyster closure watch" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "management plan" })).toHaveAttribute("href", /dmr\.ms\.gov/);
+});

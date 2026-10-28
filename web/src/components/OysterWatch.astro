@@ -1,0 +1,81 @@
+---
+import type { OysterWatch } from "../lib/types";
+import { href } from "../lib/format";
+
+interface Props { watch: OysterWatch; gaugeSlug?: string }
+const { watch, gaugeSlug } = Astro.props;
+const tz = "America/Chicago";
+const when = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", timeZone: tz });
+const statusText: Record<string, string> = {
+  above: "At or above the closure level",
+  forecast: "Forecast to reach the closure level",
+  near: "Within 2 ft of the closure level",
+  clear: "Well below the closure level",
+};
+const g = watch.gauge;
+const nowText = (x: NonNullable<OysterWatch["groups"]>[number]) =>
+  statusText[x.status] + (x.status === "forecast" && x.crossing_time ? `, around ${when(x.crossing_time)}` : "") + ".";
+// Scale for the stage bar: from 0 to a bit past the highest of stage, forecast and thresholds.
+const thresholds = (watch.groups ?? []).map((x) => x.stage_ft);
+const top = Math.max(14, ...(g ? [g.stage + 1] : []), ...(watch.forecast?.max ? [watch.forecast.max + 1] : []), ...thresholds.map((t) => t + 2));
+const pct = (v: number) => `${Math.max(0, Math.min(100, (v / top) * 100)).toFixed(1)}%`;
+const trend = g?.change_24h == null ? "" : Math.abs(g.change_24h) < 0.1 ? "steady" : g.change_24h > 0 ? `up ${g.change_24h.toFixed(1)} ft in 24 hours` : `down ${Math.abs(g.change_24h).toFixed(1)} ft in 24 hours`;
+---
+<section class="group oyster-watch" aria-labelledby="g-oyster">
+  <h2 id="g-oyster">Oyster closure watch</h2>
+  <p>MDMR closes the conditionally approved reefs in the western Sound when the Pearl River runs high or after heavy
+    rain. This compares today's readings with the criteria in its <a href={watch.plan_url}>management plan</a>.
+    Only MDMR decides closures.</p>
+
+  {!watch.available || !g ? (
+    <p class="quiet-note">River stage readings aren't available right now.</p>
+  ) : (
+    <>
+      <div class="stage-now">
+        <p class="stage-val">{g.stage.toFixed(1)} ft</p>
+        <p class="stage-sub">
+          Pearl River near Pearl River, LA{trend && <>, {trend}</>}.
+          {watch.forecast?.max != null && watch.forecast.max_time && (
+            <> NWS forecast peak {watch.forecast.max.toFixed(1)} ft around {when(watch.forecast.max_time)}.</>
+          )}
+          {watch.stale && <span class="warn"> This reading is more than a day old.</span>}
+        </p>
+        <div class="stage-bar" role="img"
+          aria-label={`Stage ${g.stage.toFixed(1)} feet; closure levels at ${thresholds.join(" and ")} feet`}>
+          <span class="stage-fill" style={`width:${pct(g.stage)}`}></span>
+          {watch.forecast?.max != null && watch.forecast.max > g.stage && (
+            <span class="stage-fc" style={`left:${pct(g.stage)};width:calc(${pct(watch.forecast.max)} - ${pct(g.stage)})`}></span>
+          )}
+          {thresholds.map((t) => <span class="stage-mark" style={`left:${pct(t)}`}><span>{t} ft</span></span>)}
+        </div>
+      </div>
+
+      <table class="oyster-table">
+        <thead><tr><th>Areas</th><th>River closure level</th><th>Rain closure level (24 h)</th><th>Now</th></tr></thead>
+        <tbody>
+          {watch.groups!.map((x) => (
+            <tr data-status={x.status}>
+              <td><strong>{x.areas.join(", ")}</strong>{x.names && <span class="reefs">{x.names}</span>}</td>
+              <td>{x.stage_ft} ft</td>
+              <td>{x.rain_in ? Object.entries(x.rain_in).map(([a, v]) => `${a}: ${v} in`).join("; ") : "—"}</td>
+              <td class="now-cell">
+                {nowText(x)}{x.rain_triggered.length > 0 && <span class="warn">{` Rain criterion met for ${x.rain_triggered.join(", ")}.`}</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="oyster-notes">
+        {watch.rain?.yesterday_in != null && <>Rain in Hancock County yesterday: about {watch.rain.yesterday_in.toFixed(2)} in. </>}
+        Our rain figure is an estimate; MDMR measures at the Hancock County Utility Authority gauge. Areas reopen once the
+        river falls below its level or crests and water samples pass, after time for the oysters to cleanse.
+        {gaugeSlug && <> <a href={href(`station/${gaugeSlug}/`)}>Stage history and forecast</a>.</>}
+      </p>
+    </>
+  )}
+  <p class="oyster-notes">
+    For what's open today: <a href={watch.status_url ?? "https://dmr.ms.gov/"}>MDMR shellfish</a>
+    {watch.hotline && <> or the oyster information line, {watch.hotline}</>}.
+  </p>
+</section>

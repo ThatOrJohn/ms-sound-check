@@ -39,6 +39,7 @@ build a region picker until a second region exists.
 | USGS (new OGC API, via `dataretrieval`) | conductance → salinity, water temp, river flow; 15-minute values | `usgs.recent` | free; set `API_USGS_PAT` for higher limits |
 | USGS legacy `dv` service | daily history back to 1998 | `usgs.backfill_daily`, one time | free; retired Q1 2027, after which this moves to `waterdata.get_daily` |
 | National Weather Service | air temperature at Gulfport-Biloxi airport | `nws.recent` | free, no key |
+| NWS National Water Prediction Service | observed and forecast river stage at PERL1 (Pearl River near Pearl River, LA) for the oyster watch | `nwps.recent_and_forecast`, every run; history from USGS 02492600 at backfill | free, no key |
 | MDEQ Beach Monitoring (public ArcGIS feature service) | beach advisories and closures (bacteria, debris, algal blooms) and beach segments | `beaches.fetch`, every run | free, no key |
 | Open-Meteo | observed and forecast daily rain, local and basin-averaged | `openmeteo.*` | free, no key, **non-commercial terms**; revisit if sponsorship happens |
 

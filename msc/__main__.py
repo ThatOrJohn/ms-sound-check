@@ -63,6 +63,15 @@ def cmd_ingest(region, args):
         new = pd.concat(recent, ignore_index=True)
         store.write_recent(region, new)
         store.upsert_daily(region, store.recent_to_daily(region, new))
+    from .adapters import nwps
+    res_st = _try("river stage", nwps.recent_and_forecast, region)
+    if res_st is not None:
+        obs, fc = res_st
+        if not obs.empty:
+            store.write_recent(region, obs[["site", "var", "time", "value", "source"]])
+            store.upsert_daily(region, store.recent_to_daily(region, obs[["site", "var", "time", "value", "source"]]))
+        region.data_dir.mkdir(parents=True, exist_ok=True)
+        fc.to_parquet(region.data_dir / "stage_forecast.parquet", index=False)
     from .adapters import beaches
     snap = _try("beaches", beaches.fetch, region)
     if snap:

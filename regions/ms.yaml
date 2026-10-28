@@ -102,6 +102,20 @@ sites:
     osm_names: [Pascagoula River, East Pascagoula River, West Pascagoula River]
     drains_from: [basin-pascagoula]
 
+  # --- river stage gauge used by MDMR's oyster management plan ---
+  - id: NWS-PERL1
+    name: Pearl River near Pearl River, LA
+    short: Pearl River stage
+    kind: gauge
+    source: nwps          # NWS water prediction service: observed + official stage forecast
+    nws_lid: PERL1
+    history_usgs: "02492600"   # USGS site for the daily stage history (backfill)
+    lat: 30.385
+    lon: -89.7367
+    vars: [stage]
+    note: The gauge MDMR's shellfish management plan uses to close and reopen conditionally approved oyster areas. NWS issues stage forecasts here year-round.
+    drains_from: [USGS-02489500]
+
   # --- weather ---
   - id: NWS-KGPT
     name: Gulfport-Biloxi Airport
@@ -118,6 +132,14 @@ sites:
     kind: rain
     source: openmeteo
     points: [[30.40, -88.90]]
+    vars: [rain]
+  - id: rain-hancock
+    name: Hancock County rainfall
+    short: Hancock County rain
+    kind: rain
+    source: openmeteo
+    note: Approximate stand-in for the Hancock County Utility Authority gauge MDMR's plan uses for rainfall closures.
+    points: [[30.31, -89.33]]
     vars: [rain]
   - id: basin-pearl
     name: Pearl River basin rainfall
@@ -156,7 +178,7 @@ personas:
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
-    card_order: [sound, river, rain, estuary, weather, beaches]
+    card_order: [oyster_watch, sound, river, rain, estuary, weather, beaches]
     map_layers: [depth, contours, rivers, salinity]
   - id: shrimp
     label: Shrimp
@@ -213,6 +235,28 @@ indicators:
     alert_days: 14
     topics: [oyster, general]
     text: "{site} has been under {threshold} ppt for {days} straight days. Past two weeks, oyster reefs start dying."
+
+  # Oyster closure watch: MDMR's published criteria for conditionally approved areas.
+  # Source: MDMR Molluscan Shellfish Growing Waters Management Plan (Dec 2025 edits). See docs/decisions/0012.
+  - id: oyster_closure_watch
+    type: custom
+    fn: msc.models.oyster:closure_watch
+    topics: [oyster]
+    gauge: NWS-PERL1
+    rain_site: rain-hancock
+    plan_name: MDMR Molluscan Shellfish Growing Waters Management Plan (December 2025)
+    plan_url: https://dmr.ms.gov/wp-content/uploads/2026/01/Molluscan-Shellfish-Growing-Waters-Management-Plan_12.2025-edits.pdf
+    status_url: https://dmr.ms.gov/shellfish/
+    hotline: "228-374-5167"
+    groups:
+      - areas: [I-B, II-A, II-B]
+        names: St. Joe, Pass Christian, Henderson Point, Waveland and St. Stanislaus reefs
+        stage_ft: 10
+        rain_in: {I-B: 1.0, II-A: 1.0, II-B: 0.5}
+      - areas: [II-E, II-F, II-G]
+        names: Henderson Point, Pass Dredging and Pass Marianne reefs
+        stage_ft: 11
+        rain_in: {II-E: 2.0, II-F: 2.0, II-G: 2.0}
 
   # Beach advisories and closures (data: beaches source above).
   - id: beach_status

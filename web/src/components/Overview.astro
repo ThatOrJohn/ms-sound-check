@@ -5,6 +5,7 @@ import PersonaPicker from "./PersonaPicker.astro";
 import Freshness from "./Freshness.astro";
 import StationList from "./StationList";
 import BeachStatus from "./BeachStatus.astro";
+import OysterWatch from "./OysterWatch.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import { SEV_RANK } from "../lib/format";
 import ReadingRow from "./ReadingRow";
@@ -13,8 +14,10 @@ interface Props { data: Latest; persona: Persona }
 const { data, persona } = Astro.props;
 
 const showsBeaches = !!data.beaches && persona.card_order.includes("beaches");
-// Beach advisories get their own section; don't list them twice.
-const findings = forPersona(data.findings, persona).filter((f) => !(showsBeaches && f.var === "beach"));
+const showsOyster = !!data.oyster_watch && persona.card_order.includes("oyster_watch");
+// Beach advisories and oyster-watch findings have their own sections; don't list them twice.
+const findings = forPersona(data.findings, persona)
+  .filter((f) => !(showsBeaches && f.var === "beach") && !(showsOyster && f.indicator === "oyster_closure_watch"));
 const dates = data.cards.flatMap((c) => Object.values(c.vars)).map((v) => v.date).filter(Boolean).sort() as string[];
 const newest = dates.at(-1) ?? null;
 const paths = Object.fromEntries(data.personas.map((p) => [p.id, personaPath(p.id)]));
@@ -35,7 +38,8 @@ const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((
 }));
 const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
-  .filter((g) => g.kind === "beaches" ? !!data.beaches : g.cards.length);
+  .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch : g.cards.length);
+const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
 ---
 <section class="lede" aria-labelledby="headline">
   <div class="lede-ctl">
@@ -72,7 +76,8 @@ const groups = persona.card_order
   )}
 </section>
 
-{groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} /> : (
+{groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} />
+  : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} /> : (
   <section class="group" aria-labelledby={`g-${g.kind}`}>
     <h2 id={`g-${g.kind}`}>{g.title}</h2>
     {g.blurb && <p>{g.blurb}</p>}

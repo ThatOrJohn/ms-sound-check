@@ -83,7 +83,7 @@ def recent_to_daily(region: Region, recent: pd.DataFrame) -> pd.DataFrame:
         by_day = g.groupby("date")["value"]
         # Need reasonable coverage before trusting a daily mean.
         counts = by_day.count()
-        vals = by_day.sum() if agg == "sum" else by_day.mean()
+        vals = by_day.sum() if agg == "sum" else by_day.max() if agg == "max" else by_day.mean()
         if agg == "mean":
             vals = vals[counts >= 4]
         out.append(pd.DataFrame({"site": site, "var": var, "date": vals.index,

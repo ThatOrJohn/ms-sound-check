@@ -19,7 +19,7 @@ from ..derive import salinity_from_specific_conductance
 
 log = logging.getLogger(__name__)
 
-PCODES = {"00095": "conductance", "00480": "salinity_raw", "00010": "water_temp", "00060": "flow"}
+PCODES = {"00095": "conductance", "00480": "salinity_raw", "00010": "water_temp", "00060": "flow", "00065": "stage"}
 NODATA = -999999.0
 
 
@@ -36,6 +36,8 @@ def _to_canonical(site: dict, frame: pd.DataFrame, time_col: str) -> pd.DataFram
         rows.append(t.assign(var="water_temp"))
     if "flow" in want:
         rows.append(frame[frame.param == "flow"].assign(var="flow"))
+    if "stage" in want:
+        rows.append(frame[frame.param == "stage"].assign(var="stage"))
     if "salinity" in want:
         if site.get("salinity_from", "conductance") == "conductance":
             c = frame[frame.param == "conductance"].copy()
@@ -48,7 +50,7 @@ def _to_canonical(site: dict, frame: pd.DataFrame, time_col: str) -> pd.DataFram
     out = pd.concat(rows, ignore_index=True)
     out = out[np.isfinite(out["value"])]
     # Sanity filters: physically impossible values are sensor junk.
-    bounds = {"salinity": (0, 45), "water_temp": (-2, 40), "flow": (0, 2e6)}
+    bounds = {"salinity": (0, 45), "water_temp": (-2, 40), "flow": (0, 2e6), "stage": (-20, 80)}
     lo_hi = out["var"].map(bounds)
     ok = [(lo <= v <= hi) for v, (lo, hi) in zip(out["value"], lo_hi)]
     out = out[ok]
@@ -108,9 +110,12 @@ def _legacy_dv_frame(payload: dict) -> pd.DataFrame:
 def backfill_daily(region: Region, start: str = "1998-01-01", end: str | None = None) -> pd.DataFrame:
     end = end or pd.Timestamp.today().strftime("%Y-%m-%d")
     out = []
-    for site in region.sites_by(source="usgs"):
-        log.info("usgs backfill %s", site["id"])
-        frame = _legacy_dv_frame(_fetch_legacy_dv(_usgs_number(site["id"]), start, end))
+    for site in region.sites:
+        number = _usgs_number(site["id"]) if site["source"] == "usgs" else site.get("history_usgs")
+        if not number:
+            continue
+        log.info("usgs backfill %s (USGS %s)", site["id"], number)
+        frame = _legacy_dv_frame(_fetch_legacy_dv(number, start, end))
         out.append(_to_canonical(site, frame, "date"))
     return pd.concat(out, ignore_index=True) if out else pd.DataFrame()
 

@@ -32,6 +32,10 @@ for (const c of [...upstream, card]) {
       log: vn === "flow",
       points: s.points,
       expected: c.id === card.id ? s.expected : undefined,
+      forecast: vn === "stage" && c.id === data.oyster_watch?.gauge?.id ? data.oyster_watch?.forecast?.points : undefined,
+      thresholds: vn === "stage" && data.oyster_watch?.groups
+        ? data.oyster_watch.groups.map((g) => ({ value: g.stage_ft, label: `${g.stage_ft} ft: MDMR closes ${g.areas.join(", ")}` }))
+        : undefined,
       threshold: vn === "salinity" && c.id === card.id && (c.kind === "sound" || c.kind === "estuary")
         ? { value: 2, label: "2 ppt: oyster stress line" } : undefined,
     });

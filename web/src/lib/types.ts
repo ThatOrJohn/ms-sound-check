@@ -2,8 +2,9 @@
 
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
-export type Kind = "sound" | "estuary" | "river" | "rain" | "weather";
-export type Section = Kind | "beaches";
+export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge";
+export type Section = Kind | "beaches" | "oyster_watch";
+export type Kind2 = Kind | "gauge";
 
 export interface Persona {
   id: string;
@@ -78,7 +79,21 @@ export interface Card {
   findings: number[];
 }
 
+export interface OysterGroup {
+  areas: string[]; names: string | null; stage_ft: number; status: "above" | "forecast" | "near" | "clear";
+  crossing_time: string | null; rain_in: Record<string, number> | null; rain_triggered: string[];
+}
+export interface OysterWatch {
+  available: boolean; stale?: boolean;
+  gauge?: { id: string; name: string; lid: string; stage: number; time: string; change_24h: number | null };
+  forecast?: { points: [string, number][]; max: number | null; max_time: string | null };
+  rain?: { site: string; yesterday_in: number | null; approximate: boolean };
+  groups?: OysterGroup[];
+  plan_name: string; plan_url: string; status_url?: string; hotline?: string;
+}
+
 export interface Latest {
+  oyster_watch?: OysterWatch | null;
   beaches?: BeachSection | null;
   region: { id: string; name: string; units: Record<string, string>; map: { center: [number, number]; zoom: number } };
   generated_at: string;

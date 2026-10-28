@@ -20,6 +20,7 @@ VARIABLES = {
     "air_temp":   {"unit": "degC", "agg": "mean", "label": "Air temp"},
     "flow":       {"unit": "cfs",  "agg": "mean", "label": "River flow"},
     "rain":       {"unit": "mm",   "agg": "sum",  "label": "Rain"},
+    "stage":      {"unit": "ft",   "agg": "max",  "label": "River stage"},
 }
 
 

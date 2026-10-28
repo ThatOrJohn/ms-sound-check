@@ -15,3 +15,6 @@ web/.astro/
 web/public/data/
 web/test-results/
 web/playwright-report/
+# local leftovers (safe to delete)
+_superseded/
+site/

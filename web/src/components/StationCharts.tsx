@@ -18,6 +18,9 @@ export interface Panel {
   kind: "line" | "bar";
   points: SeriesPoint[];
   threshold?: { value: number; label: string };
+  thresholds?: { value: number; label: string }[];
+  /** Official forecast continuing past the last observation: [ISO time, value] */
+  forecast?: [string, number][];
   log?: boolean;          // log scale (river flow spans orders of magnitude)
   /** Virtual sensor: [date, expected, lo90, hi90] */
   expected?: [string, number | null, number | null, number | null][];
@@ -52,7 +55,8 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
   // Show only the selected range so each axis scales to what's on screen.
   const panels = allPanels.map((p) => ({ ...p, points: p.points.slice(-days), expected: p.expected?.slice(-days) }));
   const last = panels[0]?.points.at(-1)?.[0];
-  const end = last ? new Date(`${last}T12:00:00`).getTime() : Date.now();
+  const fcEnd = Math.max(0, ...panels.flatMap((p) => (p.forecast ?? []).map((f) => new Date(f[0]).getTime())));
+  const end = Math.max(last ? new Date(`${last}T12:00:00`).getTime() : Date.now(), fcEnd);
   const start = end - (days - 1) * 86400_000;
   const grids = panels.map((_, i) => ({
     left: 64, right: 18, top: i * (PANEL_H + TITLE_H + GAP) + TITLE_H, height: PANEL_H, containLabel: false,
@@ -64,7 +68,7 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
     if (band.length > 2) {
       // Normal band (p10-p90) as one polygon: correct on linear and log axes alike.
       series.push({
-        type: "custom", xAxisIndex: i, yAxisIndex: i, silent: true, z: 1, tooltip: { show: false },
+        type: "custom", xAxisIndex: i, yAxisIndex: i, silent: true, clip: true, z: 1, tooltip: { show: false },
         // Real band values as data so the axis extent fits them; draw the polygon once.
         data: band.flatMap((q) => [[ts(q[0]), q[2]], [ts(q[0]), q[4]]]),
         renderItem: (params: any, api: any) => {
@@ -82,7 +86,7 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
     const ex = (p.expected ?? []).filter((q) => q[2] !== null && q[3] !== null);
     if (ex.length > 2) {
       series.push({
-        type: "custom", xAxisIndex: i, yAxisIndex: i, silent: true, z: 2, tooltip: { show: false },
+        type: "custom", xAxisIndex: i, yAxisIndex: i, silent: true, clip: true, z: 2, tooltip: { show: false },
         data: ex.flatMap((q) => [[ts(q[0]), q[2]], [ts(q[0]), q[3]]]),
         renderItem: (params: any, api: any) => {
           if (params.dataIndex !== 0) return null;
@@ -95,15 +99,22 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
         lineStyle: { color: t.ink, width: 1.2, type: [2, 3], opacity: 0.7 }, data: (p.expected ?? []).map((q) => [ts(q[0]), q[1]]),
       });
     }
+    if (p.forecast?.length) {
+      series.push({
+        name: `${p.key}-forecast`, type: "line", xAxisIndex: i, yAxisIndex: i, symbol: "none", z: 3,
+        lineStyle: { color: t.gulf, width: 2, type: [5, 4] }, data: p.forecast,
+      });
+    }
     series.push({
       name: p.key, type: p.kind, xAxisIndex: i, yAxisIndex: i, symbol: "none", connectNulls: false, z: 3,
       barMaxWidth: 6, itemStyle: { color: p.kind === "bar" ? t.fresh : t.gulf },
       lineStyle: { color: t.gulf, width: 2 },
       data: p.points.map((q) => [ts(q[0]), p.log && q[1] !== null && q[1] <= 0 ? null : q[1]]),
-      markLine: p.threshold ? {
+      markLine: (p.threshold || p.thresholds?.length) ? {
         silent: true, symbol: "none", lineStyle: { color: t.red, type: [6, 4], width: 1.2 },
-        label: { formatter: p.threshold.label, color: t.red, fontFamily: t.sans, fontSize: 11, position: "insideEndTop" },
-        data: [{ yAxis: p.threshold.value }],
+        label: { color: t.red, fontFamily: t.sans, fontSize: 11, position: "insideEndTop" },
+        data: [...(p.threshold ? [p.threshold] : []), ...(p.thresholds ?? [])]
+          .map((th) => ({ yAxis: th.value, label: { formatter: th.label } })),
       } : undefined,
     });
   });
@@ -127,6 +138,8 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
     })),
     yAxis: panels.map((p, i) => ({
       type: p.log ? "log" : "value", gridIndex: i, scale: p.kind !== "bar", splitNumber: 3, logBase: 10,
+      // Keep threshold lines on the chart even when the river is far below them.
+      max: p.thresholds?.length ? (v: { max: number }) => Math.ceil(Math.max(v.max, ...p.thresholds!.map((th) => th.value)) + 1) : undefined,
       axisLabel: { color: t.soft, fontFamily: t.sans, formatter: (v: number) => (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : `${+v.toFixed(1)}`) },
       splitLine: { lineStyle: { color: t.rule, opacity: 0.7 } },
     })),
@@ -191,6 +204,7 @@ export default function StationCharts({ panels, note }: { panels: Panel[]; note?
       <p className="chart-note">
         Shaded band: the middle 80% of past readings for that time of year. Dashed line: typical.
         Charts share one time axis, upstream first: rain, then the river, then this station. Hover or tap for values.
+        {panels.some((p) => p.forecast?.length) && " Dashed line past today: the official NWS forecast."}
         {note && <> {note}</>}
       </p>
     </section>

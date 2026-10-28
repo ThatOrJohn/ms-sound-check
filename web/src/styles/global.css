@@ -184,6 +184,29 @@ select, .btn {
 .beach-sub { color: var(--ink-soft); font-size: 0.88rem; text-align: right; }
 .beach-src { font-size: 0.85rem; color: var(--ink-soft); }
 
+/* ---------- oyster closure watch ---------- */
+.oyster-watch > p { max-width: var(--measure); }
+.stage-now { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px 30px; margin: 12px 0; max-width: var(--measure); }
+.stage-val { font: 500 2.2rem/1 var(--serif); margin: 0; }
+.stage-sub { color: var(--ink-soft); margin: 6px 0 14px; }
+.stage-bar { position: relative; height: 12px; border-radius: 6px; background: var(--water); }
+.stage-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--fresh); }
+.stage-fc { position: absolute; top: 3px; bottom: 3px; background: repeating-linear-gradient(90deg, var(--fresh) 0 4px, transparent 4px 7px); opacity: 0.8; }
+.stage-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--marker-red); }
+.stage-mark span { position: absolute; top: 20px; left: -14px; font-size: 0.75rem; color: var(--marker-red); white-space: nowrap; }
+.oyster-table { width: 100%; max-width: 60rem; border-collapse: collapse; font-size: 0.92rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; }
+.oyster-table th, .oyster-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.oyster-table th { font-weight: 600; color: var(--ink-soft); font-size: 0.85rem; }
+.oyster-table .reefs { display: block; color: var(--ink-soft); font-size: 0.85rem; }
+.oyster-table tr[data-status="above"] .now-cell { color: var(--marker-red); font-weight: 600; }
+.oyster-table tr[data-status="forecast"] .now-cell { color: var(--amber); font-weight: 600; }
+.oyster-notes { font-size: 0.88rem; color: var(--ink-soft); max-width: var(--measure); }
+@media (max-width: 640px) {
+  .oyster-table thead { display: none; }
+  .oyster-table tr { display: grid; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+  .oyster-table td { border: 0; padding: 4px 12px; }
+}
+
 /* ---------- station page ---------- */
 .crumbs { padding-top: 22px; font-size: 0.9rem; color: var(--ink-soft); }
 .station-head { padding: 10px 0 6px; max-width: var(--measure); }
