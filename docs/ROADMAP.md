@@ -12,7 +12,7 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Next
 - **Better event explanations**: wind and rivers explain under half of the events ([0017](decisions/0017-step-events-describe-wind-and-rivers.md)). Candidates: Mississippi River flow and Bonnet Carré openings, tides at the Gulf passes.
-- **Use Dauphin Island Sea Lab as an independent check**: GCOOS ERDDAP serves its salinity hourly (DISL_DISL since 2008, DISL_KATA since 2011), no key. It could back a QC check for Round Island (see the Sprint 4 notes) and extend the east end of the map.
+- **Use the Dauphin Island reference data**: DISL salinity is ingested ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)) but not used for flags. Next: show it on the map's east end, or pair it with a closer station such as Grand Bay NERR.
 - **Share previews**: generated Open Graph images per page (for Bluesky and X).
 - **Weekly digest**: Bluesky post + RSS from the same build.
 
@@ -34,7 +34,6 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **Dock price tracker**: needs committed contributors ([seed.md](seed.md)).
 
 ## Known issues
-- First live beach, NWPS stage and MDMR notice fetches not yet verified in CI.
 - Oyster rainfall is an estimate (Open-Meteo point), not MDMR's Hancock County Utility Authority gauge.
 - Round Island's 36-40 ppt readings since 2026-10-15 are probably a sensor problem: nothing nearby corroborates them (Sprint 4 notes). The "possibly a sensor problem" caveat stays.
 - East Ship Island can't be estimated (held-out error ~7 ppt), so it shows as offline.

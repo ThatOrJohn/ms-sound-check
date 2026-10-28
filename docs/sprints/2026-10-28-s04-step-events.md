@@ -11,6 +11,7 @@
 - [x] Wind and river context for each event ([0017](../decisions/0017-step-events-describe-wind-and-rivers.md)): not a cause, because the 1998-2026 history doesn't support one
 - [x] Events across three or more stations lead the Oysters and Fishing headlines (short form); two-station events stay in Signals
 - [x] Settle the Round Island caveat: keep it. Merrill Shell's step is real but lands at about 25 ppt, not 37 (see notes)
+- [x] DISL salinity ingested as reference data; no automatic flag ([0019](../decisions/0019-disl-reference-data-no-auto-flag.md))
 - [x] Official-source notices up front on the home page and in each section; About provenance ([0018](../decisions/0018-official-source-notices-up-front.md))
 
 ## Notes
@@ -31,3 +32,7 @@
     Caveat: Dauphin Island is a different part of the Sound (Mobile Bay side), so this is strong circumstantial
     evidence, not proof. The 15-minute record for Round Island starts only on Oct 21, so I couldn't compare its
     intraday swing before and after the jump.
+- 2026-10-28: Tried DISL as an automatic Round Island check. Its gap to DISL is +11 to +13 ppt now, inside the historical
+  range (95th pct +10.5, 99th +14.7, max +21), so a rule can't separate this from real events. Kept as reference data
+  only ([0019](../decisions/0019-disl-reference-data-no-auto-flag.md)). The first live beach, NWPS stage and MDMR
+  fetches are confirmed in CI (run 40762443105).

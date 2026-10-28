@@ -39,8 +39,9 @@ _try.failures = []
 
 
 def cmd_backfill(region, args):
-    from .adapters import openmeteo, usgs
+    from .adapters import gcoos, openmeteo, usgs
     for label, fn in [("usgs backfill", usgs.backfill_daily), ("rain backfill", openmeteo.backfill_daily),
+                      ("reference backfill", gcoos.daily),
                       ("wind backfill", openmeteo.wind_backfill)]:
         df = _try(label, fn, region, start=args.start)
         if df is not None:
@@ -79,6 +80,10 @@ def cmd_ingest(region, args):
     wx = _try("weather forecast", nws.forecast, region)
     if wx:
         nws.save_forecast(region, wx)
+    from .adapters import gcoos
+    ref = _try("reference salinity", gcoos.daily, region)
+    if ref is not None and not ref.empty:
+        store.upsert_daily(region, ref)
     from .adapters import tides
     tide_rows = _try("tides", tides.fetch, region)
     if tide_rows:

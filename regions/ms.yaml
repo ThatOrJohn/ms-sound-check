@@ -190,6 +190,14 @@ tides:
   - {id: "8745557", name: Gulfport Harbor}
   - {id: "8741533", name: Pascagoula NOAA Lab}
 
+# Independent salinity references (GCOOS ERDDAP). Not shown as cards; a station listed in `checks` is flagged
+# suspect when it runs far saltier than its usual gap to the reference (msc/models/reference.py).
+reference:
+  - id: GCOOS-DISL_DISL
+    dataset: DISL_DISL
+    name: Dauphin Island Sea Lab
+    checks: [USGS-301849088350000]
+
 # Personas re-rank indicators and reorder cards. Add one by adding an entry here.
 personas:
   - id: general
