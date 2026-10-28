@@ -94,6 +94,8 @@ really covers about 90%. The build uses them three ways:
 First run (2026-10-28), held-out MAE in ppt (vs. averaging the neighbors): Gulfport Light 2.3 (9.0),
 Pearl River mouth 2.7 (11.8), Back Bay 3.7 (4.4), Round Island 4.0 (10.4), Merrill Shell 5.0 (6.2),
 East Ship Island 7.1 (12.1).
+With the six wind features (same day): Gulfport Light 2.2, Pearl River mouth 2.2, Back Bay 3.5, Round Island 3.9,
+Merrill Shell 5.0, East Ship Island 7.0. A modest gain at five stations and none at Merrill Shell.
 
 **Build** (`msc/build.py`) writes `web/public/data/<region>/latest.json` (cards,
 findings, one headline per persona, rain forecast) and

@@ -3,7 +3,7 @@
 Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Now
-Nothing scheduled. Sprint 3 is done apart from the wind comparison (first item under Next).
+Nothing scheduled. Sprint 3 is done; pick from Next.
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -11,7 +11,6 @@ Nothing scheduled. Sprint 3 is done apart from the wind comparison (first item u
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
-- **Get wind history loading in CI**: the ERA5 backfill fails on the GitHub runner (429, then timeouts). Then compare `train` scores with and without the wind features.
 - **Step detection in the build**: a step at one station is suspect; matching steps at two or more stations within a few days become an event finding ("Gulf water pushed into the Sound").
 - **Event explanations from wind**: attach the likely wind cause to step events.
 - **Revisit Round Island's caveat**: Merrill Shell's matching step suggests the 37 ppt may be real.

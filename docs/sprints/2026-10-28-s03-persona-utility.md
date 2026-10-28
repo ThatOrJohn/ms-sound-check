@@ -1,7 +1,7 @@
 # Sprint 3: Persona utility
 
 - **Dates:** 2026-10-28 to 2026-11-04
-- **Status:** Done, except the wind-feature comparison (carried to the roadmap)
+- **Status:** Done
 - **Goal:** Each persona's page answers the question that reader shows up with.
 
 ## Checklist
@@ -26,10 +26,14 @@
   - [x] Verify the first live NWS forecast and CO-OPS tide fetches in CI: forecast periods and tides for all three stations are in the store
 - [x] **Wind in the data**: daily wind over mid-Sound (Open-Meteo: ERA5 history at backfill, recent each run);
       six wind features added to the virtual sensors
-  - [ ] Carried: compare the `train` scores with architecture.md once wind history loads. Three backfill runs
-        today all failed at the wind step, so the scores in them are without wind and match the first run. The first
-        failed with a 429, the later two with 300 s read timeouts; the chunked fetch ran fine locally (8 s for 6 years),
-        so Open-Meteo is throttling the GitHub runner. The adapter now logs each attempt and times out at 90 s.
+  - [x] Compare the `train` scores with and without wind (run 40761077611 vs. the three earlier runs, same split).
+        Held-out MAE in ppt, without wind -> with wind: Pearl River mouth 2.62 -> 2.23, Gulfport Light 2.40 -> 2.16,
+        Back Bay 3.61 -> 3.45, Round Island 4.07 -> 3.92, East Ship Island 7.08 -> 7.03, Merrill Shell 4.92 -> 5.01
+        (worse). A modest gain at five of six stations, from single runs on correlated test days, so not conclusive.
+        Back Bay now clears the 3.5 ppt estimate cutoff; it's active, so nothing shows unless it goes quiet.
+  - Getting wind history to load: the ERA5 backfill hit a 429, then a timeout, then succeeded on attempt 3 once the
+        adapter retried with a 90 s timeout. `scripts/seed_wind.py` (load it from a local machine into a checkout of the
+        data branch) stays as a fallback; the data branch was seeded with it first, which was harmless.
 - [x] **Shrimp in-season** ([0014](../decisions/0014-mdmr-notices-from-wordpress-api.md)): MDMR's shrimp notices from its
       public WordPress API (last year, newest five, linked), 3-day day/night wind outlook from the NWS forecast; a
       notice from the past week leads the Shrimp headline
