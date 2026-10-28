@@ -154,6 +154,9 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
         attributionControl: { compact: true },
       });
       mapRef.current = map;
+      // The canvas is focusable (arrow keys pan, +/- zoom). Describe it, and point to the list with the same readings.
+      map.getCanvas().setAttribute("aria-label",
+        "Map of the Mississippi Sound with monitoring stations colored by salinity. The same readings are listed below the map.");
       map.touchZoomRotate.disableRotation();
       map.addControl(new ml.NavigationControl({ showCompass: false }), "bottom-right");
       map.on("error", (e) => { if (String(e?.error?.message || "").includes("planet")) setFailed(true); });
@@ -250,7 +253,7 @@ export default function SoundMap({ stations, rivers, basemapBase }: Props) {
   const noBasemap = meta === null;
   return (
     <div className="map-wrap">
-      <div ref={el} className="map" aria-hidden="true" />
+      <div ref={el} className="map" />
       {failed && <p className="map-msg">The map couldn't load. The station list below has the same readings.</p>}
       <details className="map-layers" open={panelOpen} onToggle={(e) => setPanelOpen((e.target as HTMLDetailsElement).open)}>
         <summary>Layers</summary>
