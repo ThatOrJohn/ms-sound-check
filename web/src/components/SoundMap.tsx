@@ -11,8 +11,11 @@ export interface MapRiver { name: string; osmNames: string[]; display: string; b
 
 interface Props {
   stations: MapStation[]; rivers: MapRiver[]; basemapBase: string;
+  /** OSM names of rivers with no flow gauge: drawn thin and named, never widened. */
+  ungauged?: string[];
   beachesUrl?: string; personaId?: string; defaultLayers?: string[];
 }
+const NO_RIVERS: string[] = [];
 
 type LayerKey = "depth" | "contours" | "salinity" | "rivers" | "beaches";
 const LAYERS: { key: LayerKey; label: string; note?: string }[] = [
@@ -56,8 +59,7 @@ function baseStyle(t: Tokens): StyleSpecification {
     glyphs: `${OFM}/fonts/{fontstack}/{range}.pbf`,
     sources: {
       omt: { type: "vector", url: `${OFM}/planet`,
-        attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
-    },
+        attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },    },
     layers: [
       { id: "land", type: "background", paint: { "background-color": t.land } },
       { id: "marsh", type: "fill", source: "omt", "source-layer": "landcover", filter: ["==", ["get", "class"], "wetland"],
@@ -133,7 +135,7 @@ function readLayers(personaId: string | undefined, defaultLayers?: string[]): Re
   try { return { ...base, ...JSON.parse(localStorage.getItem(`sc-layers:${personaId ?? "general"}`) || "{}") }; } catch { return base; }
 }
 
-export default function SoundMap({ stations, rivers, basemapBase, beachesUrl, personaId, defaultLayers }: Props) {
+export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basemapBase, beachesUrl, personaId, defaultLayers }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>(() => personaDefaults(defaultLayers));
@@ -196,10 +198,24 @@ export default function SoundMap({ stations, rivers, basemapBase, beachesUrl, pe
         const match: any[] = ["match", ["get", "name"]];
         rivers.forEach((r) => r.osmNames.forEach((n) => match.push(n, width(r.percentile))));
         match.push(0);
-        map.addLayer({ id: "rivers", type: "line", source: "omt", "source-layer": "waterway",
-          filter: ["in", ["get", "name"], ["literal", rivers.flatMap((r) => r.osmNames)]],
+        // River lines come from basemap prep (`python -m msc rivers`): at the Sound-wide zoom the vector tiles
+        // keep only the Pearl.
+        map.addSource("river-lines", { type: "geojson", data: `${basemapBase}rivers.geojson` });
+        map.addLayer({ id: "rivers-ungauged", type: "line", source: "river-lines",
+          filter: ["all", ["!", ["has", "label"]], ["in", ["get", "name"], ["literal", ungauged]]],
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": t.fresh, "line-opacity": 0.85, "line-width": 1.6, "line-dasharray": [3, 2.5] } }, "places");
+        map.addLayer({ id: "rivers", type: "line", source: "river-lines",
+          filter: ["all", ["!", ["has", "label"]], ["in", ["get", "name"], ["literal", rivers.flatMap((r) => r.osmNames)]]],
           layout: { "line-cap": "round", "line-join": "round" },
           paint: { "line-color": t.fresh, "line-opacity": 0.9, "line-width": match as any } }, "places");
+        // Name every river we track, gauged or not, at its `label` point near the coast.
+        map.addLayer({ id: "river-names", type: "symbol", source: "river-lines",
+          // One name per river (not each West/East branch).
+          filter: ["all", ["has", "label"], ["in", ["get", "name"], ["literal", [...rivers.map((r) => r.osmNames[0]), ...ungauged]]]],
+          layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Italic"], "text-size": 11.5,
+            "text-variable-anchor": ["left", "right"], "text-radial-offset": 0.5 },
+          paint: { "text-color": t.soft, "text-halo-color": t.land, "text-halo-width": 1.4 } });
 
         const fc = {
           type: "FeatureCollection" as const,
@@ -254,13 +270,13 @@ export default function SoundMap({ stations, rivers, basemapBase, beachesUrl, pe
       cleanup = () => { mq.removeEventListener("change", restyle); window.removeEventListener("sc-theme-change", restyle); map.remove(); };
     })().catch(() => setFailed(true));
     return () => { cancelled = true; cleanup(); };
-  }, [stations, rivers, basemapBase, beachesUrl, personaId, defaultLayers]);
+  }, [stations, rivers, ungauged, basemapBase, beachesUrl, personaId, defaultLayers]);
 
   function applyLayers(map: MLMap, l: Record<LayerKey, boolean>) {
     const vis = (on: boolean) => (on ? "visible" : "none");
     const set = (id: string, on: boolean) => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(on)); };
     set("depth", l.depth); set("contours", l.contours); set("contour-labels", l.contours);
-    set("salinity", l.salinity); set("rivers", l.rivers); set("beaches", l.beaches);
+    set("salinity", l.salinity); set("rivers", l.rivers); set("rivers-ungauged", l.rivers); set("beaches", l.beaches);
   }
   function toggle(key: LayerKey) {
     const next = { ...layers, [key]: !layers[key] };

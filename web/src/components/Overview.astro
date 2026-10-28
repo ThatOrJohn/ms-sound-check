@@ -40,6 +40,10 @@ const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((
   name: c.short, osmNames: c.osm_names ?? [c.short], display: c.vars.flow?.display ?? "no data",
   band: c.vars.flow?.band, percentile: c.vars.flow?.percentile,
 }));
+const ungauged = data.ungauged_rivers ?? [];
+const ungaugedNote = ungauged.length ? "Smaller rivers without a live flow gauge also reach the Sound: " +
+  ungauged.map((r, i) => `${i && i === ungauged.length - 1 ? "and " : ""}the ${r.name} into ${r.into}`).join(ungauged.length > 2 ? ", " : " ") +
+  ". They're drawn on the map." : null;
 const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
   .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
@@ -62,7 +66,7 @@ if (sal.length) {
 }
 const wt = data.cards.filter((c) => c.kind === "sound").map((c) => ({ c, r: live(c, "water_temp") })).find((x) => x.r);
 if (wt) { const [v, u] = split(wt.r!.display!); tiles.push({ label: "Water temp", value: v, unit: u, sub: near(wt.c.short, "water_temp", wt.r!.band), percentile: wt.r!.percentile, href: siteHref(wt.c.slug) }); }
-for (const c of data.cards.filter((c) => c.kind === "river")) {
+for (const c of data.cards.filter((c) => c.kind === "river" && !c.minor)) {
   const r = live(c, "flow"); if (!r) continue;
   const [v, u] = split(r.display!);
   tiles.push({ label: `${c.short} flow`, value: v, unit: u, sub: bandWords("flow", r.band), percentile: r.percentile, href: siteHref(c.slug) });
@@ -111,10 +115,10 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
       <h2 class="eyebrow">The Sound, live</h2>
       <span class="scale" aria-hidden="true"><span>Fresh</span><span class="scale-bar"></span><span>Gulf</span></span>
     </div>
-    <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} basemapBase={href("basemap/")}
-      beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
+    <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} ungauged={ungauged.flatMap((r) => r.osm_names)}
+      basemapBase={href("basemap/")} beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
       personaId={persona.id} defaultLayers={persona.map_layers} />
-    <figcaption class="sound-foot" id="sound-cap">Stations are colored by salinity. River lines widen when the rivers run high.</figcaption>
+    <figcaption class="sound-foot" id="sound-cap">{"Stations are colored by salinity. River lines widen when the rivers run high; dashed lines are rivers without a flow gauge."}</figcaption>
     <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
   </figure>
 
@@ -159,6 +163,7 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
         </article>
       ))}
     </div>
+    {g.kind === "river" && ungaugedNote && <p class="quiet-note">{ungaugedNote}</p>}
   </section>
 ))}
 </div>

@@ -81,6 +81,8 @@ export interface Card {
   drains_from?: string[] | null;
   osm_names?: string[] | null;
   retired?: boolean;
+  /** A smaller river: shown, but kept out of the headline and readout tiles. */
+  minor?: boolean;
   vars: Record<string, Reading>;
   findings: number[];
 }
@@ -136,6 +138,8 @@ export interface Latest {
   headlines: Record<string, string>;
   findings: Finding[];
   cards: Card[];
+  /** Rivers that reach the Sound without a live flow gauge: drawn and named on the map only. */
+  ungauged_rivers?: { name: string; into: string; osm_names: string[] }[];
   rain_forecast: Record<string, { days: [string, number | null][]; total: string }>;
   variables: Record<string, { label: string }>;
 }

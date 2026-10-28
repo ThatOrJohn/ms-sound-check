@@ -13,6 +13,7 @@
 - [x] Settle the Round Island caveat: keep it. Merrill Shell's step is real but lands at about 25 ppt, not 37 (see notes)
 - [x] DISL salinity ingested as reference data; no automatic flag ([0019](../decisions/0019-disl-reference-data-no-auto-flag.md))
 - [x] Official-source notices up front on the home page and in each section; About provenance ([0018](../decisions/0018-official-source-notices-up-front.md))
+- [x] Smaller rivers: Wolf and Biloxi gauges as `minor` rivers, Jourdan/Tchoutacabouffa/Escatawpa named on the map, headline names rivers ([0021](../decisions/0021-smaller-rivers-shown-not-weighed.md)). Needs the `backfill` task once in CI for their normals.
 
 ## Notes
 - 2026-10-28: Round Island went from 17.6 ppt to 36.2 ppt on Oct 14-15 and then read 37-40 ppt. Merrill Shell Bank

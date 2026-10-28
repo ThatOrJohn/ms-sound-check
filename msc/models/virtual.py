@@ -68,7 +68,7 @@ def features(region: Region, wide: pd.DataFrame, target: str) -> pd.DataFrame:
             X[_k("sal", s["id"])] = v.where(~v.apply(lambda x: is_suspect("salinity", x) if pd.notna(x) else False))
     for s in region.sites_by(kind="river"):
         col = (s["id"], "flow")
-        if col in wide:
+        if col in wide and not s.get("minor"):          # minor rivers aren't inputs (yet): see decision 0021
             q = np.log10(wide[col].clip(lower=1))
             X[_k("q", s["id"])] = q
             X[_k("q7", s["id"])] = q.rolling(7, min_periods=4).mean()

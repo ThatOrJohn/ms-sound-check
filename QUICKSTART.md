@@ -117,6 +117,10 @@ on the run's summary page. Never touches the live data.
 **Redo the depth map.** `python -m msc basemap`, then commit `web/public/basemap/`. Only needed if you
 change the map's area.
 
+**Redo the river lines.** `python -m msc rivers`, then commit `web/public/basemap/rivers.geojson`. Needed when
+a river's `osm_names` or `ungauged_rivers` in `regions/ms.yaml` change. A new gauged river also needs the
+`backfill` workflow task for its history and normals.
+
 **Start or close a sprint.** See `docs/README.md`. Short version: new file in `docs/sprints/`, tick items
 as they're done, write the outcome, update `docs/ROADMAP.md` and `CHANGELOG.md`.
 

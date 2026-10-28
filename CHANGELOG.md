@@ -13,6 +13,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 - Station charts, beaches, oyster watch and fishing outlook restyled to match.
 
 ### Added
+- Smaller coastal rivers: the Wolf River (into the Bay of St. Louis) and the Biloxi River (into Biloxi's Back Bay) have river cards and lines on the map, from their USGS gauges. The Jourdan, Tchoutacabouffa and Escatawpa, which have no live gauge, are drawn dashed and named on the map and listed with the river cards. Every river on the map is now labeled. The headline names the rivers ("The Pearl and Pascagoula rivers are running low") instead of "Both rivers", and adds a smaller river only when it runs the same way. Biloxi Back Bay's station page now charts the Biloxi River upstream, and West Sound's adds the Wolf ([0021](docs/decisions/0021-smaller-rivers-shown-not-weighed.md)).
 - Salinity step events: when two or more stations jump or drop together, the Signals list says so for a week (for example, Salinity jumped at Merrill Shell Bank and Point Cadet around October 15, by as much as 18 ppt). A single station jumping alone is not reported, since that is often the sensor. When three or more stations move together, the Oysters and Fishing headlines lead with it. Each event also says what the wind and the rivers were doing in the days before, or that nothing stood out.
 - Oyster closure watch now says how often the Pearl River reaches each closure level in a typical year (about 145 days at 10 ft since 1998), which months are busiest, and how this month compares. It describes the river, not how often areas close.
 - Shrimp season section on the Shrimp page: MDMR's latest shrimp notices (openings, area changes, closures) with links, and a three-day wind outlook with day and overnight wind. A notice from the past week leads the Shrimp headline.
@@ -28,6 +29,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 - The site: plain-language headline, findings, readings compared to normal, freshness warnings, light and dark themes.
 
 ### Fixed
+- The Pascagoula River line was missing from the map at the default zoom (the map tiles keep only the Pearl that far out). River lines now come from a prepared OpenStreetMap file.
 - Switching between light and dark no longer leaves the map without its stations, rivers and beaches.
 - Map is announced to screen readers instead of being hidden while focusable.
 - Missing spaces before links in wrapped text.

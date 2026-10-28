@@ -19,7 +19,7 @@ sites:
     vars: [salinity, water_temp]
     salinity_from: conductance   # USGS salinity series is gappy; derive from conductance
     note: Western Sound, closest to the Pearl River. Freshens first.
-    drains_from: [USGS-02489500, basin-pearl]
+    drains_from: [USGS-02489500, basin-pearl, USGS-02481510]
   - id: USGS-302318088512600
     name: Point Cadet (Back Bay)
     short: Biloxi Back Bay
@@ -30,7 +30,7 @@ sites:
     vars: [salinity, water_temp]
     salinity_from: conductance
     note: Mouth of Biloxi's Back Bay. Responds to local rain and the Biloxi/Tchoutacabouffa rivers.
-    drains_from: [local-biloxi, USGS-02489500]
+    drains_from: [local-biloxi, USGS-02481000]
   - id: USGS-301849088350000
     name: Round Island
     short: East Sound
@@ -101,6 +101,30 @@ sites:
     vars: [flow]
     osm_names: [Pascagoula River, East Pascagoula River, West Pascagoula River]
     drains_from: [basin-pascagoula]
+  # Smaller coastal rivers with live gauges. `minor` keeps them out of the headline, the readout tiles and the
+  # virtual-sensor inputs: their flow is a small fraction of the Pearl's or Pascagoula's.
+  - id: USGS-02481510
+    name: Wolf River near Landon
+    short: Wolf River
+    kind: river
+    minor: true
+    source: usgs
+    lat: 30.4836
+    lon: -89.2744
+    vars: [flow]
+    note: A smaller coastal river that empties into the Bay of St. Louis, with the Jourdan. Matters most for the bay and the western Sound off it.
+    osm_names: [Wolf River]
+  - id: USGS-02481000
+    name: Biloxi River at Wortham
+    short: Biloxi River
+    kind: river
+    minor: true
+    source: usgs
+    lat: 30.5586
+    lon: -89.1219
+    vars: [flow]
+    note: A smaller coastal river that empties into Biloxi's Back Bay, with the Tchoutacabouffa. Matters most for the Back Bay.
+    osm_names: [Biloxi River]
 
   # --- river stage gauge used by MDMR's oyster management plan ---
   - id: NWS-PERL1
@@ -166,6 +190,13 @@ sites:
     note: Approximate - average of a few points across the Leaf/Chickasawhay basins.
     points: [[31.33, -89.29], [31.69, -89.13], [31.67, -88.65], [31.15, -88.56]]
     vars: [rain]
+
+# Rivers that reach the Sound but have no live flow gauge (the Jourdan's and the Escatawpa's are tidal or
+# discontinued; the Tchoutacabouffa has none). Drawn and named on the map, and mentioned with the river cards.
+ungauged_rivers:
+  - {name: Jourdan River, into: the Bay of St. Louis, osm_names: [Jourdan River]}
+  - {name: Tchoutacabouffa River, into: Biloxi's Back Bay, osm_names: [Tchoutacabouffa River]}
+  - {name: Escatawpa River, into: the Pascagoula River near its mouth, osm_names: [Escatawpa River]}
 
 # Beach water quality (bacteria, debris, harmful algal blooms) from MDEQ's public feature service.
 beaches:

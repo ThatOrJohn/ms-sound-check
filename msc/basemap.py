@@ -13,6 +13,7 @@ Outputs (all static, a few hundred KB):
   watermask.png                     low-res water mask the salinity layer clips to
   contours.geojson                  depth contours in feet
   meta.json                         bounds and attribution
+  rivers.geojson                    the region's named rivers, from OpenStreetMap (`python -m msc rivers`)
 """
 from __future__ import annotations
 
@@ -187,3 +188,97 @@ def build(stride: int = 1) -> dict:
     if missing:
         raise SystemExit("basemap needs Pillow and Matplotlib: pip install -r requirements-dev.txt")
     return render(fetch_grid(stride))
+
+
+# ------------------------------------------------------------------ river lines
+OVERPASS = "https://overpass-api.de/api/interpreter"
+MIN_STEP_DEG = 0.0005                          # ~50 m: plenty for zoom 8-12.5
+LABEL_ALONG = 0.35                             # name sits this far up the downstream line, from its mouth end
+
+
+def _label_point(lines: list[list]) -> list:
+    """A point LABEL_ALONG of the way up the river's most downstream line, measured from its southern end."""
+    line = min(lines, key=lambda l: min(p[1] for p in l))
+    if line[0][1] > line[-1][1]:
+        line = line[::-1]
+    steps = [np.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(line, line[1:])]
+    target, run = LABEL_ALONG * sum(steps), 0.0
+    for p, d in zip(line[1:], steps):
+        run += d
+        if run >= target:
+            return p
+    return line[-1]
+
+
+def _thin(pts: list[list], step: float) -> list[list]:
+    """Drop vertices closer than `step` degrees to the last one kept; always keep both ends (so ways still join)."""
+    if len(pts) < 2:
+        return pts
+    out = [pts[0]]
+    for p in pts[1:-1]:
+        if max(abs(p[0] - out[-1][0]), abs(p[1] - out[-1][1])) >= step:
+            out.append(p)
+    return out + [pts[-1]]
+
+
+def _join(ways: list[list]) -> list[list]:
+    """Chain lines that share an endpoint (either direction) into as few lines as possible."""
+    ways = [list(w) for w in ways]
+    merged = True
+    while merged:
+        merged = False
+        for i, a in enumerate(ways):
+            for j in range(i + 1, len(ways)):
+                b = ways[j]
+                if a[-1] == b[0]:
+                    a += b[1:]
+                elif a[-1] == b[-1]:
+                    a += b[-2::-1]
+                elif a[0] == b[-1]:
+                    a[:0] = b[:-1]
+                elif a[0] == b[0]:
+                    a[:0] = b[:0:-1]
+                else:
+                    continue
+                del ways[j]
+                merged = True
+                break
+            if merged:
+                break
+    return ways
+
+
+def rivers(names: list[str]) -> int:
+    """Named river lines from OpenStreetMap (Overpass API) -> rivers.geojson. Returns the feature count.
+
+    The vector tiles keep only the Pearl at the Sound-wide zoom (z8), so the map draws rivers from this file.
+    Run again (and commit) when the river list in the region config changes:
+
+        python -m msc rivers
+    """
+    import re
+
+    import requests
+    w, s, e, n = BOUNDS
+    pattern = "|".join(re.escape(x) for x in sorted(set(names)))
+    q = f'[out:json][timeout:90];way["waterway"="river"]["name"~"^({pattern})$"]({s},{w},{n},{e});out geom;'
+    r = requests.post(OVERPASS, data={"data": q}, timeout=120, headers={"User-Agent": "ms-sound-check basemap prep"})
+    r.raise_for_status()
+    lines: dict[str, list[list]] = {}
+    for way in r.json()["elements"]:
+        pts = _thin([[round(p["lon"], 5), round(p["lat"], 5)] for p in way.get("geometry", [])], MIN_STEP_DEG)
+        if len(pts) >= 2:
+            lines.setdefault(way["tags"]["name"], []).append(pts)
+    feats = []
+    for name, ways in lines.items():
+        joined = _join(ways)    # OSM splits rivers into many short ways
+        feats += [{"type": "Feature", "properties": {"name": name}, "geometry": {"type": "LineString", "coordinates": l}}
+                  for l in joined]
+        # Meanders and bends are too tight for text to follow at the Sound-wide zoom, so each river gets one point
+        # to hang its name on, near the coast where people look.
+        feats.append({"type": "Feature", "properties": {"name": name, "label": True},
+                      "geometry": {"type": "Point", "coordinates": _label_point(joined)}})
+    (OUT / "rivers.geojson").write_text(json.dumps(
+        {"type": "FeatureCollection", "attribution": "Rivers: © OpenStreetMap contributors", "features": feats},
+        separators=(",", ":")))
+    return len(feats)

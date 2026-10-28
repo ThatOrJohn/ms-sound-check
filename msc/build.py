@@ -145,14 +145,28 @@ def _live(cards, kinds, var):
     return out
 
 
+def _river_list(names: list[str]) -> str:
+    """['Pearl River', 'Pascagoula River'] -> 'The Pearl and Pascagoula rivers'."""
+    if len(names) == 1:
+        return f"The {names[0]}"
+    bare = [n.removesuffix(" River") for n in names]
+    return f"The {', '.join(bare[:-1])} and {bare[-1]} rivers"
+
+
 def _conditions(cards, season) -> str:
-    """One plain sentence: rivers, then what that means for the Sound."""
-    rivers = _live(cards, ("river",), "flow")
-    river = _majority([r["band"] for r in rivers])
+    """One plain sentence: rivers, then what that means for the Sound.
+
+    The big rivers decide the direction; minor rivers are named only when they run the same way.
+    """
+    flows = [(c["short"], bool(c.get("minor")), r["band"]) for c in cards if c["kind"] == "river"
+             for r in _live([c], ("river",), "flow")]
+    river = _majority([b for _, minor, b in flows if not minor])
     sal = _majority([r["band"] for r in _live(cards, ("sound",), "salinity")])
-    n = len(rivers)
-    rivers_txt = {"down": "Both rivers are running low" if n == 2 else "The rivers are running low",
-                  "up": "Both rivers are running high" if n == 2 else "The rivers are running high"}.get(river)
+    rivers_txt = None
+    if river:
+        names = [n for n, minor, b in sorted(flows, key=lambda f: f[1]) if _majority([b]) == river]
+        verb = "is" if len(names) == 1 else "are"
+        rivers_txt = f"{_river_list(names)} {verb} running {'low' if river == 'down' else 'high'}"
     sound_txt = {"up": "the Sound is saltier than usual", "down": "the Sound is fresher than usual"}.get(sal, "the Sound is close to normal")
     if rivers_txt and ((river == "down" and sal == "up") or (river == "up" and sal == "down")):
         return f"{rivers_txt}, so {sound_txt} for {season}."
@@ -270,6 +284,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     for site in region.sites:
         cards.append({
             **{k: site.get(k) for k in ("id", "name", "short", "kind", "note", "lat", "lon", "drains_from", "osm_names")},
+            **({"minor": True} if site.get("minor") else {}),
             "slug": site.get("slug") or slugify(site["short"]),
             "retired": bool(site.get("retired")),
             "vars": {v: _with_virtual(region, _card_var(region, daily, normals, site, v, asof), qcs.get(site["id"]), v, site)
@@ -304,6 +319,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section, oyster_section, fishing_section, shrimp_section) for p in region.personas},
         "findings": findings,
         "cards": cards,
+        "ungauged_rivers": region.extras.get("ungauged_rivers", []),
         "rain_forecast": fc,
         "variables": {k: {"label": v["label"]} for k, v in VARIABLES.items()},
     }

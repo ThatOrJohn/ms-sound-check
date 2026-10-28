@@ -8,6 +8,7 @@
   python -m msc run       --region ms     ingest + build (what the schedule runs)
   python -m msc check     --region ms     fail if the newest water reading is stale
   python -m msc basemap                   one-time: depth shading + contours for the map (commit the output)
+  python -m msc rivers                    one-time: river lines for the map from OpenStreetMap (commit the output)
 
 Every source is independent: if one is down, the rest still update, and the
 page shows that source's data as stale instead of breaking.
@@ -139,7 +140,7 @@ def cmd_check(region, args) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="msc")
-    ap.add_argument("command", choices=["backfill", "normals", "train", "ingest", "build", "run", "check", "basemap"])
+    ap.add_argument("command", choices=["backfill", "normals", "train", "ingest", "build", "run", "check", "basemap", "rivers"])
     ap.add_argument("--region", default="ms")
     ap.add_argument("--start", default="1998-01-01", help="backfill start date")
     ap.add_argument("--days", type=int, default=7, help="ingest lookback days")
@@ -160,6 +161,12 @@ def main(argv=None) -> int:
         from .basemap import build as build_basemap
         meta = build_basemap(stride=args.stride)
         log.info("basemap written: %s px, bounds %s", meta["size"], meta["bounds"])
+        return 0
+    if args.command == "rivers":
+        from .basemap import rivers
+        names = [n for s in region.sites_by(kind="river") for n in s.get("osm_names", [])]
+        names += [n for r in region.extras.get("ungauged_rivers", []) for n in r["osm_names"]]
+        log.info("rivers.geojson: %d lines", rivers(names))
         return 0
     if args.command == "check":
         return cmd_check(region, args)
