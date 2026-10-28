@@ -260,6 +260,24 @@ indicators:
     topics: [oyster, general]
     text: "{site} has been under {threshold} ppt for {days} straight days. Past two weeks, oyster reefs start dying."
 
+  # Matching salinity steps at two or more stations: Gulf water pushed in, or fresh water pushed out (docs/decisions/0016).
+  # One station stepping alone is treated as a sensor problem. `lead_step` is the biggest step the event needs;
+  # `min_step` is what the other stations must clear to corroborate it.
+  - id: salinity_steps
+    type: custom
+    fn: msc.models.steps:step_events
+    var: salinity
+    kinds: [sound, estuary]
+    min_step: 3.0
+    lead_step: 6.0
+    topics: [general, fish, oyster, shrimp]
+    lead_min_stations: 3            # an event this wide leads the headline of personas whose first focus is one of lead_topics
+    lead_topics: [oyster, fish]
+    up_short: "Salinity jumped at {n} stations around {when}, by up to {change} {unit}. That usually means saltier Gulf water moved in."
+    down_short: "Salinity dropped at {n} stations around {when}, by up to {change} {unit}. That usually means fresh water moved in."
+    up_text: "Salinity jumped at {places} around {when}, by as much as {change} {unit}. Matching jumps at several stations usually mean saltier Gulf water moved into the Sound."
+    down_text: "Salinity dropped at {places} around {when}, by as much as {change} {unit}. Matching drops at several stations usually mean fresh water moved into the Sound."
+
   # Oyster closure watch: MDMR's published criteria for conditionally approved areas.
   # Source: MDMR Molluscan Shellfish Growing Waters Management Plan (Dec 2025 edits). See docs/decisions/0012.
   - id: oyster_closure_watch

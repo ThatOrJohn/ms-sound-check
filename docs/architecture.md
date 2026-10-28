@@ -70,6 +70,7 @@ provisional data.
 | `vs_normal` | the latest reading is outside the 10th–90th percentile band for this time of year | "Pearl River is running high (30,100 cfs vs. a typical 2,970)" |
 | `run_below` | a value has stayed under a threshold for N straight days, with watch, warning and alert levels | oyster freshwater stress: under 2 ppt for 5 / 10 / 14 days |
 | `custom` | a Python function (`module:function`) returns findings | `msc.models.shrimp:season_lean` |
+| `custom` (`steps:step_events`) | two or more stations step the same way within three days ([0016](decisions/0016-step-events-need-matching-stations.md)) | "Salinity jumped at Merrill Shell Bank and Point Cadet around October 15, by as much as 18 ppt" |
 
 Each finding has a severity (notice < watch < warning < alert), topic tags, and
 a plain-language sentence. Stale data (more than 3 days old) never fires an

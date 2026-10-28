@@ -11,6 +11,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 - Station charts, beaches, oyster watch and fishing outlook restyled to match.
 
 ### Added
+- Salinity step events: when two or more stations jump or drop together, the Signals list says so for a week (for example, Salinity jumped at Merrill Shell Bank and Point Cadet around October 15, by as much as 18 ppt). A single station jumping alone is not reported, since that is often the sensor. When three or more stations move together, the Oysters and Fishing headlines lead with it.
 - Oyster closure watch now says how often the Pearl River reaches each closure level in a typical year (about 145 days at 10 ft since 1998), which months are busiest, and how this month compares. It describes the river, not how often areas close.
 - Shrimp season section on the Shrimp page: MDMR's latest shrimp notices (openings, area changes, closures) with links, and a three-day wind outlook with day and overnight wind. A notice from the past week leads the Shrimp headline.
 - Fishing outlook on the Fishing page: wind, sky and rain chances from the NWS forecast with a plain verdict per day, NOAA tides for three stations, water temperature trend, where the saltiest and freshest water is, and muddy-water risk. The best day leads the Fishing headline.

@@ -3,7 +3,7 @@
 Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Now
-Nothing scheduled. Sprint 3 is done; pick from Next.
+**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes.
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -11,7 +11,6 @@ Nothing scheduled. Sprint 3 is done; pick from Next.
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
-- **Step detection in the build**: a step at one station is suspect; matching steps at two or more stations within a few days become an event finding ("Gulf water pushed into the Sound").
 - **Event explanations from wind**: attach the likely wind cause to step events.
 - **Revisit Round Island's caveat**: Merrill Shell's matching step suggests the 37 ppt may be real.
 - **Share previews**: generated Open Graph images per page (for Bluesky and X).
@@ -20,6 +19,7 @@ Nothing scheduled. Sprint 3 is done; pick from Next.
 - **Move `backfill` to the new USGS API** before the old one retires in early 2027 (daily runs already use the new one).
 
 ## Later
+- **MDMR shellfish areas on the oyster map**: the molluscan shellfish and oyster growing waters classification areas as a map layer (I-B, II-A and so on), so the closure table's area names point at places. Look for a public MDMR feature service first, like the beach layer, and don't work around bot checks.
 - Custom domain (about $12/yr) and Cloudflare Web Analytics.
 - Grand Bay NERR water-quality sondes as extra stations.
 - A second region (Alabama via ARCOS, or a Texas bay): new YAML, maybe one adapter.

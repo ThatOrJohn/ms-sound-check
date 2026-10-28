@@ -46,7 +46,7 @@ const ownSal = loadSite(card.id)?.series.salinity;
 const chartNote = ownSal?.expected?.length
   ? `Dotted line and gray band: what nearby stations and river flow suggest for this spot (typically within ±${Math.round(ownSal.expected_mae ?? 0)} ppt). A sensor drifting away from it is a hint something's wrong.`
   : undefined;
-const own = data.findings.filter((f) => f.site === card.id);
+const own = data.findings.filter((f) => f.site === card.id || f.sites?.includes(card.id));
 const dates = Object.values(card.vars).map((v) => v.date).filter(Boolean).sort() as string[];
 const usgsUrl = card.id.startsWith("USGS-") ? `https://waterdata.usgs.gov/monitoring-location/${card.id}/` : null;
 const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.display).filter(Boolean).join(", ")}, compared to normal for ${data.season}.`;

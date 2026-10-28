@@ -214,9 +214,10 @@ def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch
     rel = [f for f in findings if set(f["topics"]) & set(focus)]
     # Ties on severity go to whatever this persona cares about most (its focus order).
     focus_rank = lambda f: min((focus.index(t) for t in f["topics"] if t in focus), default=99)
-    serious = sorted([f for f in rel if SEVERITY.get(f["severity"], 0) >= SEVERITY["watch"]],
+    serious = sorted([f for f in rel if SEVERITY.get(f["severity"], 0) >= SEVERITY["watch"] or focus[0] in f.get("lead", [])],
                      key=lambda f: (-SEVERITY.get(f["severity"], 0), focus_rank(f)))
-    own_model = [f for f in rel if f.get("site") is None and focus[0] in f["topics"] and focus[0] != "general"]
+    own_model = [f for f in rel if f.get("site") is None and "lead" not in f
+                 and focus[0] in f["topics"] and focus[0] != "general"]
     parts: list[str] = []
     if focus[0] == "fish":               # anglers' question is "should I go?": the outlook leads
         from .models import fishing as fishing_model
@@ -229,7 +230,11 @@ def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch
         if sh:
             parts.append(sh)
     if serious:
-        parts.append(serious[0]["text"])
+        top = serious[0]
+        if focus[0] in top.get("lead", []):      # a wide event leads, in its short form
+            parts.insert(0, top["short"])
+        else:
+            parts.append(top["text"])
     if own_model:
         parts.append(own_model[0].get("short", own_model[0]["text"]))
     if not parts:
@@ -269,7 +274,8 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
             "retired": bool(site.get("retired")),
             "vars": {v: _with_virtual(region, _card_var(region, daily, normals, site, v, asof), qcs.get(site["id"]), v, site)
                      for v in site["vars"]},
-            "findings": [i for i, f in enumerate(findings) if f.get("site") == site["id"]],
+            "findings": [i for i, f in enumerate(findings)
+                         if f.get("site") == site["id"] or site["id"] in f.get("sites", [])],
         })
         for v, out in cards[-1]["vars"].items():
             if VARIABLES[v].get("now") and (n := _now(region, recent, site, v, generated_at)):

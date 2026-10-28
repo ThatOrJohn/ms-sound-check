@@ -29,6 +29,7 @@ export interface BeachSection {
 export interface Finding {
   indicator: string;
   site: string | null;
+  sites?: string[];      // stations an event involves (site is null for events across stations)
   severity: Severity;
   topics: string[];
   text: string;
