@@ -167,10 +167,36 @@ Asterisks and red-team notes on the stack:
   are boring and honest. Add an LLM layer only to rephrase rule output, never
   to decide what's notable.
 
+## Probe results (run 2026-10-28)
+
+**Verdict: shrimp is a footnote, not the headline.** The signal is real enough
+to publish as a seasonal lean (early / normal / late), but not good enough to
+publish as a date.
+
+- **Temperature, not salinity, carries the signal.** Warmer Mar–Apr water means
+  an earlier opening, about 6 days earlier per standard deviation of warmth. The
+  three-station composite (n=15, Spearman -0.57, permutation p≈0.03) cuts the
+  leave-one-out error from 8.5 to 6.1 days and lands within a week in 10 of 15
+  seasons, versus 7 of 15 for guessing the average. The mechanism is
+  plausible: MDMR has blamed a delayed season on cold water slow to reach 68°F,
+  the temperature at which shrimp grow well.
+- **Salinity was the original hypothesis and is weak.** It points the right way,
+  but adding it to temperature makes predictions worse (6.7 days), and it is
+  partly a proxy for temperature (r=0.42). Freshwater seems to matter only in
+  extremes: 2019, the spillway year, opened 11 days later than temperature
+  predicted. River flow shows nothing.
+- **Red team.** The hypothesis moved after seeing the data, and roughly 20
+  variants were tried. Mechanistic refinements (degree-days above 20°C, the
+  date the water crosses 20°C) did *not* beat the plain mean, which is a mild
+  warning sign. 2025 was a warm spring that opened 3.5 weeks late, and nothing
+  here explains it. Recent seasons (2022–2025) have the largest errors.
+- **What would make it credible.** Publish the lean on May 1 each year, before
+  MDMR announces, and score it in public. Spring 2027 is the first true
+  out-of-sample test.
+
 ## Suggested build order
 
-1. **Now: run the probe** (`scripts/probe_shrimp_signal.py`, see the README).
-   That answers whether shrimp forecasting is the headline or just a footnote.
+1. ~~Run the probe~~ Done: shrimp is a footnote (see above).
 2. **Backfill normals** for the four live stations and two rivers, and compute
    day-of-year percentile bands.
 3. **Ingest Action** on the new USGS API, writing `data/latest.json` hourly and a
@@ -178,8 +204,8 @@ Asterisks and red-team notes on the stack:
 4. **One static page**: four station cards plus river flow, each with "vs.
    normal," a freshwater-stress counter, and a short text block.
 5. **Weekly Bluesky/RSS digest.** Add X only if the audience is there.
-6. **Shrimp forecast** goes live next March *if* the probe earns it, published
-   before MDMR announces so it can be scored publicly.
+6. **Shrimp lean** (early / normal / late from Mar–Apr water temperature),
+   published May 1, 2027 and scored publicly against MDMR's actual date.
 
 ## Open questions for John
 

@@ -1,0 +1,22 @@
+---
+import type { Persona } from "../lib/types";
+interface Props { personas: Persona[]; current: string; paths: Record<string, string> }
+const { personas, current, paths } = Astro.props;
+---
+<label class="ctl">
+  Show conditions for
+  <select data-persona-picker data-paths={JSON.stringify(paths)}>
+    {personas.map((p) => <option value={p.id} selected={p.id === current}>{p.label}</option>)}
+  </select>
+</label>
+<script>
+  // Switching persona goes to that persona's page and remembers the choice.
+  const sel = document.querySelector<HTMLSelectElement>("[data-persona-picker]");
+  if (sel) {
+    const paths: Record<string, string> = JSON.parse(sel.dataset.paths || "{}");
+    sel.addEventListener("change", () => {
+      try { localStorage.setItem("sc-persona", sel.value); } catch {}
+      if (paths[sel.value]) window.location.assign(paths[sel.value]);
+    });
+  }
+</script>

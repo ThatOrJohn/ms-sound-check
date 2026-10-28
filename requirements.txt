@@ -1,0 +1,7 @@
+pandas>=2.1
+numpy
+pyarrow
+pyyaml
+requests
+gsw
+dataretrieval>=1.4

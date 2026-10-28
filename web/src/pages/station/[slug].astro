@@ -1,0 +1,79 @@
+---
+import type { GetStaticPaths } from "astro";
+import Base from "../../layouts/Base.astro";
+import ReadingRow from "../../components/ReadingRow";
+import StationCharts, { type Panel } from "../../components/StationCharts";
+import Freshness from "../../components/Freshness.astro";
+import { loadLatest, loadSite } from "../../lib/data";
+import { SEV_LABEL, href } from "../../lib/format";
+import type { Card } from "../../lib/types";
+
+export const getStaticPaths = (() =>
+  loadLatest().cards.map((c) => ({ params: { slug: c.slug }, props: { id: c.id } }))) satisfies GetStaticPaths;
+
+const data = loadLatest();
+const card = data.cards.find((c) => c.id === Astro.props.id)!;
+const byId = (id: string) => data.cards.find((c) => c.id === id);
+const kindOrder: Record<string, number> = { rain: 0, river: 1, estuary: 2, sound: 3, weather: 4 };
+const upstream = (card.drains_from ?? []).map(byId).filter(Boolean)
+  .sort((a, b) => kindOrder[a!.kind] - kindOrder[b!.kind]) as Card[];
+const downstream = data.cards.filter((c) => (c.drains_from ?? []).includes(card.id));
+
+const panels: Panel[] = [];
+for (const c of [...upstream, card]) {
+  const f = loadSite(c.id);
+  if (!f) continue;
+  for (const [vn, s] of Object.entries(f.series)) {
+    panels.push({
+      key: `${c.id}:${vn}`,
+      title: c.id === card.id ? s.label : vn === "rain" ? c.short : vn === "flow" ? `${c.short} flow` : `${c.short} ${s.label.toLowerCase()}`,
+      unit: s.unit,
+      kind: vn === "rain" ? "bar" : "line",
+      log: vn === "flow",
+      points: s.points,
+      threshold: vn === "salinity" && c.id === card.id && (c.kind === "sound" || c.kind === "estuary")
+        ? { value: 2, label: "2 ppt: oyster stress line" } : undefined,
+    });
+  }
+}
+const own = data.findings.filter((f) => f.site === card.id);
+const dates = Object.values(card.vars).map((v) => v.date).filter(Boolean).sort() as string[];
+const usgsUrl = card.id.startsWith("USGS-") ? `https://waterdata.usgs.gov/monitoring-location/${card.id}/` : null;
+const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.display).filter(Boolean).join(", ")}, compared to normal for ${data.season}.`;
+---
+<Base title={`${card.name} | Sound Check`} description={desc} regionName={data.region.name}>
+  <nav class="crumbs" aria-label="Breadcrumb"><a href={href()}>Conditions</a> / {card.short}</nav>
+  <header class="station-head">
+    <h1>{card.name}</h1>
+    {card.note && <p>{card.note}</p>}
+    <Freshness newest={dates.at(-1) ?? null} generatedAt={data.generated_at} />
+  </header>
+
+  {own.length > 0 && (
+    <section class="findings" aria-label="Findings for this station">
+      <ul>{own.map((f) => <li class="finding" data-sev={f.severity}><span class="sev">{SEV_LABEL[f.severity]}.</span>{" "}{f.text}</li>)}</ul>
+    </section>
+  )}
+
+  <section class="now" aria-label="Current readings">
+    {Object.entries(card.vars).map(([vn, r]) => (
+      <article class="card">
+        <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[card.id]?.total : undefined} />
+      </article>
+    ))}
+  </section>
+
+  {panels.length > 0 && <StationCharts client:visible panels={panels} />}
+
+  <section class="upstream">
+    {upstream.length > 0 && (<>
+      <h2>What feeds this spot</h2>
+      <ul>{upstream.map((u) => <li><a href={href(`station/${u.slug}/`)}>{u.name}</a></li>)}</ul>
+    </>)}
+    {downstream.length > 0 && (<>
+      <h2>Where this water goes</h2>
+      <ul>{downstream.map((d) => <li><a href={href(`station/${d.slug}/`)}>{d.name}</a></li>)}</ul>
+    </>)}
+    {usgsUrl && <p>Source data: <a href={usgsUrl}>USGS monitoring location {card.id.replace("USGS-", "")}</a>.</p>}
+  </section>
+</Base>

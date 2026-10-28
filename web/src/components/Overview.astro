@@ -1,0 +1,63 @@
+---
+import type { Latest, Persona } from "../lib/types";
+import { GROUPS, SEV_LABEL, forPersona, href, personaPath } from "../lib/format";
+import PersonaPicker from "./PersonaPicker.astro";
+import Freshness from "./Freshness.astro";
+import SoundStrip from "./SoundStrip";
+import ReadingRow from "./ReadingRow";
+
+interface Props { data: Latest; persona: Persona }
+const { data, persona } = Astro.props;
+
+const findings = forPersona(data.findings, persona);
+const dates = data.cards.flatMap((c) => Object.values(c.vars)).map((v) => v.date).filter(Boolean).sort() as string[];
+const newest = dates.at(-1) ?? null;
+const paths = Object.fromEntries(data.personas.map((p) => [p.id, personaPath(p.id)]));
+const siteHref = (slug: string) => href(`station/${slug}/`);
+const groups = persona.card_order
+  .map((kind) => ({ kind, ...GROUPS[kind], cards: data.cards.filter((c) => c.kind === kind) }))
+  .filter((g) => g.cards.length);
+---
+<section class="lede" aria-labelledby="headline">
+  <div class="lede-ctl">
+    <PersonaPicker personas={data.personas} current={persona.id} paths={paths} />
+  </div>
+  <p class="persona-blurb">{persona.blurb}</p>
+  <h1 id="headline">{data.headlines[persona.id]}</h1>
+  <Freshness newest={newest} generatedAt={data.generated_at} />
+</section>
+
+<SoundStrip cards={data.cards} findings={data.findings} siteHref={siteHref} />
+
+<section class="findings" aria-labelledby="findings-h">
+  <h2 id="findings-h">Worth knowing</h2>
+  {findings.length ? (
+    <ul>
+      {findings.map((f) => (
+        <li class="finding" data-sev={f.severity}>
+          <span class="sev">{SEV_LABEL[f.severity]}.</span>{" "}{f.text}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class="quiet-note">Nothing stands out for {persona.label.toLowerCase()} right now. Everything is within the normal range for {data.season}.</p>
+  )}
+</section>
+
+{groups.map((g) => (
+  <section class="group" aria-labelledby={`g-${g.kind}`}>
+    <h2 id={`g-${g.kind}`}>{g.title}</h2>
+    {g.blurb && <p>{g.blurb}</p>}
+    <div class="cards">
+      {g.cards.map((c) => (
+        <article class="card">
+          <h3><a href={siteHref(c.slug)}>{c.short}</a></h3>
+          <p class="where">{c.name}</p>
+          {Object.entries(c.vars).map(([vn, r]) => (
+            <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[c.id]?.total : undefined} />
+          ))}
+        </article>
+      ))}
+    </div>
+  </section>
+))}

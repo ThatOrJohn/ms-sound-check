@@ -1,0 +1,38 @@
+---
+import { fmtDate } from "../lib/format";
+interface Props { newest: string | null; generatedAt: string }
+const { newest, generatedAt } = Astro.props;
+const builtLabel = fmtDate(generatedAt, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" } as Intl.DateTimeFormatOptions);
+---
+{newest ? (
+  <p class="asof" data-freshness data-generated={generatedAt} data-newest={newest}>
+    Latest readings from {fmtDate(newest)}. <span data-updated>Updated {builtLabel}.</span>
+    <span class="warn" data-warn hidden></span>
+  </p>
+) : <p class="asof">No readings available yet.</p>}
+<script>
+  // Turns the build time into "updated 2 hours ago", and warns if the schedule has stopped.
+  function ago(ms: number) {
+    const mins = Math.round(ms / 60000);
+    if (mins < 2) return "just now";
+    if (mins < 90) return `${mins} minutes ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 36) return `${hrs} hours ago`;
+    return `${Math.round(hrs / 24)} days ago`;
+  }
+  function tick() {
+    document.querySelectorAll<HTMLElement>("[data-freshness]").forEach((el) => {
+      const built = new Date(el.dataset.generated!).getTime();
+      const age = Date.now() - built;
+      const lag = Math.round((built - new Date(`${el.dataset.newest}T12:00:00`).getTime()) / 86400000);
+      el.querySelector("[data-updated]")!.textContent = `Updated ${ago(age)}.`;
+      const warn = el.querySelector<HTMLElement>("[data-warn]")!;
+      const msg = age > 12 * 3600000 ? "This page hasn't refreshed recently, so these readings may be out of date."
+        : lag > 2 ? `The newest data is ${lag} days old.` : "";
+      warn.textContent = msg ? ` ${msg}` : "";
+      warn.hidden = !msg;
+    });
+  }
+  tick();
+  setInterval(tick, 60000);
+</script>

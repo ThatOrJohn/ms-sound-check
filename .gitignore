@@ -1,5 +1,17 @@
+# pipeline store lives on the `data` branch in CI; locally it's regenerable
+data/ms/
+data/*/daily/
 data/raw/
+data/probe/
+store/
+# built site data (deployed by CI, never committed)
+site/data/
 __pycache__/
 .venv/
 .DS_Store
-data/probe/*synthetic*
+web/node_modules/
+web/dist/
+web/.astro/
+web/public/data/
+web/test-results/
+web/playwright-report/

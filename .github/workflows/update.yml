@@ -1,0 +1,134 @@
+name: Update conditions
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # every 3 hours, off the top of the hour
+    - cron: "43 7 1 * *"     # monthly: recompute normals
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "run (normal update) or backfill (first-time history pull + normals)"
+        default: run
+        type: choice
+        options: [run, backfill]
+  pull_request:              # build + test only; never touches data or deploys
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update-conditions-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+env:
+  REGION: ms
+  MSC_DATA_DIR: ${{ github.workspace }}/store
+  API_USGS_PAT: ${{ secrets.API_USGS_PAT }}   # optional; free key raises USGS rate limits
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      healthy: ${{ steps.health.outputs.healthy }}
+      message: ${{ steps.health.outputs.message }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the data store (data branch)
+        run: |
+          git config user.name "ms-sound-check bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git fetch --depth 1 origin data; then
+            git worktree add store FETCH_HEAD
+          else
+            git worktree add --orphan -b data store
+          fi
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - run: npm ci
+        working-directory: web
+
+      - name: Backfill history and normals
+        if: github.event.inputs.task == 'backfill'
+        run: |
+          python -m msc backfill --region "$REGION"
+          python -m msc normals --region "$REGION"
+
+      - name: Recompute normals (monthly)
+        if: github.event.schedule == '43 7 1 * *'
+        run: python -m msc normals --region "$REGION"
+
+      - name: Ingest and build data
+        run: python -m msc run --region "$REGION"
+
+      - name: Health check
+        id: health
+        continue-on-error: true
+        run: python -m msc check --region "$REGION"
+
+      - id: pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Build site
+        working-directory: web
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin || 'http://localhost:4321' }}
+          SITE_BASE: ${{ steps.pages.outputs.base_path && format('{0}/', steps.pages.outputs.base_path) || '/' }}
+        run: npm run build
+
+      - name: Browser and accessibility tests
+        working-directory: web
+        env:
+          SITE_BASE: ${{ steps.pages.outputs.base_path && format('{0}/', steps.pages.outputs.base_path) || '/' }}
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: web/playwright-report, retention-days: 7 }
+
+      - name: Save data store (single squashed commit on the data branch)
+        if: github.event_name != 'pull_request'
+        run: |
+          cd store
+          git checkout --orphan snapshot
+          git add -A
+          git commit -q -m "data snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -f origin HEAD:data
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with: { path: web/dist }
+
+  deploy:
+    needs: update
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Fails the run (and GitHub emails you) when data has stopped updating.
+  # The page itself still deploys and shows its own staleness warning.
+  health:
+    needs: [update, deploy]
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Data freshness
+        run: |
+          echo "${{ needs.update.outputs.message }}"
+          test "${{ needs.update.outputs.healthy }}" = "true"

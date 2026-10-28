@@ -5,6 +5,10 @@ USGS/MDMR data. Hobby project.
 
 - `docs/seed.md`: the original idea
 - `docs/feasibility.md`: what exists, data health, free stack, build order
+- `docs/architecture.md`: how the pipeline, regions, indicators and page fit together
+- `regions/ms.yaml`: Mississippi sites, personas and indicators
+- `msc/`: the pipeline (`python -m msc run`)
+- `web/`: the site (Astro + TypeScript, React + ECharts for charts)
 - `data/shrimp_openings.csv`: MDMR shrimp season opening dates, 2012–2026, with sources
 - `scripts/probe_shrimp_signal.py`: does spring salinity predict opening day?
 

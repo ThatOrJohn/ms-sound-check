@@ -1,0 +1,17 @@
+---
+import type { GetStaticPaths } from "astro";
+import Base from "../../layouts/Base.astro";
+import Overview from "../../components/Overview.astro";
+import { loadLatest } from "../../lib/data";
+
+export const getStaticPaths = (() => {
+  const data = loadLatest();
+  return data.personas.filter((p) => p.id !== "general").map((p) => ({ params: { persona: p.id }, props: { personaId: p.id } }));
+}) satisfies GetStaticPaths;
+
+const data = loadLatest();
+const persona = data.personas.find((p) => p.id === Astro.props.personaId)!;
+---
+<Base title={`Sound Check: ${persona.label} | ${data.region.name}`} description={data.headlines[persona.id]} regionName={data.region.name} current="overview">
+  <Overview data={data} persona={persona} />
+</Base>

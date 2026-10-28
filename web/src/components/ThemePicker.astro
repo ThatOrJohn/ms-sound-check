@@ -1,0 +1,26 @@
+---
+// Theme picker: plain HTML + a few lines of script (no framework on content pages).
+---
+<label class="ctl">
+  Theme
+  <select data-theme-picker>
+    <option value="auto">Auto</option>
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+  </select>
+</label>
+<script>
+  const sel = document.querySelector<HTMLSelectElement>("[data-theme-picker]");
+  if (sel) {
+    let saved = "auto";
+    try { saved = localStorage.getItem("sc-theme") || "auto"; } catch {}
+    sel.value = saved === "light" || saved === "dark" ? saved : "auto";
+    sel.addEventListener("change", () => {
+      const t = sel.value;
+      try { localStorage.setItem("sc-theme", t); } catch {}
+      if (t === "auto") delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = t;
+      window.dispatchEvent(new CustomEvent("sc-theme-change"));
+    });
+  }
+</script>

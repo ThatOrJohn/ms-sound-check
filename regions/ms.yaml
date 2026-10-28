@@ -1,0 +1,183 @@
+# Region definition. Everything region-specific lives here; the pipeline code is generic.
+id: ms
+name: Mississippi Sound
+timezone: America/Chicago
+map: {center: [30.30, -88.95], zoom: 9}
+
+# Display units for this region's audience. Data is stored in SI.
+units: {temp: F, rain: in, flow: cfs, salinity: ppt}
+
+sites:
+  # --- water stations (USGS / MDMR cooperative network) ---
+  - id: USGS-301429089145600
+    name: Merrill Shell Bank
+    short: West Sound
+    kind: sound
+    source: usgs
+    lat: 30.2414
+    lon: -89.2489
+    vars: [salinity, water_temp]
+    salinity_from: conductance   # USGS salinity series is gappy; derive from conductance
+    note: Western Sound, closest to the Pearl River. Freshens first.
+    drains_from: [USGS-02489500, basin-pearl]
+  - id: USGS-302318088512600
+    name: Point Cadet (Back Bay)
+    short: Biloxi Back Bay
+    kind: sound
+    source: usgs
+    lat: 30.3883
+    lon: -88.8572
+    vars: [salinity, water_temp]
+    salinity_from: conductance
+    note: Mouth of Biloxi's Back Bay. Responds to local rain and the Biloxi/Tchoutacabouffa rivers.
+    drains_from: [local-biloxi, USGS-02489500]
+  - id: USGS-301849088350000
+    name: Round Island
+    short: East Sound
+    kind: sound
+    source: usgs
+    lat: 30.3136
+    lon: -88.5833
+    vars: [salinity, water_temp]
+    salinity_from: conductance
+    note: Eastern Sound off Pascagoula. Follows the Pascagoula River.
+    drains_from: [USGS-02479000, basin-pascagoula]
+  - id: USGS-301141089320300
+    name: East Pearl River
+    short: Pearl River mouth
+    kind: estuary
+    source: usgs
+    lat: 30.1947
+    lon: -89.5341
+    vars: [salinity, water_temp]
+    salinity_from: conductance
+    note: Lower East Pearl near the Sound. Usually fresh; salt here means the river is low.
+    drains_from: [USGS-02489500]
+
+  # --- rivers ---
+  - id: USGS-02489500
+    name: Pearl River near Bogalusa
+    short: Pearl River
+    kind: river
+    source: usgs
+    lat: 30.7932
+    lon: -89.8209
+    vars: [flow]
+    drains_from: [basin-pearl]
+  - id: USGS-02479000
+    name: Pascagoula River at Merrill
+    short: Pascagoula River
+    kind: river
+    source: usgs
+    lat: 30.9774
+    lon: -88.7259
+    vars: [flow]
+    drains_from: [basin-pascagoula]
+
+  # --- weather ---
+  - id: NWS-KGPT
+    name: Gulfport-Biloxi Airport
+    short: Coast weather
+    kind: weather
+    source: nws
+    station: KGPT
+    lat: 30.4073
+    lon: -89.0701
+    vars: [air_temp]
+  - id: local-biloxi
+    name: Biloxi rainfall
+    short: Coast rain
+    kind: rain
+    source: openmeteo
+    points: [[30.40, -88.90]]
+    vars: [rain]
+  - id: basin-pearl
+    name: Pearl River basin rainfall
+    short: Pearl basin rain
+    kind: rain
+    source: openmeteo
+    note: Approximate - average of a few points across the basin above Bogalusa.
+    points: [[32.30, -90.18], [32.77, -89.12], [31.25, -89.85], [31.70, -90.40]]
+    vars: [rain]
+  - id: basin-pascagoula
+    name: Pascagoula River basin rainfall
+    short: Pascagoula basin rain
+    kind: rain
+    source: openmeteo
+    note: Approximate - average of a few points across the Leaf/Chickasawhay basins.
+    points: [[31.33, -89.29], [31.69, -89.13], [31.67, -88.65], [31.15, -88.56]]
+    vars: [rain]
+
+# Personas re-rank indicators and reorder cards. Add one by adding an entry here.
+personas:
+  - id: general
+    label: Coast (general)
+    blurb: What the Sound is doing this week and whether any of it matters.
+    focus: [general, oyster, shrimp, fish]
+    card_order: [sound, river, rain, weather, estuary]
+  - id: oyster
+    label: Oysters
+    blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
+    focus: [oyster, general]
+    card_order: [sound, river, rain, estuary, weather]
+  - id: shrimp
+    label: Shrimp
+    blurb: Spring water temperature drives when brown shrimp reach legal size; fresh water pushes them offshore.
+    focus: [shrimp, general]
+    card_order: [sound, weather, river, rain, estuary]
+  - id: fish
+    label: Fishing
+    blurb: Salinity and water temperature shifts that move bait and fish around the Sound.
+    focus: [fish, general]
+    card_order: [sound, weather, rain, river, estuary]
+
+indicators:
+  # Unusual vs. normal for this time of year, for every station/variable.
+  - id: salinity_vs_normal
+    type: vs_normal
+    var: salinity
+    kinds: [sound]
+    low_pct: 10
+    high_pct: 90
+    topics: [general, fish, oyster]
+    low_text: "{site} is fresher than usual for {season} ({value} vs. a typical {p50})."
+    high_text: "{site} is saltier than usual for {season} ({value} vs. a typical {p50})."
+  - id: water_temp_vs_normal
+    type: vs_normal
+    var: water_temp
+    kinds: [sound]
+    low_pct: 10
+    high_pct: 90
+    topics: [general, fish, shrimp]
+    low_text: "Water at {site} is running cold for {season} ({value} vs. a typical {p50})."
+    high_text: "Water at {site} is running warm for {season} ({value} vs. a typical {p50})."
+  - id: river_vs_normal
+    type: vs_normal
+    var: flow
+    kinds: [river]
+    low_pct: 10
+    high_pct: 90
+    topics: [general, oyster, shrimp, fish]
+    low_text: "The {site} is running low ({value} vs. a typical {p50}). Expect saltier water downstream."
+    high_text: "The {site} is running high ({value} vs. a typical {p50}). Expect fresher water downstream while it stays up."
+
+  # Oyster freshwater stress. Threshold from NGI/USM spillway research (2026):
+  # mortality when salinity stays below ~2 ppt for more than two weeks.
+  - id: oyster_fresh_stress
+    type: run_below
+    var: salinity
+    kinds: [sound]
+    threshold: 2.0
+    watch_days: 5
+    warn_days: 10
+    alert_days: 14
+    topics: [oyster, general]
+    text: "{site} has been under {threshold} ppt for {days} straight days. Past two weeks, oyster reefs start dying."
+
+  # Shrimp season lean from spring water temperature (see docs/feasibility.md).
+  - id: shrimp_season_lean
+    type: custom
+    fn: msc.models.shrimp:season_lean
+    active: ["03-15", "06-30"]
+    topics: [shrimp]
+    sites: [USGS-301429089145600, USGS-302318088512600, USGS-301849088350000]

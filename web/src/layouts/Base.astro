@@ -1,0 +1,59 @@
+---
+import "../styles/global.css";
+import ThemePicker from "../components/ThemePicker.astro";
+import { href } from "../lib/format";
+
+interface Props {
+  title: string;
+  description: string;
+  regionName: string;
+  current?: "overview" | "about";
+}
+const { title, description, regionName, current } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={href("favicon.svg")} type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="theme-color" content="#e9eef0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#142224" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      // Apply the saved theme before first paint so there's no flash.
+      try { const t = localStorage.getItem("sc-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+    </script>
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="masthead">
+      <div class="wrap masthead-row">
+        <a class="wordmark" href={href()}>Sound Check <small>{regionName}</small></a>
+        <nav class="nav" aria-label="Site">
+          <a href={href()} aria-current={current === "overview" ? "page" : undefined}>Conditions</a>
+          <a href={href("about/")} aria-current={current === "about" ? "page" : undefined}>About the data</a>
+          <ThemePicker />
+        </nav>
+      </div>
+    </header>
+    <main id="main" class="wrap">
+      <slot />
+    </main>
+    <footer class="wrap foot">
+      <p>Data from USGS and Mississippi Department of Marine Resources monitoring stations, the National Weather Service,
+        and Open-Meteo rainfall. Readings are provisional and can be revised. "Typical" means the middle of what each
+        station has recorded for this time of year since monitoring began.</p>
+      <p>A hobby project, not an official source. Not for navigation or harvest decisions; check
+        <a href="https://dmr.ms.gov/">MDMR</a> for closures and seasons.</p>
+    </footer>
+  </body>
+</html>
