@@ -17,6 +17,8 @@ watch, fishing weekend outlook, wind data, shrimp in-season notices.
 - **Share previews**: generated Open Graph images per page (for Bluesky and X).
 - **Weekly digest**: Bluesky post + RSS from the same build.
 
+- **Move `backfill` to the new USGS API** before the old one retires in early 2027 (daily runs already use the new one).
+
 ## Later
 - Custom domain (about $12/yr) and Cloudflare Web Analytics.
 - Grand Bay NERR water-quality sondes as extra stations.

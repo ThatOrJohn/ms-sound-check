@@ -9,7 +9,8 @@ import { SEV_LABEL, href } from "../../lib/format";
 import type { Card } from "../../lib/types";
 
 export const getStaticPaths = (() =>
-  loadLatest().cards.map((c) => ({ params: { slug: c.slug }, props: { id: c.id } }))) satisfies GetStaticPaths;
+  // Wind is an input to the models and the fishing outlook, not a station anyone browses to.
+  loadLatest().cards.filter((c) => c.kind !== "wind").map((c) => ({ params: { slug: c.slug }, props: { id: c.id } }))) satisfies GetStaticPaths;
 
 const data = loadLatest();
 const card = data.cards.find((c) => c.id === Astro.props.id)!;

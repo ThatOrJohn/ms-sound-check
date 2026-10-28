@@ -123,6 +123,7 @@ sites:
     kind: weather
     source: nws
     station: KGPT
+    forecast_point: [30.37, -89.08]   # NWS 7-day forecast for the Gulfport waterfront
     lat: 30.4073
     lon: -89.0701
     vars: [air_temp]
@@ -133,6 +134,14 @@ sites:
     source: openmeteo
     points: [[30.40, -88.90]]
     vars: [rain]
+  - id: wind-sound
+    name: Wind over the Sound
+    short: Sound wind
+    kind: wind
+    source: openmeteo
+    note: Hourly wind over the middle of the Sound (ERA5 reanalysis for history, model analysis for recent days), averaged by day.
+    points: [[30.25, -89.0]]
+    vars: [wind_u, wind_v, wind_max]
   - id: rain-hancock
     name: Hancock County rainfall
     short: Hancock County rain
@@ -166,6 +175,12 @@ beaches:
   stations_layer: 0
   segments_layer: 1
 
+# Tide predictions (NOAA CO-OPS), west to east.
+tides:
+  - {id: "8747437", name: Bay Waveland Yacht Club}
+  - {id: "8745557", name: Gulfport Harbor}
+  - {id: "8741533", name: Pascagoula NOAA Lab}
+
 # Personas re-rank indicators and reorder cards. Add one by adding an entry here.
 personas:
   - id: general
@@ -190,7 +205,7 @@ personas:
     label: Fishing
     blurb: Salinity and water temperature shifts that move bait and fish around the Sound.
     focus: [fish, general]
-    card_order: [sound, weather, rain, river, estuary, beaches]
+    card_order: [fishing_outlook, sound, weather, rain, river, estuary, beaches]
     map_layers: [depth, contours, salinity]
 
 indicators:

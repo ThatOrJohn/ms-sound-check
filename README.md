@@ -3,7 +3,8 @@
 A plain-language read on what the Mississippi Sound is doing, built on public
 USGS/MDMR data. Hobby project.
 
-- `docs/ROADMAP.md`: **what's done, what's now, what's next** (start here)
+- `QUICKSTART.md`: **coming back after a while? Read this first**
+- `docs/ROADMAP.md`: what's done, what's now, what's next
 - `docs/seed.md`: the original idea
 - `docs/feasibility.md`: what exists, data health, free stack, build order
 - `docs/architecture.md`: how the pipeline, regions, indicators and page fit together

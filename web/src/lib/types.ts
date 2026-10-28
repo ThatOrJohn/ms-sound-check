@@ -2,8 +2,8 @@
 
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
-export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge";
-export type Section = Kind | "beaches" | "oyster_watch";
+export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind";
+export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook";
 export type Kind2 = Kind | "gauge";
 
 export interface Persona {
@@ -92,7 +92,20 @@ export interface OysterWatch {
   plan_name: string; plan_url: string; status_url?: string; hotline?: string;
 }
 
+export interface Tide { station: string; name: string; time: string; type: "high" | "low"; ft: number }
+export interface FishingDay {
+  date: string; label: string; wind: string | null; wind_mph_hi: number | null; sky: string | null;
+  rain_pct: number | null; high_f: number | null; verdict: string | null; verdict_text: string | null; tides: Tide[];
+}
+export interface FishingOutlook {
+  days: FishingDay[]; weekend: boolean;
+  water: { temp_f: number | null; temp_change_7d: number | null; saltiest: [string, number] | null; freshest: [string, number] | null };
+  muddy: { level: "clean" | "some runoff" | "muddy"; reasons: string[]; local_rain_3d_in: number | null; forecast_rain_in: number | null };
+  tide_stations: { id: string; name: string }[];
+}
+
 export interface Latest {
+  fishing_outlook?: FishingOutlook | null;
   oyster_watch?: OysterWatch | null;
   beaches?: BeachSection | null;
   region: { id: string; name: string; units: Record<string, string>; map: { center: [number, number]; zoom: number } };

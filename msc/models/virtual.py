@@ -47,7 +47,7 @@ def salinity_sites(region: Region) -> list[dict]:
 
 
 def _wide(daily: pd.DataFrame) -> pd.DataFrame:
-    d = daily[daily["var"].isin(["salinity", "flow", "rain"])]
+    d = daily[daily["var"].isin(["salinity", "flow", "rain", "wind_u", "wind_v", "wind_max"])]
     w = d.pivot_table(index="date", columns=["site", "var"], values="value").sort_index()
     return w.asfreq("D") if len(w) else w
 
@@ -79,6 +79,16 @@ def features(region: Region, wide: pd.DataFrame, target: str) -> pd.DataFrame:
             r = wide[col]
             X[_k("r7", s["id"])] = r.rolling(7, min_periods=7).sum()
             X[_k("r30", s["id"])] = r.rolling(30, min_periods=30).sum()
+    # Wind moves the Sound (see docs/feasibility.md, "ML experiments"): today's and recent days' wind.
+    for s in region.sites_by(kind="wind"):
+        if (s["id"], "wind_u") in wide and (s["id"], "wind_v") in wide:
+            u, v = wide[(s["id"], "wind_u")], wide[(s["id"], "wind_v")]
+            X[_k("wu", s["id"])], X[_k("wv", s["id"])] = u, v
+            X[_k("wu3", s["id"])] = u.rolling(3, min_periods=2).mean()
+            X[_k("wv3", s["id"])] = v.rolling(3, min_periods=2).mean()
+            X[_k("wv7", s["id"])] = v.rolling(7, min_periods=5).mean()
+        if (s["id"], "wind_max") in wide:
+            X[_k("wmax", s["id"])] = wide[(s["id"], "wind_max")]
     doy = X.index.dayofyear
     X["doy_sin"] = np.sin(2 * np.pi * doy / 365.25)
     X["doy_cos"] = np.cos(2 * np.pi * doy / 365.25)

@@ -21,6 +21,9 @@ VARIABLES = {
     "flow":       {"unit": "cfs",  "agg": "mean", "label": "River flow"},
     "rain":       {"unit": "mm",   "agg": "sum",  "label": "Rain"},
     "stage":      {"unit": "ft",   "agg": "max",  "label": "River stage"},
+    "wind_u":     {"unit": "m/s",  "agg": "mean", "label": "Wind toward east"},
+    "wind_v":     {"unit": "m/s",  "agg": "mean", "label": "Wind toward north"},
+    "wind_max":   {"unit": "m/s",  "agg": "max",  "label": "Peak wind"},
 }
 
 
@@ -55,5 +58,5 @@ def load_region(region_id: str) -> Region:
         id=raw["id"], name=raw["name"], timezone=raw.get("timezone", "UTC"),
         units=raw.get("units", {}), sites=raw["sites"], personas=raw.get("personas", []),
         indicators=raw.get("indicators", []), map=raw.get("map", {}),
-        extras={k: raw[k] for k in ("beaches",) if k in raw},
+        extras={k: raw[k] for k in ("beaches", "tides") if k in raw},
     )

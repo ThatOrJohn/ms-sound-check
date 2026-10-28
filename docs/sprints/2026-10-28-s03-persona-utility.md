@@ -17,11 +17,21 @@
   - [ ] Verify the first live NWPS fetch and the PERL1 backfill in CI
   - [ ] Confirm the oyster information line (228-374-5167 comes from MDMR notices; check it's current)
   - [ ] With history in hand: how often each threshold is crossed per year (context line for the section)
-- [ ] **Fishing weekend outlook**: wind (NWS forecast), tides (CO-OPS 8747437, 8745557, 8741533), muddy-water risk, water temperature trend
-- [ ] **Wind in the data**: ingest, add to virtual sensors, re-score
+- [x] **Fishing weekend outlook** (Fishing page): per-day wind with a plain verdict, sky, rain chance, tides at
+      Gulfport Harbor (all three stations in a table), water temperature trend, saltiest/freshest station,
+      muddy-water risk; best day becomes the Fishing headline. Shows this weekend, or the next three days
+      on Sun/Mon.
+  - [ ] Verify the first live NWS forecast and CO-OPS tide fetches in CI
+- [x] **Wind in the data**: daily wind over mid-Sound (Open-Meteo: ERA5 history at backfill, recent each run);
+      six wind features added to the virtual sensors
+  - [ ] After the next backfill, compare the `train` log's scores with the numbers in architecture.md and
+        record the result here
 - [ ] **Shrimp in-season**: MDMR notices (check whether their WordPress API is readable), 3-day wind outlook
 
 ## Notes
+- 2026-10-28: Wind verdict bands (NWS forecast's upper sustained mph): light ≤10, moderate ≤15, breezy ≤20,
+  windy above. Muddy-water risk is a stated heuristic: 3-day coast rain (≥0.5 / ≥1 in), rivers above normal,
+  forecast rain ≥1 in.
 - 2026-10-28: Oyster watch built and checked with simulated readings (rising river forecast to cross 10 ft).
   Rainfall uses an Open-Meteo point in Hancock County as a stand-in for the HCUA gauge; labeled as an estimate.
 - 2026-10-28: The plan names "Pearl River, Louisiana" as the gauge, not Bogalusa as first assumed.

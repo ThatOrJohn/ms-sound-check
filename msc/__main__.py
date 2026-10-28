@@ -40,7 +40,8 @@ _try.failures = []
 
 def cmd_backfill(region, args):
     from .adapters import openmeteo, usgs
-    for label, fn in [("usgs backfill", usgs.backfill_daily), ("rain backfill", openmeteo.backfill_daily)]:
+    for label, fn in [("usgs backfill", usgs.backfill_daily), ("rain backfill", openmeteo.backfill_daily),
+                      ("wind backfill", openmeteo.wind_backfill)]:
         df = _try(label, fn, region, start=args.start)
         if df is not None:
             log.info("%s: %d rows", label, store.upsert_daily(region, df))
@@ -72,6 +73,16 @@ def cmd_ingest(region, args):
             store.upsert_daily(region, store.recent_to_daily(region, obs[["site", "var", "time", "value", "source"]]))
         region.data_dir.mkdir(parents=True, exist_ok=True)
         fc.to_parquet(region.data_dir / "stage_forecast.parquet", index=False)
+    wind = _try("wind", openmeteo.wind_recent, region)
+    if wind is not None and not wind.empty:
+        store.upsert_daily(region, wind)
+    wx = _try("weather forecast", nws.forecast, region)
+    if wx:
+        nws.save_forecast(region, wx)
+    from .adapters import tides
+    tide_rows = _try("tides", tides.fetch, region)
+    if tide_rows:
+        tides.save(region, tide_rows)
     from .adapters import beaches
     snap = _try("beaches", beaches.fetch, region)
     if snap:

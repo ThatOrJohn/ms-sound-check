@@ -1,0 +1,73 @@
+---
+import type { FishingOutlook, Tide } from "../lib/types";
+
+interface Props { outlook: FishingOutlook }
+const { outlook } = Astro.props;
+const title = outlook.weekend ? "Weekend outlook" : "Next few days";
+// One tide station up front (the middle of the coast), the rest one click away.
+const main = outlook.tide_stations[Math.floor(outlook.tide_stations.length / 2)];
+const time = (t: string) =>
+  new Date(t.replace(" ", "T")).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const tidesFor = (list: Tide[], station?: string) => list.filter((t) => !station || t.station === station);
+const w = outlook.water;
+const tempTrend = w.temp_change_7d == null ? "" : Math.abs(w.temp_change_7d) < 1.5 ? ", steady this week"
+  : w.temp_change_7d > 0 ? `, up ${Math.round(w.temp_change_7d)}° this week` : `, down ${Math.round(Math.abs(w.temp_change_7d))}° this week`;
+const muddyText = {
+  clean: "Low. No big rain or high rivers lately, so the water should be clearing.",
+  "some runoff": "Some. Expect stained water near river mouths and bayous.",
+  muddy: "High. Expect muddy water well out from the river mouths.",
+}[outlook.muddy.level];
+---
+<section class="group fishing" aria-labelledby="g-fishing">
+  <h2 id="g-fishing">{title}</h2>
+  <div class="fish-days">
+    {outlook.days.map((d) => (
+      <article class="fish-day" data-verdict={d.verdict ?? "unknown"}>
+        <h3>{d.label}</h3>
+        {d.wind ? <p class="fish-wind">{d.wind}</p> : <p class="fish-wind">No forecast yet</p>}
+        {d.verdict_text && <p class="fish-verdict">{d.verdict_text}</p>}
+        <p class="fish-sky">
+          {[d.sky, d.high_f != null ? `high ${d.high_f}°` : null, d.rain_pct ? `${d.rain_pct}% chance of rain` : null].filter(Boolean).join(", ")}
+        </p>
+        {main && tidesFor(d.tides, main.id).length > 0 && (
+          <p class="fish-tides">
+            <span class="tide-label">Tides, {main.name}:</span>{" "}
+            {tidesFor(d.tides, main.id).map((t) => `${t.type} ${time(t.time)} (${t.ft.toFixed(1)} ft)`).join(", ")}
+          </p>
+        )}
+      </article>
+    ))}
+  </div>
+
+  <div class="fish-water">
+    <p><strong>Water:</strong>{" "}{w.temp_f != null ? `about ${w.temp_f}°F${tempTrend}.` : "temperature not available."}
+      {w.saltiest && w.freshest && w.saltiest[0] !== w.freshest[0] &&
+        ` Saltiest at ${w.saltiest[0]} (${w.saltiest[1].toFixed(0)} ppt), freshest at ${w.freshest[0]} (${w.freshest[1].toFixed(0)} ppt).`}
+    </p>
+    <p><strong>Muddy-water risk:</strong>{" "}{muddyText}
+      {outlook.muddy.reasons.length > 0 && ` (${outlook.muddy.reasons.join("; ")}.)`}
+    </p>
+  </div>
+
+  {outlook.tide_stations.length > 1 && (
+    <details class="fish-more">
+      <summary>Tides at all stations</summary>
+      <table>
+        <thead><tr><th>Station</th>{outlook.days.map((d) => <th>{d.label}</th>)}</tr></thead>
+        <tbody>
+          {outlook.tide_stations.map((st) => (
+            <tr>
+              <td>{st.name}</td>
+              {outlook.days.map((d) => (
+                <td>{tidesFor(d.tides, st.id).map((t) => `${t.type === "high" ? "H" : "L"} ${time(t.time)} ${t.ft.toFixed(1)}`).join("; ") || "—"}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
+  )}
+  <p class="fish-src">Wind and sky: National Weather Service forecast for the Gulfport waterfront. Tides: NOAA predictions (feet above
+    mean lower low water). Wind bands: light up to 10 mph, moderate to 15, breezy to 20. Muddy-water risk is our estimate
+    from recent rain and river flow.</p>
+</section>

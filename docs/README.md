@@ -2,7 +2,8 @@
 
 | File | What it's for |
 |---|---|
-| [ROADMAP.md](ROADMAP.md) | **Start here.** What's done, what's in the current sprint, what's next, known issues. |
+| [../QUICKSTART.md](../QUICKSTART.md) | **Coming back after a while? Read this first.** What does what, common tasks, troubleshooting. |
+| [ROADMAP.md](ROADMAP.md) | **Then this.** What's done, what's in the current sprint, what's next, known issues. |
 | [sprints/](sprints/) | One file per sprint: goal, checklist, notes, outcome. Closed sprints stay as history. |
 | [decisions/](decisions/) | Architecture decision records: one short file per significant choice and why. |
 | [../CHANGELOG.md](../CHANGELOG.md) | User-visible changes, newest first. |

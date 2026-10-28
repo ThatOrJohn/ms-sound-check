@@ -40,6 +40,9 @@ build a region picker until a second region exists.
 | USGS legacy `dv` service | daily history back to 1998 | `usgs.backfill_daily`, one time | free; retired Q1 2027, after which this moves to `waterdata.get_daily` |
 | National Weather Service | air temperature at Gulfport-Biloxi airport | `nws.recent` | free, no key |
 | NWS National Water Prediction Service | observed and forecast river stage at PERL1 (Pearl River near Pearl River, LA) for the oyster watch | `nwps.recent_and_forecast`, every run; history from USGS 02492600 at backfill | free, no key |
+| NWS forecast (api.weather.gov) | 7-day forecast for the Gulfport waterfront: wind, sky, rain chance, temperature | `nws.forecast`, every run | free, no key |
+| NOAA CO-OPS | tide predictions (highs and lows) at Bay Waveland, Gulfport Harbor, Pascagoula | `tides.fetch`, every run | free, no key |
+| Open-Meteo (wind) | daily wind over mid-Sound: east/north components and peak; ERA5 history at backfill | `openmeteo.wind_*` | free, non-commercial |
 | MDEQ Beach Monitoring (public ArcGIS feature service) | beach advisories and closures (bacteria, debris, algal blooms) and beach segments | `beaches.fetch`, every run | free, no key |
 | Open-Meteo | observed and forecast daily rain, local and basin-averaged | `openmeteo.*` | free, no key, **non-commercial terms**; revisit if sponsorship happens |
 

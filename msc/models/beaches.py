@@ -19,8 +19,11 @@ def _names(items: list[dict]) -> str:
 
 def findings(region, cfg, daily, normals, asof):
     snap, _ = src.load(region)
-    if not snap:
+    if not snap or not snap.get("fetched_at"):
         return []
+    import pandas as pd
+    if pd.Timestamp.now(tz="UTC") - pd.Timestamp(snap["fetched_at"]) > pd.Timedelta(days=2):
+        return []   # stale snapshot: say nothing rather than something possibly wrong
     out = []
     for kind, sev, verb in (("closure", "warning", "closed"), ("advisory", "watch", "under a swimming advisory")):
         items = [s for s in snap["stations"] if s["status"] == kind]

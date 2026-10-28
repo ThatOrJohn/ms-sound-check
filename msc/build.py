@@ -160,6 +160,9 @@ def _beaches(region, asof):
     snap, geo = src.load(region)
     if not snap:
         return None, None
+    fetched = pd.Timestamp(snap["fetched_at"]) if snap.get("fetched_at") else None
+    if fetched is None or pd.Timestamp.now(tz="UTC") - fetched > pd.Timedelta(days=2):
+        return None, None   # hide rather than show advisories that may have changed
     stations = snap["stations"]
     hist = region.data_dir / "beach_history.parquet"
     days_flagged = {}
@@ -185,7 +188,7 @@ def _beaches(region, asof):
     return section, geo
 
 
-def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch=None):
+def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch=None, fishing=None):
     """Lead with anything serious; otherwise describe the overall picture in plain words."""
     focus = persona["focus"]
     season = season_phrase(asof)
@@ -198,6 +201,11 @@ def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch
         parts.append(serious[0]["text"])
     if own_model:
         parts.append(own_model[0].get("short", own_model[0]["text"]))
+    if not parts and focus[0] == "fish":
+        from .models import fishing as fishing_model
+        fh = fishing_model.headline(fishing)
+        if fh:
+            parts.append(fh)
     if not parts:
         parts.append(_conditions(cards, season))
         if focus[0] in ("shrimp", "fish"):
@@ -242,17 +250,19 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                                 for d, v in zip(pd.to_datetime(g.date), g.value)],
                        "total": fmt("rain", g.value.sum(), region.units)}
     beach_section, beach_geo = _beaches(region, asof)
-    from .models import oyster
+    from .models import fishing, oyster
     oyster_section = oyster.section(region, daily, asof)
+    fishing_section = fishing.section(region, daily, asof, cards, forecast)
     latest = {
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
         "beaches": beach_section,
         "oyster_watch": oyster_section,
+        "fishing_outlook": fishing_section,
         "generated_at": (generated_at or pd.Timestamp.now(tz="UTC")).isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),
         "personas": region.personas,
-        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section, oyster_section) for p in region.personas},
+        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section, oyster_section, fishing_section) for p in region.personas},
         "findings": findings,
         "cards": cards,
         "rain_forecast": fc,

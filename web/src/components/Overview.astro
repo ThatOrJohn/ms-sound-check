@@ -6,6 +6,7 @@ import Freshness from "./Freshness.astro";
 import StationList from "./StationList";
 import BeachStatus from "./BeachStatus.astro";
 import OysterWatch from "./OysterWatch.astro";
+import FishingOutlook from "./FishingOutlook.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import { SEV_RANK } from "../lib/format";
 import ReadingRow from "./ReadingRow";
@@ -38,7 +39,8 @@ const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((
 }));
 const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
-  .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch : g.cards.length);
+  .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
+    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.cards.length);
 const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
 ---
 <section class="lede" aria-labelledby="headline">
@@ -77,7 +79,8 @@ const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
 </section>
 
 {groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} />
-  : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} /> : (
+  : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} />
+  : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} /> : (
   <section class="group" aria-labelledby={`g-${g.kind}`}>
     <h2 id={`g-${g.kind}`}>{g.title}</h2>
     {g.blurb && <p>{g.blurb}</p>}
