@@ -12,12 +12,14 @@ import numpy as np
 import pandas as pd
 
 from . import normals as nm
+from . import store
 from .config import SITE_OUT, VARIABLES, Region
 from .indicators import SEVERITY, evaluate, is_suspect
 from .units import convert, fmt, season_phrase, unit_label
 
 SPARK_DAYS = 30
 HISTORY_DAYS = 365
+NOW_MAX_AGE = pd.Timedelta(hours=4)   # a "now" reading older than this is hidden, not shown
 
 
 def _r(v, nd=2):
@@ -101,6 +103,23 @@ def _card_var(region, daily, normals, site, var, asof):
         out["percentile"] = round(pct)
         out["band"] = "low" if pct <= 10 else "high" if pct >= 90 else (
             "below" if pct < 25 else "above" if pct > 75 else "normal")
+    return out
+
+
+def _now(region, recent, site, var, now):
+    """Newest observation plus today's low and high, or None if there isn't a fresh one."""
+    r = recent[(recent.site == site["id"]) & (recent["var"] == var) & (recent.time <= now)]
+    if r.empty or now - r.time.max() > NOW_MAX_AGE:
+        return None
+    last = r.loc[r.time.idxmax()]
+    local = r.time.dt.tz_convert(region.timezone)
+    today = r[local.dt.date == now.tz_convert(region.timezone).date()].value
+    out = {"value": _r(convert(var, last.value, region.units)), "display": fmt(var, last.value, region.units),
+           "time": last.time.isoformat(), "lo": _r(convert(var, today.min(), region.units)),
+           "hi": _r(convert(var, today.max(), region.units))}
+    if site["source"] == "nws":
+        from .adapters import nws
+        out["url"] = nws.latest_url(site["station"])
     return out
 
 
@@ -240,6 +259,8 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     expected, qcs = _virtual(region, daily, asof)
     suspect = {(sid, "salinity") for sid, q in qcs.items() if q["suspect"]}
     findings = evaluate(region, daily, normals, asof, suspect=suspect)
+    generated_at = generated_at or pd.Timestamp.now(tz="UTC")
+    recent = store.read_recent(region)
     cards = []
     for site in region.sites:
         cards.append({
@@ -250,6 +271,9 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                      for v in site["vars"]},
             "findings": [i for i, f in enumerate(findings) if f.get("site") == site["id"]],
         })
+        for v, out in cards[-1]["vars"].items():
+            if VARIABLES[v].get("now") and (n := _now(region, recent, site, v, generated_at)):
+                out["now"] = n
     fc = {}
     if forecast is not None and not forecast.empty:
         for sid, g in forecast.groupby("site"):
@@ -267,7 +291,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "oyster_watch": oyster_section,
         "fishing_outlook": fishing_section,
         "shrimp_season": shrimp_section,
-        "generated_at": (generated_at or pd.Timestamp.now(tz="UTC")).isoformat(),
+        "generated_at": generated_at.isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),
         "personas": region.personas,

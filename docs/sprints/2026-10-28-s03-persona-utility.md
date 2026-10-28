@@ -31,6 +31,11 @@
       notice from the past week leads the Shrimp headline
   - [ ] Verify the first live MDMR fetch in CI
 
+- [x] **Air temp shows the latest reading**: the readout tile led with today's daily mean (61°F at noon on a cool
+      morning that warmed to 77°F). The build now adds the newest NWS observation with its time and today's low/high
+      (`"now": True` in `VARIABLES`), hidden after 4 hours; the station page labels the daily value as an average.
+  - [x] Refresh it in the browser on load from api.weather.gov ([0015](../decisions/0015-live-air-temp-in-browser.md));
+        checked live: built 75°F at 11:05 AM became 79°F at 1:20 PM
 - [x] **UI refresh** ([0013](../decisions/0013-instrument-panel-design.md)): Geist, new palette, readout strip, signals rail,
       percentile meters, segmented controls. Axe passes on every page in both themes. Sample data for review:
       `python scripts/dev_fixtures.py apply` (and `clear` afterward).

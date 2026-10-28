@@ -13,11 +13,12 @@ REFERENCE = ROOT / "data"                       # hand-curated reference data (i
 DATA = Path(os.environ.get("MSC_DATA_DIR", ROOT / "data"))  # pipeline store (data branch in CI)
 SITE_OUT = ROOT / "web" / "public" / "data"  # read by the Astro build and served as-is
 
-# Canonical variables: stored unit, how daily values aggregate, label.
+# Canonical variables: stored unit, how daily values aggregate, label. "now": also publish the newest
+# observation, for variables whose daily value hides what it's like outside right now.
 VARIABLES = {
     "salinity":   {"unit": "ppt",  "agg": "mean", "label": "Salinity", "suspect_above": 36.0},
     "water_temp": {"unit": "degC", "agg": "mean", "label": "Water temp"},
-    "air_temp":   {"unit": "degC", "agg": "mean", "label": "Air temp"},
+    "air_temp":   {"unit": "degC", "agg": "mean", "label": "Air temp", "now": True},
     "flow":       {"unit": "cfs",  "agg": "mean", "label": "River flow"},
     "rain":       {"unit": "mm",   "agg": "sum",  "label": "Rain"},
     "stage":      {"unit": "ft",   "agg": "max",  "label": "River stage"},

@@ -3,6 +3,17 @@ import AxeBuilder from "@axe-core/playwright";
 
 const PAGES = ["", "for/oyster/", "for/shrimp/", "about/", "station/west-sound/", "station/pearl-river/"];
 
+// The page refreshes air temp from api.weather.gov on load; answer with a fixed, newer reading so tests don't depend
+// on the network. 26.1 °C is 79 °F.
+const LIVE_TEMP_C = 26.1;
+test.beforeEach(async ({ page }) => {
+  await page.route("https://api.weather.gov/**", (route) => route.fulfill({
+    contentType: "application/geo+json",
+    body: JSON.stringify({ properties: { timestamp: new Date(Date.now() - 5 * 60_000).toISOString(),
+      temperature: { unitCode: "wmoUnit:degC", value: LIVE_TEMP_C } } }),
+  }));
+});
+
 // Each test gets a fresh browser context, so localStorage starts empty. Don't clear it with
 // addInitScript: that runs before every navigation and would wipe the very choices under test.
 
@@ -56,4 +67,24 @@ test("shrimp page shows MDMR's season notices and the wind outlook", async ({ pa
   await page.goto("for/shrimp/");
   await expect(page.getByRole("heading", { name: "Shrimp season", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "MDMR shrimp information" })).toHaveAttribute("href", /dmr\.ms\.gov/);
+});
+
+test("air temp refreshes from the latest observation on load", async ({ page }) => {
+  await page.goto("");
+  const tile = page.locator(".readout[data-live]");
+  test.skip(await tile.count() === 0, "no fresh air temp in this build's data");
+  await expect(tile).toHaveAttribute("data-live-updated", "");
+  await expect(tile.locator("[data-live-value]")).toHaveText("79");
+  await expect(tile.locator("[data-live-text]")).toContainText("79°F");
+});
+
+test("air temp keeps the built reading when the live request fails", async ({ page }) => {
+  await page.route("https://api.weather.gov/**", (route) => route.abort());
+  await page.goto("");
+  const tile = page.locator(".readout[data-live]");
+  test.skip(await tile.count() === 0, "no fresh air temp in this build's data");
+  const built = JSON.parse((await tile.getAttribute("data-live"))!);
+  await page.waitForLoadState("networkidle");
+  await expect(tile.locator("[data-live-value]")).toHaveText(String(Math.round(built.value)));
+  await expect(tile).not.toHaveAttribute("data-live-updated", "");
 });

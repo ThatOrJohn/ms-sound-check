@@ -1,4 +1,4 @@
-import type { Band, Finding, Persona, Reading } from "./types";
+import type { Band, Finding, Now, Persona, Reading } from "./types";
 
 /** Join a path onto the configured base (works under /<repo>/ on GitHub Pages). */
 export function href(p = ""): string {
@@ -12,6 +12,17 @@ export function fmtDate(iso: string, opts: Intl.DateTimeFormatOptions = { month:
   const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso);
   return d.toLocaleDateString("en-US", opts);
 }
+
+/** "11:05 AM" in the region's time zone. */
+export const fmtTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+
+const deg = (v: number, unit: string) => `${Math.round(v)}${unit}`;
+const range = (n: Now, unit: string) => n.lo !== undefined && n.hi !== undefined ? `today ${deg(n.lo, unit)} to ${deg(n.hi, unit)}` : "";
+/** Home readout: "Coast weather at 11:05 AM, today 55°F to 75°F". Shared with the on-load refresh (lib/live.ts). */
+export const nowTileSub = (where: string, n: Now, unit: string) => [`${where} at ${fmtTime(n.time)}`, range(n, unit)].filter(Boolean).join(", ");
+/** Station page: "Latest 75°F at 11:05 AM; today 55°F to 75°F". */
+export const nowRowText = (n: Now, unit: string) => [`Latest ${deg(n.value, unit)} at ${fmtTime(n.time)}`, range(n, unit)].filter(Boolean).join("; ");
 
 export const SEV_RANK: Record<string, number> = { alert: 4, warning: 3, watch: 2, notice: 1 };
 export const SEV_LABEL: Record<string, string> = { alert: "Alert", warning: "Warning", watch: "Watch", notice: "Note" };

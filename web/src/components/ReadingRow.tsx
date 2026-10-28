@@ -1,5 +1,5 @@
 import type { Reading } from "../lib/types";
-import { bandWords, fmtDate, typical } from "../lib/format";
+import { bandWords, fmtDate, nowRowText, typical } from "../lib/format";
 import Sparkline from "./Sparkline";
 import Meter from "./Meter";
 
@@ -53,7 +53,7 @@ export default function ReadingRow({ varName, label, r, forecast, retired }: Pro
   const t = typical(varName, r);
   return (
     <div className="reading">
-      <span className="what">{isRain ? "Rain, past 7 days" : label}</span>
+      <span className="what">{isRain ? "Rain, past 7 days" : r.now ? `${label}, daily average` : label}</span>
       <span className="val">{r.display.replace(" past 7 days", "")}</span>
       <Sparkline points={r.spark ?? []} label={label} />
       {r.suspect ? (
@@ -76,6 +76,7 @@ export default function ReadingRow({ varName, label, r, forecast, retired }: Pro
           Reads {r.vs_neighbors === "high" ? "saltier" : "fresher"} than nearby stations suggest (about {r.expected.display}).
         </span>
       )}
+      {r.now && <span className="extra" data-live={JSON.stringify({ kind: "row", unit: r.unit, ...r.now })} data-live-text>{nowRowText(r.now, r.unit ?? "")}</span>}
       {forecast && <span className="extra">Next 7 days: {forecast} forecast</span>}
     </div>
   );

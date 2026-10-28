@@ -59,7 +59,12 @@ export interface Reading {
   vs_neighbors?: "high" | "low";
   /** Published estimate for a station with no live reading. */
   estimate?: Estimate;
+  /** Newest observation (only for variables whose daily value hides "right now", e.g. air temp). */
+  now?: Now;
 }
+
+/** lo/hi: today's range so far (absent once the day has turned); url: where the page refreshes it on load. */
+export interface Now { value: number; display: string; time: string; lo?: number; hi?: number; url?: string }
 
 export interface Estimate { value: number; lo: number; hi: number; display: string; mae: number | null; published: boolean }
 

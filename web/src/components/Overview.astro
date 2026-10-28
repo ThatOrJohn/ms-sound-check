@@ -11,7 +11,7 @@ import ShrimpSeason from "./ShrimpSeason.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import ReadingRow from "./ReadingRow";
 import Meter from "./Meter";
-import { bandWords } from "../lib/format";
+import { bandWords, nowTileSub } from "../lib/format";
 
 interface Props { data: Latest; persona: Persona }
 const { data, persona } = Astro.props;
@@ -46,7 +46,7 @@ const groups = persona.card_order
 const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
 
 // ---------- the readout strip: a handful of numbers that sum up the Sound right now
-type Tile = { label: string; value: string; unit: string; sub: string; percentile?: number; href?: string };
+type Tile = { label: string; value: string; unit: string; sub: string; percentile?: number; href?: string; live?: string };
 const split = (d: string) => { const m = d.replace(" past 7 days", "").match(/^(~?[\d.,–-]+)\s*(.*)$/); return m ? [m[1], m[2]] : [d, ""]; };
 const live = (c: (typeof data.cards)[number], vn: string) => {
   const r = c.vars[vn]; return r && r.display && r.value !== undefined && !r.stale && !r.suspect && !c.retired ? r : null;
@@ -72,9 +72,14 @@ if (rainCard && rr?.display) { const [v, u] = split(rr.display); const fc = data
   tiles.push({ label: "Rain, 7 days", value: v, unit: u, sub: fc ? `${fc} forecast next 7` : bandWords("rain", rr.band), percentile: rr.percentile, href: siteHref(rainCard.slug) }); }
 const wx = data.cards.find((c) => c.kind === "weather");
 const at = wx && live(wx, "air_temp");
-if (wx && at) { const [v, u] = split(at.display!); tiles.push({ label: "Air temp", value: v, unit: u, sub: near(wx.short, "air_temp", at.band), percentile: at.percentile, href: siteHref(wx.slug) }); }
+// The daily value is an average (a cool morning drags it down), so lead with the newest observation when there is one.
+if (wx && at?.now) { tiles.push({ label: "Air temp", value: String(Math.round(at.now.value)), unit: at.unit!, sub: nowTileSub(wx.short, at.now, at.unit!), href: siteHref(wx.slug),
+  live: JSON.stringify({ kind: "tile", where: wx.short, unit: at.unit, ...at.now }) }); }
+else if (wx && at) { const [v, u] = split(at.display!); tiles.push({ label: "Air temp, daily avg", value: v, unit: u, sub: near(wx.short, "air_temp", at.band), percentile: at.percentile, href: siteHref(wx.slug) }); }
 const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 ---
+<script>import "../lib/live";</script>
+
 <section class="hero" aria-labelledby="headline">
   <div class="hero-bar">
     <PersonaPicker personas={data.personas} current={persona.id} paths={paths} />
@@ -88,10 +93,10 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 {tiles.length > 0 && (
   <section class="readouts" aria-label="Key readings right now">
     {tiles.slice(0, 6).map((t) => (
-      <div class="readout">
+      <div class="readout" data-live={t.live}>
         <p class="readout-label">{t.href ? <a href={t.href}>{t.label}</a> : t.label}</p>
-        <p class="readout-val">{t.value}<span class="unit">{t.unit}</span></p>
-        <p class="readout-sub"><Meter percentile={t.percentile} small /><span>{t.sub}</span></p>
+        <p class="readout-val"><span data-live-value>{t.value}</span><span class="unit">{t.unit}</span></p>
+        <p class="readout-sub"><Meter percentile={t.percentile} small /><span data-live-text>{t.sub}</span></p>
       </div>
     ))}
   </section>

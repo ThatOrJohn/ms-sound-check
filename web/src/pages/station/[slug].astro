@@ -86,4 +86,5 @@ const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.disp
     </>)}
     {usgsUrl && <p>Source data: <a href={usgsUrl}>USGS monitoring location {card.id.replace("USGS-", "")}</a>.</p>}
   </section>
+  <script>import "../../lib/live";</script>
 </Base>

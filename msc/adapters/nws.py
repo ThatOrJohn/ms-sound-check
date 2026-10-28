@@ -12,6 +12,11 @@ UA = {"User-Agent": "ms-sound-check (https://github.com/; hobby coastal conditio
       "Accept": "application/geo+json"}
 
 
+def latest_url(station: str) -> str:
+    """Newest observation; api.weather.gov allows cross-origin requests, so the page refreshes from it on load."""
+    return f"https://api.weather.gov/stations/{station}/observations/latest"
+
+
 def recent(region: Region, days: int = 7) -> pd.DataFrame:
     import requests
     out = []
