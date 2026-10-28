@@ -227,3 +227,39 @@ publish as a date.
 - [X API in 2026 (OpenTweet)](https://opentweet.io/answers/is-the-x-api-free-in-2026)
 - USGS series catalog per station, via waterservices site service (queried 2026-10-28)
 - Shrimp opening dates: per-row sources in `data/shrimp_openings.csv`
+
+## ML experiments (2026-10-28)
+
+All tests: gradient-boosted models (LightGBM), trained through 2018 and tested on 2019-2026, compared
+against persistence ("salinity stays where it is today"). Scores are mean absolute error in ppt.
+
+**Salinity forecasting, 1-14 days, our two rivers only: no edge.** The models never beat persistence.
+Predicting the change from today instead of the level only brought them to even. Even with the *true*
+future flow of the Pearl and Pascagoula (an oracle), the best case was 5-14% better at 1-2 weeks.
+
+**Adding the Mississippi River (Baton Rouge flow): no edge.** No change, sometimes slightly worse, even
+with the 2019 and 2020 Bonnet Carre openings inside the test period.
+
+**Adding wind (ERA5 reanalysis over mid-Sound): the first real signal.** Using past wind only:
+
+| Station | 3 days | 7 days |
+|---|---|---|
+| Round Island | 2.69 → 2.26 (−16%) | 3.32 → 2.81 (−15%) |
+| Merrill Shell | 2.07 → 1.88 (−9%) | 2.84 → 2.59 (−9%) |
+| Back Bay | 1.74 → 1.64 (−6%) | 2.41 → 2.32 (−4%) |
+
+A perfect wind forecast adds a few percent more at most. On freshwater-event days (salinity < 8 ppt),
+every model is still worse than persistence without the oracle wind.
+
+**Decision:** don't ship a salinity forecast. The gains are on ordinary days, too small for readers to
+notice, and the models are weakest during the events that matter. Do add wind as data: for the virtual
+sensors, for explaining events ("south wind pushed Gulf water in"), and for the fishing outlook.
+
+**Virtual sensors and step detection.** See `docs/architecture.md`. The neighbor-based estimate is
+good enough to publish for Gulfport Light (about 2.3 ppt typical error). Watching for sudden *steps* in
+a station's gap from its neighbors found exactly one event at Round Island in 17 years (+10 ppt, Oct 17,
+2026). Merrill Shell stepped +14 ppt a day earlier, which points to real Gulf water rather than a sensor
+fault. The rule to ship: a step at one station is suspect; matching steps at two or more stations within
+a few days are an event worth reporting.
+
+Reproduce: run the `Update conditions` workflow with task `experiment`, or `python scripts/experiment_drivers.py`.
