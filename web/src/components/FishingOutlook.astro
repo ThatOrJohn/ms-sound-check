@@ -18,6 +18,10 @@ const muddyText = {
   "some runoff": "Some. Expect stained water near river mouths and bayous.",
   muddy: "High. Expect muddy water well out from the river mouths.",
 }[outlook.muddy.level];
+// What the satellite actually saw, next to the rule-of-thumb risk above (the map's clarity layer has the picture).
+const clarity = data.satellite?.clarity;
+const satDays = clarity ? [clarity.from, clarity.to].map((d) => new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })) : [];
+const satLine = clarity?.summary ? `${clarity.summary} (${satDays[0] === satDays[1] ? satDays[0] : satDays.join("–")}; the map's clarity layer shows where.)` : null;
 ---
 <section class="group fishing" aria-labelledby="g-fishing">
   <h2 id="g-fishing">{title}</h2>
@@ -49,6 +53,7 @@ const muddyText = {
     <p><strong>Muddy-water risk:</strong>{" "}{muddyText}
       {outlook.muddy.reasons.length > 0 && ` (${outlook.muddy.reasons.join("; ")}.)`}
     </p>
+    {satLine && <p><strong>From the satellite:</strong>{" "}{satLine}</p>}
   </div>
 
   {outlook.tide_stations.length > 1 && (

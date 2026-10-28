@@ -8,6 +8,7 @@ import BeachStatus from "./BeachStatus.astro";
 import OysterWatch from "./OysterWatch.astro";
 import FishingOutlook from "./FishingOutlook.astro";
 import ShrimpSeason from "./ShrimpSeason.astro";
+import Spillway from "./Spillway.astro";
 import OfficialSources from "./OfficialSources.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import ReadingRow from "./ReadingRow";
@@ -27,7 +28,8 @@ const newest = dates.at(-1) ?? null;
 const paths = Object.fromEntries(data.personas.map((p) => [p.id, personaPath(p.id)]));
 const siteHref = (slug: string) => href(`station/${slug}/`);
 const alerting = new Set(data.findings.filter((f) => f.site && SEV_RANK[f.severity] >= 2).map((f) => f.site));
-const mapStations: MapStation[] = data.cards.filter((c) => c.kind === "sound" || c.kind === "estuary").map((c) => {
+// A retired station stays on the map only while it has a published estimate; otherwise it would just say "offline".
+const mapStations: MapStation[] = data.cards.filter((c) => (c.kind === "sound" || c.kind === "estuary") && !(c.retired && !c.vars.salinity?.estimate)).map((c) => {
   const v = c.vars.salinity ?? {};
   const live = v.value !== undefined && !v.stale && !c.retired;
   const status: MapStation["status"] = live ? (v.suspect ? "suspect" : "live") : v.estimate ? "estimate" : "quiet";
@@ -37,7 +39,7 @@ const mapStations: MapStation[] = data.cards.filter((c) => c.kind === "sound" ||
     salinity, display, status, alert: alerting.has(c.id) };
 });
 const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((c) => ({
-  name: c.short, osmNames: c.osm_names ?? [c.short], display: c.vars.flow?.display ?? "no data",
+  id: c.id, name: c.short, osmNames: c.osm_names ?? [c.short], display: c.vars.flow?.display ?? "no data",
   band: c.vars.flow?.band, percentile: c.vars.flow?.percentile,
 }));
 const ungauged = data.ungauged_rivers ?? [];
@@ -47,7 +49,7 @@ const ungaugedNote = ungauged.length ? "Smaller rivers without a live flow gauge
 const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
   .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
-    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.cards.length);
+    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.cards.length);
 const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
 
 // ---------- the readout strip: a handful of numbers that sum up the Sound right now
@@ -117,7 +119,8 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
     </div>
     <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} ungauged={ungauged.flatMap((r) => r.osm_names)}
       basemapBase={href("basemap/")} beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
-      personaId={persona.id} defaultLayers={persona.map_layers} />
+      personaId={persona.id} defaultLayers={persona.map_layers}
+      satellite={data.satellite} dataBase={href(`data/${data.region.id}/`)} replay={data.replay} />
     <figcaption class="sound-foot" id="sound-cap">{"Stations are colored by salinity. River lines widen when the rivers run high; dashed lines are rivers without a flow gauge."}</figcaption>
     <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
   </figure>
@@ -146,7 +149,8 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 {groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} data={data} />
   : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} data={data} />
   : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} data={data} />
-  : g.kind === "shrimp_season" ? <ShrimpSeason season={data.shrimp_season!} data={data} /> : (
+  : g.kind === "shrimp_season" ? <ShrimpSeason season={data.shrimp_season!} data={data} />
+  : g.kind === "spillway" ? <Spillway spillway={data.spillway!} data={data} /> : (
   <section class="group" aria-labelledby={`g-${g.kind}`}>
     <div class="group-head">
       <h2 id={`g-${g.kind}`}>{g.title}</h2>

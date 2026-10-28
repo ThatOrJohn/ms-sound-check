@@ -11,6 +11,13 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
+- **Beach advisory heads-up**: `beach_history.parquet` plus rainfall could show how often MDEQ advisories follow heavy
+  rain and how soon, for a "likely after rain like this" note between the weekly samples. Never says a beach is closed.
+- **Vibrio-favorable conditions**: warm water (about 20°C and up) at moderate salinity (about 5-25 ppt) is where Vibrio
+  grows best, and both are live at every station. Needs careful, calm wording and a decision record before it ships.
+- **Dev fixtures keep real files**: `dev_fixtures.py apply` overwrites the real `mdmr_notices.json`,
+  `weather_forecast.json` and `tides.json`, and `clear` deletes them, so the Shrimp section disappears locally until
+  the next `msc run`. Back them up on apply and restore on clear.
 - **Better event explanations**: wind and rivers explain under half of the events ([0017](decisions/0017-step-events-describe-wind-and-rivers.md)). The Mississippi River added nothing beyond chance ([0020](decisions/0020-mississippi-flow-not-added-to-event-text.md)). Left to test: Gulf water level at Dauphin Island (NOAA CO-OPS 8735180; pull slowly, the API refused a fast bulk request).
 - **Use the Dauphin Island reference data**: DISL salinity is ingested ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)) but not used for flags. Next: show it on the map's east end, or pair it with a closer station such as Grand Bay NERR.
 - **Smaller rivers in the virtual sensors**: run an experiment with the Wolf and Biloxi gauges as inputs for West Sound and Biloxi Back Bay. They're shown but not used today ([0021](decisions/0021-smaller-rivers-shown-not-weighed.md)).
@@ -18,6 +25,13 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **Weekly digest**: Bluesky post + RSS from the same build.
 
 ## Later
+- **West-to-east salinity strip**: one gradient bar from the Pearl River mouth to East Sound, each station placed by
+  where it sits, with a faint band for typical. The whole Sound at a glance, and a good share image.
+- **Reference years on station charts**: a faint line for 2019 (the spillway year) or a year the reader picks.
+- **River panel on phones**: the map's river flow panel is hidden under 900 px; show it as a compact row instead.
+- **Per-beach RSS**: one feed per beach, alongside the weekly digest.
+- **Spillway status feed**: if the Corps publishes structure flow or bays open, use it instead of the hand-kept list
+  ([0022](decisions/0022-spillway-watch-from-the-river.md)).
 - **MDMR shellfish areas on the oyster map**: the molluscan shellfish and oyster growing waters classification areas as a map layer (I-B, II-A and so on), so the closure table's area names point at places. Look for a public MDMR feature service first, like the beach layer, and don't work around bot checks.
 - Custom domain (about $12/yr) and Cloudflare Web Analytics.
 - Grand Bay NERR water-quality sondes as extra stations.

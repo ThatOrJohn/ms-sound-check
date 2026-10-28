@@ -3,7 +3,7 @@
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
 export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind";
-export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season";
+export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway";
 export type Kind2 = Kind | "gauge";
 
 export interface Persona {
@@ -125,7 +125,35 @@ export interface ShrimpSeason {
   notices: ShrimpNotice[]; notices_available: boolean; link: string | null; source: string | null; days: ShrimpWindDay[];
 }
 
+export interface SpillwayOpening { opened: string; year: number; days: number | null; closed: string | null; max_bays: number | null; peak_cfs: number | null }
+/** What our Sound station did during a past opening: median the month before, lowest during (or two weeks after). */
+export interface SpillwayEffect { opened: string; year: number; days: number | null; before: number; low: number; low_date: string }
+export interface Spillway {
+  gauge_name: string; open_ft: number; watch_ft: number; link: string | null;
+  openings: SpillwayOpening[]; open_now: SpillwayOpening | null; count: number; since: number | null; since_2000: number;
+  effects: SpillwayEffect[]; sound_site: string;
+  /** Null when the river readings are missing or stale. */
+  river: null | {
+    stage: number; time: string; change_24h: number | null; status: "open_level" | "forecast_open" | "watch" | "low";
+    forecast: [string, number][]; crest: number | null; crest_time: string | null;
+    reach_open_time: string | null; reach_watch_time: string | null; observed: [string, number][];
+  };
+}
+
+/** A satellite map layer: a data PNG (gray = value scaled to range, log if `log`; alpha 0 = no clear view). */
+export interface SatelliteLayer {
+  label: string; png: string; source: string | null; bounds: [number, number, number, number];
+  from: string; to: string; log: boolean; range: [number, number]; unit: string | null; coverage: number;
+  summary: string | null; zones: [string, number][];
+}
+
+/** Last 30 days for the map's replay: salinity per station, flow percentile per river (null = no reading). */
+export interface Replay { days: string[]; salinity: Record<string, (number | null)[]>; flow_pct: Record<string, (number | null)[]> }
+
 export interface Latest {
+  spillway?: Spillway | null;
+  satellite?: Record<string, SatelliteLayer>;
+  replay?: Replay;
   fishing_outlook?: FishingOutlook | null;
   shrimp_season?: ShrimpSeason | null;
   oyster_watch?: OysterWatch | null;

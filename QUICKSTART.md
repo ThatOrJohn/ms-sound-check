@@ -129,6 +129,7 @@ as they're done, write the outcome, update `docs/ROADMAP.md` and `CHANGELOG.md`.
 | When | What |
 |---|---|
 | Every spring (March to May) | The Shrimp page shows a season "lean" from spring water temperature. When MDMR announces the opening date, add a row to `data/shrimp_openings.csv` and note in the roadmap whether the lean was right. |
+| When the Corps opens the Bonnet Carré Spillway | Add a row to `data/spillway_openings.csv` with a blank `days`; fill in `days` when it closes. The site only says it's open from this file ([0022](docs/decisions/0022-spillway-watch-from-the-river.md)). |
 | Monthly (automatic) | CI recomputes normals and retrains the virtual sensors. Glance at that run's log if you're curious. |
 | If MDMR revises its shellfish plan | Update the oyster watch's thresholds and `plan_url` in `regions/ms.yaml`, and add a decision record. |
 

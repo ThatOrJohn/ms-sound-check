@@ -1,0 +1,19 @@
+# Bonnet Carré Spillway openings (US Army Corps of Engineers, New Orleans District, via its operation history).
+# Add a row when the Corps opens it; set days once it closes (leave blank while open). See docs/decisions/0022.
+# The one-bay test on 2025-04-21 (about 260 cfs) was a test, not an opening, and is left out.
+opened,days,max_bays,peak_cfs
+1937-01-28,48,285,203571
+1945-03-23,57,350,250000
+1950-02-10,38,350,250000
+1973-04-08,75,350,250000
+1975-04-14,13,225,160714
+1979-04-17,45,350,250000
+1983-05-20,35,350,250000
+1997-03-17,31,298,212857
+2008-04-11,31,160,114286
+2011-05-09,42,330,235714
+2016-01-10,22,210,203000
+2018-03-08,22,183,196000
+2019-02-27,43,206,213000
+2019-05-10,79,168,161000
+2020-04-03,29,90,90000

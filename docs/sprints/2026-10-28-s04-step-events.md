@@ -14,8 +14,17 @@
 - [x] DISL salinity ingested as reference data; no automatic flag ([0019](../decisions/0019-disl-reference-data-no-auto-flag.md))
 - [x] Official-source notices up front on the home page and in each section; About provenance ([0018](../decisions/0018-official-source-notices-up-front.md))
 - [x] Smaller rivers: Wolf and Biloxi gauges as `minor` rivers, Jourdan/Tchoutacabouffa/Escatawpa named on the map, headline names rivers ([0021](../decisions/0021-smaller-rivers-shown-not-weighed.md)). Needs the `backfill` task once in CI for their normals.
+- [x] Bonnet Carré Spillway watch: Mississippi stage and forecast at New Orleans against 17 ft, every past opening, and what West Sound did during recent ones ([0022](../decisions/0022-spillway-watch-from-the-river.md))
+- [x] Satellite water clarity and surface temperature as map layers, with a plain summary by part of the Sound ([0023](../decisions/0023-satellite-layers-newest-clear-view.md)); clarity on by default for Fishing and repeated in its outlook
+- [x] Map replay: a 30-day slider and Play button that redraw station salinity and river flow day by day
+- [x] Colorblind fixes: beach segments use line patterns, labels and a key; collapsible panels show a chevron
 
 ## Notes
+- 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN
+  stopped on 2026-09-14 and have nothing for the structure, USGS has no gauge in the channel, and the Corps' site
+  answers bots with 403. So the watch reads the river (NWS NORL1) and a hand-kept list of openings (0022).
+- 2026-10-28: West Sound during openings (median the month before, then the low): 2019-02-27 15.5 to 0.6 ppt, 2019-05-10
+  5.7 to 0.2, 2020-04-03 7.8 to 5.5. In 2011 it fell from 15.9 to 1.1, and in 2016 from 15.4 to 1.3.
 - 2026-10-28: Round Island went from 17.6 ppt to 36.2 ppt on Oct 14-15 and then read 37-40 ppt. Merrill Shell Bank
   stepped from 7 to 24 ppt on the same days while rivers were low and the wind was calm, so the jump looks real at
   two stations. 40 ppt is above what the Gulf should carry, so the Round Island numbers are still doubtful.

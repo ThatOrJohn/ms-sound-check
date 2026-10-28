@@ -221,6 +221,29 @@ def _beaches(region, asof):
     return section, geo
 
 
+REPLAY_DAYS = 30
+
+
+def _replay(region, daily, normals, asof) -> dict:
+    """Daily salinity at the map's stations and flow percentile for each river, for the map's replay slider."""
+    days = pd.date_range(asof - pd.Timedelta(days=REPLAY_DAYS - 1), asof)
+    recent = daily[(daily.date >= days[0]) & (daily.date <= asof)]
+    out = {"days": [d.strftime("%Y-%m-%d") for d in days], "salinity": {}, "flow_pct": {}}
+    for site in region.sites:
+        if site.get("retired"):
+            continue
+        if site["kind"] in ("sound", "estuary") and "salinity" in site["vars"]:
+            s = recent[(recent.site == site["id"]) & (recent["var"] == "salinity")].drop_duplicates("date").set_index("date").value
+            out["salinity"][site["id"]] = [None if d not in s.index or is_suspect("salinity", s[d]) else _r(s[d], 1) for d in days]
+        elif site["kind"] == "river" and not normals.empty:
+            s = recent[(recent.site == site["id"]) & (recent["var"] == "flow")].drop_duplicates("date").set_index("date").value
+            n = normals[(normals.site == site["id"]) & (normals["var"] == "flow")].set_index("doy")
+            out["flow_pct"][site["id"]] = [
+                round(nm.percentile_of(s[d], n.loc[min(d.dayofyear, 365)])) if d in s.index and min(d.dayofyear, 365) in n.index else None
+                for d in days]
+    return out
+
+
 def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch=None, fishing=None, shrimp=None):
     """Lead with anything serious; otherwise describe the overall picture in plain words."""
     focus = persona["focus"]
@@ -306,12 +329,22 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     oyster_section = oyster.section(region, daily, asof)
     fishing_section = fishing.section(region, daily, asof, cards, forecast)
     shrimp_section = shrimp.section(region, asof)
+    from .models import satellite, spillway
+    spillway_section = spillway.section(region, daily, asof)
+    out = SITE_OUT / region.id
+    (out / "sites").mkdir(parents=True, exist_ok=True)
+    for old in out.glob("sat-*.png"):     # a layer that went stale must disappear, not linger
+        old.unlink()
+    satellite_layers = satellite.build(region, out)
     latest = {
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
         "beaches": beach_section,
         "oyster_watch": oyster_section,
         "fishing_outlook": fishing_section,
         "shrimp_season": shrimp_section,
+        "spillway": spillway_section,
+        "satellite": satellite_layers,
+        "replay": _replay(region, daily, normals, asof),
         "generated_at": generated_at.isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),
@@ -323,8 +356,6 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "rain_forecast": fc,
         "variables": {k: {"label": v["label"]} for k, v in VARIABLES.items()},
     }
-    out = SITE_OUT / region.id
-    (out / "sites").mkdir(parents=True, exist_ok=True)
     if beach_geo:
         (out / "beaches.geojson").write_text(json.dumps(beach_geo, separators=(",", ":")))
     (out / "latest.json").write_text(json.dumps(latest, default=str, separators=(",", ":")))

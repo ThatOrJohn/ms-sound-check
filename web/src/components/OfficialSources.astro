@@ -2,7 +2,7 @@
 import type { Latest } from "../lib/types";
 import { fmtDate, fmtTime, href } from "../lib/format";
 
-type Topic = "beaches" | "oyster" | "shrimp" | "weather";
+type Topic = "beaches" | "oyster" | "shrimp" | "spillway" | "weather";
 interface Props { data: Latest; only?: Topic }
 const { data, only } = Astro.props;
 
@@ -29,6 +29,11 @@ const rows: { topic: Topic; what: string; who: string; href: string; link: strin
     topic: "shrimp", what: "Shrimp season dates and areas", who: "Mississippi Department of Marine Resources (MDMR)",
     href: data.shrimp_season?.link ?? "https://dmr.ms.gov/shrimp/", link: "MDMR shrimp information",
     how: "We repeat the title and opening lines of MDMR's press releases. Boundaries and dates are in the full notice, which is the rule. A notice we missed or a title we filter out won't appear.",
+  },
+  {
+    topic: "spillway", what: "Bonnet Carré Spillway openings", who: "US Army Corps of Engineers, New Orleans District",
+    href: data.spillway?.link ?? "https://www.mvn.usace.army.mil/", link: "Corps spillway information",
+    how: "No public feed says whether the spillway is open, so we compare the river at New Orleans (National Weather Service) with the level where the Corps has opened it before, and add openings to our list by hand. A river at that level doesn't mean it's open.",
   },
   {
     topic: "weather", what: "Wind, waves and getting around on the water", who: "National Weather Service, Mobile",

@@ -25,6 +25,9 @@
   --fresh: #8c6a3f;        /* tannin river water */
   --brackish: #7f8c4f;
   --gulf: #2b6c78;
+  --sst-cool: #3d6fa8;     /* satellite surface temp ramp */
+  --sst-mild: #c9c08f;
+  --sst-warm: #b5502a;
   --focus: #1f6fb5;
   --glass: rgba(255, 255, 255, 0.78);
   --shadow: 0 1px 2px rgba(14, 26, 30, 0.04), 0 8px 24px -12px rgba(14, 26, 30, 0.14);
@@ -41,6 +44,7 @@
     --hair: rgba(230, 237, 239, 0.08); --land: #142024; --water: #0c181d; --accent: #5cc6de;
     --marker-red: #f97066; --marker-green: #5fd08a; --amber: #f5b14c; --watch: #e2cf5b; --notice: #8fc1cb;
     --fresh: #b48c55; --brackish: #a3b06a; --gulf: #5aa3ae; --focus: #7cb8f0;
+    --sst-cool: #6f9fd8; --sst-mild: #cfc79a; --sst-warm: #e8825a;
     --glass: rgba(17, 30, 35, 0.74); --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.7);
     color-scheme: dark;
   }
@@ -50,6 +54,7 @@
   --hair: rgba(230, 237, 239, 0.08); --land: #142024; --water: #0c181d; --accent: #5cc6de;
   --marker-red: #f97066; --marker-green: #5fd08a; --amber: #f5b14c; --watch: #e2cf5b; --notice: #8fc1cb;
   --fresh: #b48c55; --brackish: #a3b06a; --gulf: #5aa3ae; --focus: #7cb8f0;
+    --sst-cool: #6f9fd8; --sst-mild: #cfc79a; --sst-warm: #e8825a;
   --glass: rgba(17, 30, 35, 0.74); --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.7);
   color-scheme: dark;
 }
@@ -177,11 +182,12 @@ select, .btn {
   box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.35);
 }
 .map-layers { position: absolute; top: 12px; right: 12px; margin: 0; padding: 9px 12px 10px; max-width: 230px; font-size: 0.82rem; display: grid; gap: 2px; }
-.map-layers summary { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; min-height: 24px; display: flex; align-items: center; gap: 7px; list-style: none; }
-.map-layers summary::-webkit-details-marker { display: none; }
-/* display: flex drops the native disclosure triangle, so draw our own chevron. */
-.map-layers summary::before { content: ""; width: 5px; height: 5px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform 0.15s; flex: none; }
-.map-layers[open] summary::before { transform: rotate(45deg) translate(-1px, -1px); }
+.map-layers summary { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; min-height: 24px; display: flex; align-items: center; }
+/* display: flex drops the native disclosure triangle, so these summaries draw their own chevron. */
+.map-layers summary, .beach-all summary, .fish-more summary { list-style: none; gap: 8px; }
+.map-layers summary::-webkit-details-marker, .beach-all summary::-webkit-details-marker, .fish-more summary::-webkit-details-marker { display: none; }
+.map-layers summary::before, .beach-all summary::before, .fish-more summary::before { content: ""; width: 5px; height: 5px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform 0.15s; flex: none; }
+.map-layers[open] summary::before, .beach-all[open] summary::before, .fish-more[open] summary::before { transform: rotate(45deg) translate(-1px, -1px); }
 .map-layers[open] summary { margin-bottom: 4px; }
 .beach-key { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; font-size: 0.75rem; color: var(--ink-soft); }
 .beach-key li { display: flex; align-items: center; gap: 8px; }
@@ -191,6 +197,20 @@ select, .btn {
 .map-layers label { display: flex; gap: 9px; align-items: center; cursor: pointer; min-height: 28px; }
 .map-layers label.off { color: var(--ink-soft); cursor: default; }
 .map-layers input { accent-color: var(--accent); width: 15px; height: 15px; }
+.sat-key { margin-top: 6px; display: grid; gap: 3px; }
+.sat-ramp { display: block; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--gulf), var(--fresh)); }
+.sat-ramp[data-layer="sst"] { background: linear-gradient(90deg, var(--sst-cool), var(--sst-mild), var(--sst-warm)); }
+.sat-ends { display: flex; justify-content: space-between; font: 500 0.68rem var(--mono); color: var(--ink-soft); }
+.replay { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--hair); font-size: 0.8rem; }
+.replay input[type="range"] { flex: 1 1 200px; accent-color: var(--accent); min-height: 24px; }
+.replay-play { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.replay-play:hover:not(:disabled) { border-color: var(--accent); }
+.replay-play [data-icon="play"] { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor; margin-left: 3px; }
+.replay-play [data-icon="pause"] { width: 10px; height: 12px; border-left: 3px solid currentColor; border-right: 3px solid currentColor; }
+.replay-day { font: 600 0.82rem var(--mono); min-width: 52px; }
+.replay-day[data-past] { color: var(--accent); }
+.replay-note { color: var(--ink-soft); flex-basis: 100%; }
+@media (min-width: 900px) { .replay-note { flex-basis: auto; } }
 .map-note { margin: 4px 0 0; color: var(--ink-soft); font-size: 0.75rem; line-height: 1.35; }
 .map-rivers { position: absolute; left: 12px; bottom: 34px; display: grid; gap: 5px; font-size: 0.78rem; padding: 9px 12px; }
 .map-rivers .bar { display: inline-block; width: 4px; background: var(--fresh); border-radius: 2px; margin-right: 8px; vertical-align: middle; }
@@ -325,6 +345,39 @@ select, .btn {
 .oyster-table .reefs { display: block; color: var(--ink-soft); font-size: 0.82rem; }
 .oyster-table tr[data-status="above"] .now-cell { color: var(--marker-red); font-weight: 600; }
 .oyster-table tr[data-status="forecast"] .now-cell { color: var(--amber); font-weight: 600; }
+
+/* ---------- Bonnet Carré Spillway ---------- */
+.spillway > p { max-width: var(--measure); color: var(--ink-soft); }
+.spillway h3 { font-size: 0.95rem; margin: 0 0 6px; }
+.spill-open { color: var(--marker-red) !important; font-weight: 600; }
+.spill-status { margin: -10px 0 18px; font-size: 0.9rem; }
+.stage-now[data-status="open_level"] .spill-status { color: var(--marker-red); font-weight: 600; }
+.stage-now[data-status="forecast_open"] .spill-status { color: var(--amber); font-weight: 600; }
+.spill-chart { margin-top: 30px; padding-left: 26px; }
+.spill-chart .plot { position: relative; height: 130px; }
+.spill-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.spill-chart .grid { stroke: var(--hair); stroke-width: 1; }
+.spill-chart .open-line { stroke: var(--marker-red); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.spill-chart .now-line { stroke: var(--rule); stroke-width: 1; }
+.spill-chart .obs { fill: none; stroke: var(--fresh); stroke-width: 2.2; stroke-linejoin: round; }
+.spill-chart .fc { fill: none; stroke: var(--fresh); stroke-width: 2.2; stroke-dasharray: 4 4; }
+.spill-chart .tick, .spill-chart .open-label { position: absolute; font: 500 0.68rem/1 var(--mono); color: var(--ink-soft); white-space: nowrap; }
+.spill-chart .tick.y { left: -26px; width: 20px; text-align: right; transform: translateY(-50%); }
+.spill-chart .open-label { right: 0; transform: translateY(calc(-100% - 4px)); color: var(--marker-red); }
+.spill-chart .x { position: relative; height: 18px; margin-top: 6px; }
+.spill-chart .x .at-now { transform: translateX(-50%); }
+.spill-history, .spill-effects { background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); padding: 16px 20px; margin: 14px 0; max-width: var(--block); box-shadow: var(--shadow); }
+.spill-history p, .spill-effects li { font-size: 0.88rem; }
+.spill-history > p:first-of-type { margin: 0 0 4px; color: var(--ink-soft); }
+.spill-timeline { position: relative; height: 54px; margin: 8px 8px 0; }
+.spill-timeline .axis { position: absolute; left: 0; right: 0; top: 20px; height: 1px; background: var(--rule); }
+.spill-timeline .decade { position: absolute; top: 34px; transform: translateX(-50%); font: 500 0.68rem var(--mono); color: var(--ink-soft); }
+.spill-timeline .decade::before { content: ""; position: absolute; left: 50%; top: -11px; height: 6px; width: 1px; background: var(--rule); }
+.spill-timeline .opening { position: absolute; top: 20px; width: var(--d); height: var(--d); transform: translate(-50%, -50%); border-radius: 50%;
+  background: color-mix(in oklab, var(--fresh) 55%, transparent); border: 1.5px solid var(--fresh); }
+.spill-timeline .opening[data-recent] { background: var(--fresh); }
+.spill-key { margin: 2px 0 0; font-size: 0.75rem !important; color: var(--ink-soft); }
+.spill-effects ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
 @media (max-width: 640px) {
   .oyster-table thead { display: none; }
   .oyster-table tr { display: grid; padding: 8px 0; border-bottom: 1px solid var(--hair); }

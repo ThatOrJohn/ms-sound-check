@@ -229,32 +229,70 @@ reference:
     name: Dauphin Island Sea Lab
     checks: [USGS-301849088350000]
 
+# Bonnet Carré Spillway (decision 0022). The Corps opens it to keep the Mississippi at New Orleans near 1.25 million cfs,
+# about 17 ft on the Carrollton gauge, and the water reaches the western Sound through Lake Pontchartrain and Lake Borgne.
+# Nothing public says live whether it's open, so we watch the river (NWS stage + forecast) and keep past openings in
+# data/spillway_openings.csv by hand. `sound_site` is the station used to show what the Sound did during past openings.
+spillway:
+  gauge_lid: NORL1
+  gauge_name: Mississippi River at New Orleans (Carrollton)
+  open_ft: 17
+  watch_ft: 15
+  sound_site: USGS-301429089145600
+  openings: spillway_openings.csv
+  link: https://www.mvn.usace.army.mil/Missions/Mississippi-River-Flood-Control/Bonnet-Carre-Spillway-Overview/
+
+# Satellite map layers from NOAA CoastWatch ERDDAP (decision 0023). Each is the newest clear look per pixel over the
+# last `days` days, clipped to the map's area. Hidden when the newest pass is older than `max_age_days`.
+satellite:
+  bbox: [-90.0, 29.9, -88.1, 30.72]     # W, S, E, N: the basemap's bounds
+  layers:
+    - id: clarity
+      label: Water clarity
+      dataset: noaacwNPPVIIRSkd490SectorVYDaily
+      var: kd_490
+      altitude: true
+      days: 5
+      max_age_days: 4
+      log: true
+      range: [0.1, 3.0]                 # Kd490, 1/m. Fixed so days compare.
+      source: NOAA S-NPP VIIRS, 750 m
+    - id: sst
+      label: Surface temp
+      dataset: noaacwLEOACSPOSSTL3SnrtCDaily
+      var: sea_surface_temperature
+      quality: {var: quality_level, min: 5}
+      days: 3
+      max_age_days: 3
+      range: scene                      # stretched to this scene's spread, so fronts show
+      source: NOAA ACSPO multi-satellite, 2 km
+
 # Personas re-rank indicators and reorder cards. Add one by adding an entry here.
 personas:
   - id: general
     label: Coast (general)
     blurb: What the Sound is doing this week and whether any of it matters.
     focus: [general, oyster, shrimp, fish]
-    card_order: [beaches, sound, river, rain, weather, estuary]
+    card_order: [beaches, sound, river, spillway, rain, weather, estuary]
     map_layers: [depth, rivers, beaches]
   - id: oyster
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
-    card_order: [oyster_watch, sound, river, rain, estuary, weather, beaches]
+    card_order: [oyster_watch, spillway, sound, river, rain, estuary, weather, beaches]
     map_layers: [depth, contours, rivers, salinity]
   - id: shrimp
     label: Shrimp
     blurb: Spring water temperature drives when brown shrimp reach legal size; fresh water pushes them offshore.
     focus: [shrimp, general]
-    card_order: [shrimp_season, sound, weather, river, rain, estuary, beaches]
+    card_order: [shrimp_season, sound, weather, river, spillway, rain, estuary, beaches]
     map_layers: [depth, contours, rivers]
   - id: fish
     label: Fishing
     blurb: Salinity and water temperature shifts that move bait and fish around the Sound.
     focus: [fish, general]
-    card_order: [fishing_outlook, sound, weather, rain, river, estuary, beaches]
-    map_layers: [depth, contours, salinity]
+    card_order: [fishing_outlook, sound, weather, rain, river, spillway, estuary, beaches]
+    map_layers: [depth, contours, clarity]
 
 indicators:
   # Unusual vs. normal for this time of year, for every station/variable.
@@ -350,6 +388,12 @@ indicators:
 
   # Virtual-sensor QC: every salinity station checked against what its neighbors and the rivers imply.
   # (Configured here so another region can tune or drop it; the model lives in msc/models/virtual.py.)
+
+  # Bonnet Carré Spillway watch: the Mississippi at New Orleans against the level where the Corps has opened it.
+  - id: spillway_watch
+    type: custom
+    fn: msc.models.spillway:findings
+    topics: [general, oyster, shrimp, fish]
 
   # Shrimp season lean from spring water temperature (see docs/feasibility.md).
   - id: shrimp_season_lean

@@ -97,6 +97,14 @@ def cmd_ingest(region, args):
     notices = _try("mdmr notices", mdmr.fetch, region)
     if notices:
         mdmr.save(region, notices)
+    from .adapters import spillway
+    river = _try("spillway river", spillway.fetch, region)
+    if river:
+        spillway.save(region, river)
+    from .adapters import coastwatch
+    sat = _try("satellite", coastwatch.fetch, region)
+    if sat:
+        coastwatch.save(region, sat)
     res = _try("rain", openmeteo.recent_and_forecast, region)
     if res is not None:
         obs, fc = res
