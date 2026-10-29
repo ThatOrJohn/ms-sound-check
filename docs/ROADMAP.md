@@ -3,7 +3,7 @@
 Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Now
-**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035).
+**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035), then a shorter home page (0036) and the Sound west to east as one bar ([0037](decisions/0037-the-sound-west-to-east.md)).
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -18,16 +18,12 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 ### Showing the Sound
 Built 2026-10-28 ([0032](decisions/0032-year-dots-from-the-record-indicator.md)-[0035](decisions/0035-home-map-first-and-one-instrument-table.md)):
 cleaner stripes, year dots, the salinity sketch for any day back to 1998, wind and river motion, and the home layout.
-Two follow-ups:
+Home height follow-up done: one history picture on home and a folded spillway section (home 6,035 → 4,972 px,
+[0036](decisions/0036-one-history-picture-and-a-folded-spillway.md)). One follow-up left:
 - **Replay speed on a real phone**: headless software WebGL gives about 50 ms a frame while playing a year (map repaint,
   not the sketch). Check a mid-range phone; if it stutters, lengthen the play interval before trying WebGL (0033).
-- **Home height**: 6,327 px at 1360 px wide, not half of 6,000. The readings table is shorter, but the full-width
-  history section added about 600 px and the sections we kept as they are come to about 2,700. Decide whether to
-  shorten history (one station on the home page?) or spillway (0035).
 
 ## Later
-- **West-to-east salinity strip**: one gradient bar from the Pearl River mouth to East Sound, each station placed by
-  where it sits, with a faint band for typical. The whole Sound at a glance, and a good share image.
 - **Per-beach RSS**: one feed per beach, alongside the weekly digest.
 - **Spillway status feed**: if the Corps publishes structure flow or bays open, use it instead of the hand-kept list
   ([0022](decisions/0022-spillway-watch-from-the-river.md)).

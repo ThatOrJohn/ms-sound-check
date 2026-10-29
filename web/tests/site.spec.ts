@@ -112,7 +112,14 @@ test("oyster page shows the spillway watch with the Corps link and every past op
   const sec = page.locator("section.spillway");
   await expect(sec.getByRole("heading", { name: "Bonnet Carré Spillway" })).toBeVisible();
   await expect(sec.getByRole("link", { name: /Army Corps of Engineers/ })).toHaveAttribute("href", /usace\.army\.mil/);
-  await expect(sec.getByRole("img", { name: /Spillway openings by year: 1937/ })).toBeAttached();
+  // With the river low and nothing open, the section is one line and the rest opens on request (0036).
+  const more = sec.locator("details.spill-more");
+  if (await more.count()) {
+    await expect(sec.locator(".spill-calm")).toContainText("ft on the Mississippi");
+    await expect(sec.locator(".spill-timeline")).toBeHidden();
+    await more.locator("summary").click();
+  }
+  await expect(sec.getByRole("img", { name: /Spillway openings by year: 1937/ })).toBeVisible();
 });
 
 test("map replay steps back through the last 30 days and returns to today", async ({ page }) => {
@@ -236,7 +243,8 @@ test("salinity history: home section, table alternative, and a picked year on th
   await page.goto("");
   const home = page.locator("section", { has: page.locator("#g-history") });
   await expect(home.getByRole("heading", { name: /years of the Sound/ })).toBeVisible();
-  await expect(home.locator("canvas.stripes-canvas")).toHaveCount(2);
+  await expect(home.locator("canvas.stripes-canvas")).toHaveCount(1);   // one picture on home; the rest are linked (0036)
+  await expect(home.locator(".history-more").getByRole("link").first()).toHaveAttribute("href", /station\/[\w-]+\/#history$/);
   await page.goto("station/west-sound/#year-2019");
   const hist = page.locator("#history");
   await expect(hist.getByRole("combobox")).toHaveValue("2019");
@@ -245,7 +253,7 @@ test("salinity history: home section, table alternative, and a picked year on th
   await page.locator(".chart-box").scrollIntoViewIfNeeded();
   await expect(page.locator(".chart-note").first()).toContainText("2019 on the same dates");
   for (const scheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });   // no mid-transition colors for axe
     const axe = await new AxeBuilder({ page }).include("#history").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
   }
@@ -278,7 +286,7 @@ test("the weekly digest feed is valid RSS and every page links to it", async ({ 
 test("the home history pictures draw once scrolled to, keep partial years apart, and a tapped day links onward", async ({ page }) => {
   await page.goto("");
   const canvases = page.locator("section:has(#g-history) canvas.stripes-canvas");
-  await expect(canvases).toHaveCount(2);
+  await expect(canvases).toHaveCount(1);
   for (const c of await canvases.all()) {
     await c.scrollIntoViewIfNeeded();
     await expect(c).toHaveAttribute("data-drawn", "", { timeout: 10_000 });   // client:visible fired and it drew
@@ -349,8 +357,37 @@ test("home: headline, then map, then Signals in the DOM, and one instrument tabl
   await expect(table.getByRole("columnheader", { name: "Out in the Sound" })).toBeVisible();
   await expect(page.locator(".cards")).toHaveCount(0);
   for (const scheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });   // no mid-transition colors for axe
     const axe = await new AxeBuilder({ page }).include(".instruments").include(".replay").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
   }
+});
+
+// ---------- The Sound west to east (decision 0037)
+
+test("the Sound west to east: stations in order, named and linked, with a text version of the bars", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  await page.goto("");
+  const sec = page.locator("section.strip");
+  await expect(sec.getByRole("heading", { name: "The Sound, west to east" })).toBeVisible();
+  const bars = sec.getByRole("img", { name: /^Salinity from west to east: / });
+  await expect(bars).toBeVisible();
+  // Every salinity station on the map is named, west to east, in the text version.
+  const shown = latest.cards.filter((c: any) => ["sound", "estuary"].includes(c.kind) && c.vars.salinity && !(c.retired && !c.vars.salinity.estimate))
+    .sort((a: any, b: any) => a.lon - b.lon).map((c: any) => c.short);
+  const text = (await bars.getAttribute("aria-label"))!;
+  expect(shown.map((s: string) => text.indexOf(s))).toEqual(shown.map((s: string) => text.indexOf(s)).sort((a: number, b: number) => a - b));
+  for (const s of shown) await expect(sec.locator(".strip-label").getByRole("link", { name: s, exact: true })).toHaveAttribute("href", /station\/[\w-]+\/$/);
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+    const axe = await new AxeBuilder({ page }).include("section.strip").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+    expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
+  }
+});
+
+test("the Oysters share image is the strip, at 1200x630", async ({ request }) => {
+  const res = await request.get("og/oyster.png");
+  expect(res.status()).toBe(200);
+  const png = await res.body();
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
 });

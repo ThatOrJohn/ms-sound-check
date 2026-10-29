@@ -40,7 +40,8 @@
 - [x] Showing the Sound: wind particles and marching river dashes, still arrows under reduced motion ([0034](../decisions/0034-wind-and-river-flow-as-motion.md))
 - [x] Showing the Sound: home DOM order headline, map, Signals; one instrument table in place of five card grids ([0035](../decisions/0035-home-map-first-and-one-instrument-table.md))
 - [ ] Showing the Sound: check replay frame time on a real mid-range phone (headless software WebGL: about 50 ms a frame while playing, 60 fps idle)
-- [ ] Showing the Sound: home height is 6,327 px, not half of 6,000; decide whether to shorten the history or spillway sections (0035)
+- [x] Showing the Sound: home height: one history picture on home (the rest linked) and the spillway folded to one line while the river is low; home 6,035 → 4,972 px ([0036](../decisions/0036-one-history-picture-and-a-folded-spillway.md))
+- [x] The Sound west to east: one bar of today's salinity by station position over a fainter usual bar, a summary in the table's band words, labels that never cross, and the Oysters share image (`share: strip`) ([0037](../decisions/0037-the-sound-west-to-east.md))
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

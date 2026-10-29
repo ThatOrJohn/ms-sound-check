@@ -5,7 +5,7 @@ export type Band = "low" | "below" | "normal" | "above" | "high";
 export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind" | "water_level";
 /** Inputs to the models and event text, not stations anyone browses to. */
 export const INPUT_KINDS: Kind[] = ["wind", "water_level"];
-export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway" | "vibrio" | "history";
+export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway" | "vibrio" | "history" | "strip";
 export type Kind2 = Kind | "gauge";
 
 export interface Persona {
@@ -14,6 +14,8 @@ export interface Persona {
   blurb: string;
   focus: string[];
   card_order: Section[];
+  /** "strip": the share image shows the Sound west to east instead of the readout tiles (decision 0037). */
+  share?: "strip";
   map_layers?: string[];
 }
 
@@ -204,7 +206,7 @@ export interface HistoryFile {
   /** A word or two per notable year ("spillway", "Ida"), for the picture's right margin. */
   tags?: Record<string, string>;
 }
-/** In latest.json: which stations have a history file, the two the home section shows, and its takeaway line. */
+/** In latest.json: which stations have a history file, the ones the home section draws, and its takeaway line. */
 export interface HistorySummary {
   since: number; fresh_below: number; salty_above: number; home: { id: string; slug: string; short: string }[];
   stations: Record<string, string>; takeaway: string | null;

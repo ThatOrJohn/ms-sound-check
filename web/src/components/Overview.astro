@@ -11,6 +11,7 @@ import ShrimpSeason from "./ShrimpSeason.astro";
 import Spillway from "./Spillway.astro";
 import VibrioNote from "./VibrioNote.astro";
 import HistorySection from "./HistorySection.astro";
+import SoundStrip from "./SoundStrip.astro";
 import OfficialSources from "./OfficialSources.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import TideStrip from "./TideStrip";
@@ -59,7 +60,7 @@ const ungaugedNote = ungauged.length ? "Smaller rivers without a live flow gauge
 const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
   .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
-    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.kind === "vibrio" ? !!data.vibrio : g.kind === "history" ? !!data.history : g.cards.length);
+    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.kind === "vibrio" ? !!data.vibrio : g.kind === "history" ? !!data.history : g.kind === "strip" ? true : g.cards.length);
 // Stations, rivers, rain and weather share one instrument table (decision 0035), placed where the first of them comes
 // in this persona's card_order and grouped in that order.
 const TABLE_KINDS = ["sound", "estuary", "river", "rain", "weather"];
@@ -148,6 +149,7 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
   : g.kind === "spillway" ? <Spillway spillway={data.spillway!} data={data} />
   : g.kind === "vibrio" ? <VibrioNote vibrio={data.vibrio!} />
   : g.kind === "history" ? <HistorySection data={data} />
+  : g.kind === "strip" ? <SoundStrip data={data} />
   : g.kind !== tableKinds[0] ? null : (
   <InstrumentTable data={data} kinds={tableKinds} siteHref={siteHref}>
     {tableKinds.includes("river") && ungaugedNote && <p class="quiet-note">{ungaugedNote}</p>}

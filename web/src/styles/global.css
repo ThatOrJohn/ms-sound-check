@@ -193,10 +193,10 @@ select, .btn {
 .map-layers[open] { width: 230px; }
 .map-layers summary { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; min-height: 24px; display: flex; align-items: center; }
 /* display: flex drops the native disclosure triangle, so these summaries draw their own chevron. */
-.map-layers summary, .beach-all summary, .fish-more summary { list-style: none; gap: 8px; }
-.map-layers summary::-webkit-details-marker, .beach-all summary::-webkit-details-marker, .fish-more summary::-webkit-details-marker { display: none; }
-.map-layers summary::before, .beach-all summary::before, .fish-more summary::before { content: ""; width: 5px; height: 5px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform 0.15s; flex: none; }
-.map-layers[open] summary::before, .beach-all[open] summary::before, .fish-more[open] summary::before { transform: rotate(45deg) translate(-1px, -1px); }
+.map-layers summary, .beach-all summary, .fish-more summary, .spill-more > summary { list-style: none; gap: 8px; }
+.map-layers summary::-webkit-details-marker, .beach-all summary::-webkit-details-marker, .fish-more summary::-webkit-details-marker, .spill-more > summary::-webkit-details-marker { display: none; }
+.map-layers summary::before, .beach-all summary::before, .fish-more summary::before, .spill-more > summary::before { content: ""; width: 5px; height: 5px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform 0.15s; flex: none; }
+.map-layers[open] summary::before, .beach-all[open] summary::before, .fish-more[open] summary::before, .spill-more[open] > summary::before { transform: rotate(45deg) translate(-1px, -1px); }
 .map-layers[open] summary { margin-bottom: 4px; }
 .beach-key { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; font-size: 0.75rem; color: var(--ink-soft); }
 .beach-key li { display: flex; align-items: center; gap: 8px; }
@@ -372,7 +372,7 @@ select, .btn {
   background: color-mix(in oklab, var(--amber) 14%, var(--paper)); color: var(--amber); white-space: nowrap; }
 [data-status="closure"] .beach-badge { background: color-mix(in oklab, var(--marker-red) 14%, var(--paper)); color: var(--marker-red); }
 .beach-all, .fish-more { background: var(--paper); border: 1px solid var(--hair); border-radius: 12px; padding: 12px 16px; max-width: var(--block); }
-.beach-all summary, .fish-more summary { cursor: pointer; font-weight: 500; min-height: 28px; display: flex; align-items: center; }
+.beach-all summary, .fish-more summary, .spill-more > summary { cursor: pointer; font-weight: 500; min-height: 28px; display: flex; align-items: center; }
 .beach-county h3 { font: 500 0.68rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 16px 0 4px; }
 .beach-county ul { list-style: none; margin: 0; padding: 0; }
 .beach-county li { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--hair); font-size: 0.9rem; }
@@ -407,7 +407,9 @@ select, .btn {
 .oyster-table tr[data-status="forecast"] .now-cell { color: var(--amber); font-weight: 600; }
 
 /* ---------- Bonnet Carré Spillway ---------- */
-.spillway > p { max-width: var(--measure); color: var(--ink-soft); }
+.spillway > p, .spill-body > p, .spill-more > p { max-width: var(--measure); color: var(--ink-soft); }
+.spillway > .spill-calm { color: var(--ink); margin: 0 0 10px; }
+.spill-more[open] > summary { margin-bottom: 6px; }
 .spillway h3 { font-size: 0.95rem; margin: 0 0 6px; }
 .spill-open { color: var(--marker-red) !important; font-weight: 600; }
 .spill-status { margin: -10px 0 18px; font-size: 0.9rem; }
@@ -506,6 +508,33 @@ select, .btn {
 .stripes-links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 2px 0 0; font-size: 0.86rem; }
 .history-card { background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); padding: 16px 18px 14px; min-width: 0; }
 .history-card h3 { font: 600 0.98rem/1.3 var(--sans); margin: 0; }
+/* ---------- the Sound west to east (0037) ---------- */
+.strip-fig { display: grid; grid-template-columns: 52px minmax(0, 1fr); background: var(--paper); border: 1px solid var(--hair);
+  border-radius: var(--r); padding: 14px 18px 10px 10px; max-width: var(--block); }
+.strip-fig > :not(.strip-rows) { grid-column: 2; }
+.strip-rows { grid-column: 1; grid-row: 2; display: grid; grid-template-rows: 26px 12px; row-gap: 5px; align-items: center;
+  font: 500 0.64rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.strip-bars { grid-row: 2; display: grid; grid-template-rows: 26px 12px; row-gap: 5px; }
+.strip-today, .strip-usual { position: relative; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--hair); }
+.strip-usual { opacity: 0.6; }
+.strip-dot { position: absolute; z-index: 1; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%);
+  border: 2px solid var(--ink); background: var(--paper); }
+.strip-dot[data-status="suspect"], .strip-dot[data-status="none"] { border-color: var(--ink-soft); }
+.strip-labels { position: relative; }
+.strip-labels.above { grid-row: 1; }
+.strip-labels.below { grid-row: 3; }
+.strip-lead { position: absolute; z-index: 0; width: 1px; background: var(--ink-soft); transform: translateX(-0.5px); }
+.strip-labels.above .strip-lead { bottom: -4px; }
+.strip-labels.below .strip-lead { top: -34px; }   /* up through the usual bar to the station's dot (REACH) */
+.strip-label { position: absolute; display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; font-size: 0.8rem;
+  line-height: 18px; padding: 0 5px; }
+.strip-label b { font: 600 0.8rem/18px var(--mono); }
+.strip-label > span { color: var(--ink-soft); font-size: 0.74rem; }
+.strip-label[data-status="suspect"] b, .strip-label[data-status="none"] b { color: var(--ink-soft); font-weight: 500; }
+.strip-ends { grid-row: 4; display: flex; justify-content: space-between; margin-top: 4px;
+  font: 500 0.64rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.strip-key { margin: 8px 0 0; font-size: 0.8rem; color: var(--ink-soft); max-width: var(--measure); }
+.history-more { margin: 8px 0 0; font-size: 0.86rem; color: var(--ink-soft); max-width: var(--measure); }
 .upstream { margin: 32px 0; max-width: var(--measure); }
 .upstream h2 { font-size: 1.05rem; }
 .upstream ul { padding-left: 1.2em; }

@@ -56,10 +56,19 @@ const timelineLabel = `Spillway openings by year: ${sp.openings.map((o) => `${o.
 const effectLine = (e: Spillway["effects"][number]) =>
   `${e.year}, opened ${day(e.opened)}${e.days ? ` for ${e.days} days` : ""}: about ${e.before.toFixed(0)} ppt the month before, ` +
   `down to ${e.low.toFixed(1)} ppt by ${day(e.low_date)}.`;
+
+// ---------- calm: the river is well below the opening level and nothing is open, so the section is one line and the
+// rest folds into a details element (decision 0036). Any watch, forecast or opening shows everything.
+const calm = !!r && r.status === "low" && !sp.open_now;
+const calmLine = r ? `${r.stage.toFixed(1)} ft on the ${sp.gauge_name.replace(/^Mississippi River/, "Mississippi")}${trend ? `, ${trend}` : ""}. ${statusText}` : "";
+const Body = calm ? "details" : "div";
 ---
 <section class="group spillway" aria-labelledby="g-spillway">
   <h2 id="g-spillway">Bonnet Carré Spillway</h2>
   <OfficialSources data={data} only="spillway" />
+  {calm && <p class="spill-calm">{calmLine}</p>}
+  <Body class={calm ? "spill-more" : "spill-body"}>
+  {calm && <summary>What the spillway is, the river chart, and every opening</summary>}
   <p>When the Mississippi runs high, the Army Corps of Engineers opens this spillway above New Orleans to take pressure
     off the city's levees. The river water flows through Lake Pontchartrain and Lake Borgne into the western Sound. In
     2019, two long openings kept the western Sound fresh for months, and most of the oysters on its reefs died. Only the Corps
@@ -132,6 +141,7 @@ const effectLine = (e: Spillway["effects"][number]) =>
         springs, so not all of each drop is the spillway's.</p>
     </div>
   )}
+  </Body>
   <p class="oyster-notes">
     River stage and forecast from the National Weather Service. Opening dates from the Corps' operation history, kept
     by hand here. <a href={sp.link ?? "https://www.mvn.usace.army.mil/"}>Bonnet Carré Spillway, US Army Corps of Engineers</a>.

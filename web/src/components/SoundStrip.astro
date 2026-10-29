@@ -1,0 +1,69 @@
+---
+import type { Latest } from "../lib/types";
+import { href } from "../lib/format";
+import { salinityFill } from "../lib/salinity";
+import { labelRows, soundStrip, type Strip, type StripStation } from "../lib/strip";
+
+// The Sound west to east (decision 0037): today's salinity as one bar, each station where it sits, over a fainter bar
+// for the usual. Static: no script. Station names and values are real text; the bars carry a full text label.
+interface Props { data: Latest }
+const { data } = Astro.props;
+const strip = soundStrip(data);
+const ROW = 22;   // px per label row
+const REACH = 34;  // px from the bottom of the usual bar up to the middle of today's, where the station dots sit
+
+// Gradient stops. Outside the first and last station with a usable value the bar is blank, unless that station is at
+// the bar's end anyway (then its color runs to the edge rather than leaving a sliver).
+const gradient = (stops: Strip["today"]) => {
+  if (!stops.length) return "var(--paper-2)";
+  if (stops.length === 1) return salinityFill(stops[0].v);
+  const a = stops[0].x <= 3.01 ? 0 : stops[0].x, b = stops.at(-1)!.x >= 96.99 ? 100 : stops.at(-1)!.x;
+  return `linear-gradient(90deg, var(--paper-2) 0 ${a.toFixed(1)}%, ` +
+    stops.map((s, i) => `${salinityFill(s.v)} ${(i === 0 ? a : i === stops.length - 1 ? b : s.x).toFixed(1)}%`).join(", ") +
+    `, var(--paper-2) ${b.toFixed(1)}% 100%)`;
+};
+const rows = strip ? labelRows(strip.stations) : { above: [], below: [] };
+const usual = (s: StripStation) => s.typical === null ? "" : `usual ${Math.round(s.typical)}`;
+---
+{strip && (
+  <section class="group strip" aria-labelledby="g-strip">
+    <div class="group-head">
+      <h2 id="g-strip">The Sound, west to east</h2>
+      <p>{strip.summary}</p>
+    </div>
+    <div class="strip-fig">
+      <div class="strip-labels above" style={`height:${rows.above.length * ROW + 6}px`}>
+        {rows.above.map(({ station: s, row }) => (
+          <>
+            <span class="strip-lead" style={`left:${s.x.toFixed(1)}%;height:${row * ROW + 10}px`}></span>
+            <span class="strip-label" data-side="start" data-status={s.status} style={`left:${s.x.toFixed(1)}%;bottom:${row * ROW + 6}px`}>
+              <a href={href(`station/${s.slug}/`)}>{s.short}</a><b>{s.display}</b><span>{usual(s)}</span>
+            </span>
+          </>
+        ))}
+      </div>
+      <div class="strip-rows" aria-hidden="true"><span>Today</span><span>Usual</span></div>
+      <div class="strip-bars" role="img" aria-label={strip.label}>
+        <div class="strip-today" style={`background:${gradient(strip.today)}`}>
+          {strip.stations.map((s) => (
+            <span class="strip-dot" data-status={s.status} style={`left:${s.x.toFixed(1)}%` + (s.value !== null ? `;background:${salinityFill(s.value)}` : "")}></span>
+          ))}
+        </div>
+        <div class="strip-usual" style={`background:${gradient(strip.typical)}`}></div>
+      </div>
+      <div class="strip-labels below" style={`height:${rows.below.length * ROW + 6}px`}>
+        {rows.below.map(({ station: s, row }) => (
+          <>
+            <span class="strip-lead" style={`left:${s.x.toFixed(1)}%;height:${row * ROW + 6 + REACH}px`}></span>
+            <span class="strip-label" data-side="end" data-status={s.status} style={`right:${(100 - s.x).toFixed(1)}%;top:${row * ROW + 6}px`}>
+              <a href={href(`station/${s.slug}/`)}>{s.short}</a><b>{s.display}</b><span>{usual(s)}</span>
+            </span>
+          </>
+        ))}
+      </div>
+      <div class="strip-ends" aria-hidden="true"><span>West</span><span>East</span></div>
+    </div>
+    <p class="strip-key">{`Salinity in ppt. Each station sits where it is along the coast. Colors between stations are blended, not measured. The fainter bar is the usual for ${strip.season}: the middle of past years' readings at each station.` +
+      (strip.stations.some((s) => s.status === "suspect") ? " A question mark is a reading that may be a sensor problem; it doesn't color the bar." : "")}</p>
+  </section>
+)}

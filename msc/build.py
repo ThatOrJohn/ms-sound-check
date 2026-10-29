@@ -362,7 +362,7 @@ def _history(region, daily, asof, qcs, out) -> dict | None:
     home = [sid for sid in cfg.get("home", []) if sid in stations]
     if not home:
         return None
-    return {"since": min(stations[sid]["first"] for sid in home), "fresh_below": lo, "salty_above": hi,
+    return {"since": min(st["first"] for st in stations.values()), "fresh_below": lo, "salty_above": hi,
             "home": [{"id": sid, "slug": stations[sid]["slug"], "short": stations[sid]["short"]} for sid in home],
             "stations": {sid: st["slug"] for sid, st in stations.items()},
             "takeaway": _history_takeaway(region, stations.get(cfg.get("takeaway_site", home[0])), lo, hi)}

@@ -5,12 +5,15 @@ import { loadHistory } from "../lib/data";
 import { href } from "../lib/format";
 import type { Latest } from "../lib/types";
 
-// The home page's "28 years" section: the region's `history.home` stations side by side, and a takeaway line
-// written at build time from per-year counts (decision 0028).
+// The home page's "28 years" section: the region's `history.home` station(s), a takeaway line written at build time
+// from per-year counts (decision 0028), and links to every other station's picture (one picture keeps home short, 0036).
 interface Props { data: Latest }
 const { data } = Astro.props;
 const h = data.history!;
 const stations = h.home.map((s) => ({ ...s, hist: loadHistory(s.slug) })).filter((s) => s.hist?.years.length);
+const shown = new Set(h.home.map((s) => s.id));
+const others = Object.entries(h.stations).filter(([id]) => !shown.has(id))
+  .map(([id, slug]) => ({ slug, short: data.cards.find((c) => c.id === id)?.short ?? slug }));
 ---
 {stations.length > 0 && (
   <section class="group" aria-labelledby="g-history">
@@ -28,5 +31,8 @@ const stations = h.home.map((s) => ({ ...s, hist: loadHistory(s.slug) })).filter
       ))}
     </div>
     <HistoryLegend />
+    {others.length > 0 && (
+      <p class="history-more">{"The same picture for the other stations: "}{others.map((o, i) => <>{i ? ", " : ""}<a href={href(`station/${o.slug}/#history`)}>{o.short}</a></>)}{"."}</p>
+    )}
   </section>
 )}

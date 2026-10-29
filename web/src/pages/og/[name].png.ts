@@ -6,6 +6,7 @@ import { bandWords, fmtDate, fmtTime, href } from "../../lib/format";
 import { render, type Card } from "../../lib/og";
 import { INPUT_KINDS } from "../../lib/types";
 import { readoutTiles, split, type Tile } from "../../lib/readouts";
+import { soundStrip } from "../../lib/strip";
 
 export const getStaticPaths = (() => {
   const data = loadLatest();
@@ -26,8 +27,12 @@ export const GET: APIRoute = async ({ props }) => {
       tiles: readoutTiles(data, (slug) => href(`station/${slug}/`)) };
     // The home image is the whole record: the history pictures and how many years they cover (decision 0028).
     const stripes = p.id === "general" && data.history ? data.history.home.map((s) => loadHistory(s.slug)).filter((x) => x?.years.length) : [];
+    // A persona with `share: strip` shows the Sound west to east instead of the tiles (decision 0037).
+    const strip = p.share === "strip" ? soundStrip(data) : null;
+    if (strip) card = { ...card, tiles: [], strip };
     if (stripes.length) card = { ...card, tiles: [], stripes: stripes as NonNullable<typeof stripes[0]>[],
-      headline: `${+data.asof.slice(0, 4) - data.history!.since} years of the ${data.region.name}, one row per year` };
+      // Counted from the pictures shown, which can start later than the region's record (0036).
+      headline: `${+data.asof.slice(0, 4) - Math.min(...stripes.map((x) => x!.years[0].year))} years of the ${data.region.name}, one row per year` };
   } else if (props.station) {
     const c = data.cards.find((x) => x.id === props.station)!;
     const tiles: Tile[] = Object.entries(c.vars).filter(([, r]) => r.display && !r.stale && !r.suspect && !c.retired).map(([vn, r]) => {

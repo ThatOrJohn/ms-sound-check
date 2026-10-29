@@ -302,9 +302,9 @@ vibrio:
 
 # Salinity history picture (decision 0028): every day on record, one row per year, on each salinity station's page
 # and, for the `home` stations, in a section of its own. The takeaway line compares days under `fresh_below` and
-# over `salty_above` at `takeaway_site`.
+# over `salty_above` at `takeaway_site`. One home station keeps the home page short; the section links the rest.
 history:
-  home: [USGS-301429089145600, USGS-302318088512600]
+  home: [USGS-302318088512600]
   takeaway_site: USGS-302318088512600
   fresh_below: 5
   salty_above: 25
@@ -336,25 +336,26 @@ personas:
     label: Coast (general)
     blurb: What the Sound is doing this week and whether any of it matters.
     focus: [general, oyster, shrimp, fish]
-    card_order: [beaches, sound, vibrio, river, history, spillway, rain, weather, estuary]
+    card_order: [beaches, strip, sound, vibrio, river, history, spillway, rain, weather, estuary]
     map_layers: [depth, rivers, salinity, beaches]
   - id: oyster
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
-    card_order: [oyster_watch, spillway, sound, vibrio, river, history, rain, estuary, weather, beaches]
+    card_order: [oyster_watch, strip, spillway, sound, vibrio, river, history, rain, estuary, weather, beaches]
     map_layers: [depth, contours, rivers, salinity]
+    share: strip          # share image: the Sound west to east in place of the readout tiles (0037)
   - id: shrimp
     label: Shrimp
     blurb: Spring water temperature drives when brown shrimp reach legal size; fresh water pushes them offshore.
     focus: [shrimp, general]
-    card_order: [shrimp_season, sound, weather, river, spillway, rain, estuary, beaches]
+    card_order: [shrimp_season, strip, sound, weather, river, spillway, rain, estuary, beaches]
     map_layers: [depth, contours, rivers]
   - id: fish
     label: Fishing
     blurb: Salinity and water temperature shifts that move bait and fish around the Sound.
     focus: [fish, general]
-    card_order: [fishing_outlook, sound, vibrio, weather, rain, river, spillway, estuary, beaches]
+    card_order: [fishing_outlook, strip, sound, vibrio, weather, rain, river, spillway, estuary, beaches]
     map_layers: [depth, contours, clarity, wind]
 
 indicators:

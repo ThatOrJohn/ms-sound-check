@@ -7,6 +7,7 @@ import sharp from "sharp";
 import type { Tile } from "./readouts";
 import type { HistoryFile } from "./types";
 import { salinityRGB } from "./salinity";
+import { labelRows, type Strip } from "./strip";
 
 export const OG_W = 1200;
 export const OG_H = 630;
@@ -39,8 +40,9 @@ const h = (type: string, style: Record<string, unknown>, ...children: (Node | st
   return { type, props: { style, children: kids.length === 1 ? kids[0] : kids } };
 };
 
-/** stripes: history pictures to show instead of tiles (the home image, decision 0028). */
-export interface Card { eyebrow: string; headline: string; tiles: Tile[]; stamp: string; stripes?: HistoryFile[] }
+/** stripes: history pictures to show instead of tiles (the home image, decision 0028). strip: the Sound west to east
+ *  instead of tiles (a persona's `share: strip`, decision 0037). */
+export interface Card { eyebrow: string; headline: string; tiles: Tile[]; stamp: string; stripes?: HistoryFile[]; strip?: Strip | null }
 
 const hexRGB = (hex: string) => { const n = parseInt(hex.replace("#", ""), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
 
@@ -65,11 +67,45 @@ async function stripesPng(h: HistoryFile, t: Record<string, string>, w: number, 
   return `data:image/png;base64,${png.toString("base64")}`;
 }
 
+/** The Sound west to east, laid out like SoundStrip.astro: west labels above, east labels below, today over usual. */
+function stripNode(s: Strip, t: Record<string, string>): Node {
+  const ROW = 30, W = OG_W - 2 * PAD_X;
+  const fill = (v: number) => `rgb(${salinityRGB(v, { fresh: t.fresh, brackish: t.brackish, gulf: t.gulf }).join(",")})`;
+  const grad = (stops: Strip["today"]) => {
+    if (!stops.length) return t["paper-2"];
+    if (stops.length === 1) return fill(stops[0].v);
+    const a = stops[0].x <= 3.01 ? 0 : stops[0].x, b = stops.at(-1)!.x >= 96.99 ? 100 : stops.at(-1)!.x;
+    return `linear-gradient(90deg, ${t["paper-2"]} 0%, ${t["paper-2"]} ${a}%, ` +
+      stops.map((p, i) => `${fill(p.v)} ${i === 0 ? a : i === stops.length - 1 ? b : p.x}%`).join(", ") +
+      `, ${t["paper-2"]} ${b}%, ${t["paper-2"]} 100%)`;
+  };
+  const { above, below } = labelRows(s.stations);
+  const label = (st: Strip["stations"][number], side: "start" | "end", y: Record<string, number>) => h("div", {
+      position: "absolute", display: "flex", alignItems: "baseline", gap: 8, whiteSpace: "nowrap", fontSize: 21, ...y,
+      ...(side === "start" ? { left: (st.x / 100) * W + 6 } : { right: W - (st.x / 100) * W + 6 }) },
+    h("div", { display: "flex" }, st.short),
+    h("div", { display: "flex", fontFamily: "Geist Mono", color: st.status === "live" || st.status === "estimate" ? t.ink : t["ink-soft"] }, st.display));
+  const lead = (st: Strip["stations"][number], y: Record<string, number>) =>
+    h("div", { display: "flex", position: "absolute", left: (st.x / 100) * W, width: 2, background: t["ink-soft"], ...y });
+  const upH = above.length * ROW + 4, downH = below.length * ROW + 4;
+  return h("div", { display: "flex", flexDirection: "column", width: W, marginBottom: 22 },
+    h("div", { display: "flex", position: "relative", height: upH },
+      ...above.flatMap(({ station, row }) => [lead(station, { bottom: 0, height: row * ROW + 8 }), label(station, "start", { bottom: row * ROW + 4 })])),
+    h("div", { display: "flex", position: "relative", height: 34, borderRadius: 6, backgroundImage: grad(s.today) },
+      ...s.stations.map((st) => h("div", { display: "flex", position: "absolute", top: 8, left: (st.x / 100) * W - 9, width: 18, height: 18,
+        borderRadius: 9, border: `3px solid ${st.value !== null ? t.ink : t["ink-soft"]}`,
+        background: st.value !== null ? fill(st.value) : t.paper }))),
+    h("div", { display: "flex", height: 12, marginTop: 6, borderRadius: 4, opacity: 0.6, backgroundImage: grad(s.typical) }),
+    h("div", { display: "flex", position: "relative", height: downH },
+      ...below.flatMap(({ station, row }) => [lead(station, { top: -18, height: row * ROW + 22 }), label(station, "end", { top: row * ROW + 4 })])));
+}
+
 export async function render(card: Card): Promise<Buffer> {
   const t = tokens();
   const size = card.headline.length <= 90 ? 58 : card.headline.length <= 150 ? 48 : 40;
   const tiles = card.tiles.slice(0, 4);
-  const SW = (OG_W - 2 * PAD_X - GAP * 2) / 2, SH = 270;
+  const nPics = Math.min(2, card.stripes?.length ?? 0);
+  const SW = nPics === 1 ? OG_W - 2 * PAD_X : (OG_W - 2 * PAD_X - GAP * 2) / 2, SH = 270;
   const pics = card.stripes?.length
     ? await Promise.all(card.stripes.slice(0, 2).map(async (h) => ({ label: h.short, src: await stripesPng(h, t, SW, SH) })))
     : [];
@@ -80,12 +116,13 @@ export async function render(card: Card): Promise<Buffer> {
       h("div", { fontSize: 30, fontWeight: 600, letterSpacing: -0.5 }, "Sound Check"),
       h("div", { fontFamily: "Geist Mono", fontSize: 20, color: t["ink-soft"], letterSpacing: 2, marginLeft: 8 },
         card.eyebrow.toUpperCase())),
-    h("div", { display: "flex", flex: 1, alignItems: "center", fontSize: pics.length ? 44 : size, fontWeight: 600, lineHeight: 1.16,
+    h("div", { display: "flex", flex: 1, alignItems: "center", fontSize: pics.length || card.strip ? 44 : size, fontWeight: 600, lineHeight: 1.16,
       letterSpacing: -1, paddingRight: 24 }, card.headline),
     pics.length > 0 && h("div", { display: "flex", gap: GAP * 2, marginBottom: 24 },
       ...pics.map((p) => h("div", { display: "flex", flexDirection: "column", gap: 8 },
         h("div", { fontFamily: "Geist Mono", fontSize: 18, color: t["ink-soft"], letterSpacing: 1.5 }, p.label.toUpperCase()),
         { type: "img", props: { src: p.src, width: SW, style: { borderRadius: 6 } } } as Node))),
+    card.strip ? stripNode(card.strip, t) : null,
     tiles.length > 0 && h("div", { display: "flex", gap: GAP, marginBottom: 30 },
       ...tiles.map((x) => h("div", { display: "flex", flexDirection: "column", width: TILE_W, background: t.paper,
           border: `1px solid ${t.rule}`, borderRadius: 14, padding: "16px 20px", gap: 4 },
