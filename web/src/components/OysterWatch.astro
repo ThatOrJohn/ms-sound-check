@@ -1,6 +1,7 @@
 ---
 import type { Latest, OysterWatch } from "../lib/types";
 import { href } from "../lib/format";
+import MdmrNotices from "./MdmrNotices.astro";
 import OfficialSources from "./OfficialSources.astro";
 
 interface Props { watch: OysterWatch; gaugeSlug?: string; data: Latest }
@@ -87,6 +88,10 @@ const trend = g?.change_24h == null ? "" : Math.abs(g.change_24h) < 0.1 ? "stead
         {gaugeSlug && <> <a href={href(`station/${gaugeSlug}/`)}>Stage history and forecast</a>.</>}
       </p>
     </>
+  )}
+  {watch.notices_available !== undefined && (
+    <MdmrNotices notices={watch.notices ?? []} available={watch.notices_available} topic="oyster"
+      link={watch.notices_link ?? watch.status_url ?? "https://dmr.ms.gov/shellfish/"} linkText="MDMR's shellfish page" />
   )}
   <p class="oyster-notes">
     For what's open today: <a href={watch.status_url ?? "https://dmr.ms.gov/"}>MDMR shellfish</a>

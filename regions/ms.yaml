@@ -215,6 +215,9 @@ mdmr_notices:
   categories: [6]
   topics:
     shrimp: {search: shrimp, title: "shrimp season|shrimping", link: "https://dmr.ms.gov/shrimp/"}
+    # Season openings, closures and growing-area changes; not meetings, aquaculture training or leases.
+    oyster: {search: oyster, title: "oyster season|oyster harvest|oyster reefs|oyster relay|growing waters",
+             exclude: "meeting|aquaculture|training|lease", link: "https://dmr.ms.gov/shellfish/"}
 
 # Tide predictions (NOAA CO-OPS), west to east.
 tides:
@@ -228,6 +231,10 @@ reference:
   - id: GCOOS-DISL_DISL
     dataset: DISL_DISL
     name: Dauphin Island Sea Lab
+    place: Dauphin Island, AL                 # shown at the map's east edge: just past the basemap, Mobile Bay side
+    lat: 30.2513
+    lon: -88.0778
+    link: https://erddap.gcoos.org/erddap/tabledap/DISL_DISL.html
     checks: [USGS-301849088350000]
 
 # Bonnet Carré Spillway (decision 0022). The Corps opens it to keep the Mississippi at New Orleans near 1.25 million cfs,

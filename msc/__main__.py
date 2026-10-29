@@ -6,7 +6,7 @@
   python -m msc ingest    --region ms     pull recent data from every source
   python -m msc build     --region ms     write site/data/<region>/*.json
   python -m msc run       --region ms     ingest + build (what the schedule runs)
-  python -m msc check     --region ms     fail if the newest water reading is stale
+  python -m msc check     --region ms     fail if the newest water reading is stale or a shrimp opening is missing
   python -m msc basemap                   one-time: depth shading + contours for the map (commit the output)
   python -m msc rivers                    one-time: river lines for the map from OpenStreetMap (commit the output)
 
@@ -140,6 +140,11 @@ def cmd_check(region, args) -> int:
     healthy = age is not None and age <= args.max_age_days
     msg = f"newest water reading {newest} ({age} days old)" if newest else "no water readings at all"
     (log.info if healthy else log.error)("health: %s", msg)
+    # Reference data kept by hand: a new MDMR shrimp opening must reach the CSV the season lean trains on.
+    from .models import shrimp
+    for problem in shrimp.openings_check(region):
+        log.error("health: %s", problem)
+        healthy, msg = False, f"{msg}; {problem}"
     if "GITHUB_OUTPUT" in os.environ:
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"healthy={'true' if healthy else 'false'}\nmessage={msg}\n")

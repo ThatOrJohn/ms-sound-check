@@ -20,6 +20,7 @@ from .units import convert, fmt, season_phrase, unit_label
 SPARK_DAYS = 30
 HISTORY_DAYS = 365
 NOW_MAX_AGE = pd.Timedelta(hours=4)   # a "now" reading older than this is hidden, not shown
+REFERENCE_MAX_DAYS = 3                # a reference site's daily mean older than this is hidden
 
 
 def _r(v, nd=2):
@@ -234,6 +235,33 @@ def _beach_reason(s: dict) -> str | None:
     return "algal bloom" if "hab" in e or "algal" in e else "debris" if "debris" in e else "high bacteria"
 
 
+def _reference(region, daily, asof) -> list[dict]:
+    """Reference salinity sites (decision 0019) for the map's edge: newest daily mean, and how far they sit from
+    our nearest station. Shown for context only; they never feed flags, models or the salinity fill."""
+    out = []
+    ours = [x for x in region.sites if x["kind"] == "sound" and not x.get("retired") and x.get("lat") is not None]
+    for ref in region.extras.get("reference", []):
+        if ref.get("lat") is None:
+            continue
+        s = daily[(daily.site == ref["id"]) & (daily["var"] == "salinity") & (daily.date <= asof)].sort_values("date")
+        fresh = len(s) and (asof - s.date.iloc[-1]).days <= REFERENCE_MAX_DAYS
+        near = min(ours, key=lambda x: _km(ref, x), default=None)
+        out.append({
+            **{k: ref.get(k) for k in ("id", "name", "place", "lat", "lon", "link")},
+            "salinity": _r(s.value.iloc[-1], 1) if fresh else None,
+            "date": s.date.iloc[-1].strftime("%Y-%m-%d") if fresh else None,
+            "nearest": near["short"] if near else None, "km": round(_km(ref, near) / 5) * 5 if near else None,
+            "east": bool(near and ref["lon"] > near["lon"]),
+        })
+    return out
+
+
+def _km(a, b) -> float:
+    lat1, lon1, lat2, lon2 = map(np.radians, (a["lat"], a["lon"], b["lat"], b["lon"]))
+    h = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2
+    return float(2 * 6371 * np.arcsin(np.sqrt(h)))
+
+
 def _tide_strip(region) -> dict | None:
     """Highs and lows at the middle tide station (the one the Fishing card leads with), with UTC offsets so the
     browser can place "now" on the curve without guessing the time zone."""
@@ -295,6 +323,11 @@ def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch
         sh = shrimp_model.headline(shrimp, asof)
         if sh:
             parts.append(sh)
+    if focus[0] == "oyster":             # likewise MDMR's own oyster season notice
+        from .models import oyster as oyster_model
+        oh = oyster_model.headline(oyster_watch, asof)
+        if oh:
+            parts.append(oh)
     if serious:
         top = serious[0]
         if focus[0] in top.get("lead", []):      # a wide event leads, in its short form
@@ -376,6 +409,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "spillway": spillway_section,
         "vibrio": vibrio_section,
         "satellite": satellite_layers,
+        "reference": _reference(region, daily, asof),
         "replay": _replay(region, daily, normals, asof),
         "generated_at": generated_at.isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),

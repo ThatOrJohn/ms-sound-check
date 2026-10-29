@@ -103,6 +103,8 @@ export interface OysterWatch {
   rain?: { site: string; yesterday_in: number | null; approximate: boolean };
   groups?: OysterGroup[];
   plan_name: string; plan_url: string; status_url?: string; hotline?: string;
+  /** MDMR's own oyster season notices (openings, closures, area changes), newest first. */
+  notices?: MdmrNotice[]; notices_available?: boolean; notices_link?: string | null;
 }
 
 export interface Tide { station: string; name: string; time: string; type: "high" | "low"; ft: number }
@@ -119,13 +121,18 @@ export interface FishingOutlook {
   tide_stations: { id: string; name: string }[];
 }
 
-export interface ShrimpNotice { id: number; date: string; title: string; summary: string; link: string }
+export interface MdmrNotice { id: number; date: string; title: string; summary: string; link: string }
 export interface ShrimpWindDay {
   date: string; label: string; day_wind: string | null; night_wind: string | null; wind_mph_hi: number | null;
   sky: string | null; rain_pct: number | null; verdict: string | null;
 }
 export interface ShrimpSeason {
-  notices: ShrimpNotice[]; notices_available: boolean; link: string | null; source: string | null; days: ShrimpWindDay[];
+  notices: MdmrNotice[]; notices_available: boolean; link: string | null; source: string | null; days: ShrimpWindDay[];
+}
+
+export interface ReferenceSite {
+  id: string; name: string; place: string | null; lat: number; lon: number; link: string | null;
+  salinity: number | null; date: string | null; nearest: string | null; km: number | null; east: boolean;
 }
 
 export interface SpillwayOpening { opened: string; year: number; days: number | null; closed: string | null; max_bays: number | null; peak_cfs: number | null }
@@ -165,6 +172,8 @@ export interface Latest {
   vibrio?: Vibrio | null;
   satellite?: Record<string, SatelliteLayer>;
   replay?: Replay;
+  /** Reference salinity sites (not our stations); salinity is null when the newest daily mean is stale. */
+  reference?: ReferenceSite[];
   fishing_outlook?: FishingOutlook | null;
   tide_strip?: TideStrip | null;
   shrimp_season?: ShrimpSeason | null;

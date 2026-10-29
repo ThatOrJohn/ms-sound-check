@@ -23,6 +23,10 @@
 
 - [x] Tide strip under the map: predicted tide at Gulfport, 12 hours back and 36 ahead, "now" placed in the browser ([0025](../decisions/0025-tide-strip-predictions-in-the-browser.md)); tide fetch starts a day early
 - [x] Beach popups on the map: hover or tap a segment for status, reason and duration, linking to its row in Beaches
+- [x] MDMR oyster season notices in the Oysters section (an `oyster` topic in `regions/ms.yaml`, with an `exclude` filter for meetings, aquaculture and leases); a notice from the past week leads the Oysters headline
+- [x] `python -m msc check` fails when an MDMR spring "shrimp season opens" notice has no row in `data/shrimp_openings.csv`, or a different date
+- [x] River panel on phones: the same rows as a strip under the map below 640 px
+- [x] Dauphin Island salinity as a labeled reference chip at the map's east edge (0019, update); not a station dot, never in the salinity fill
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

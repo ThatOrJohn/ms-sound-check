@@ -12,6 +12,8 @@ from ..config import Region
 
 NEAR_FT = 2.0
 MM_PER_IN = 25.4
+NOTICE_DAYS = 365      # MDMR oyster notices older than this drop off the list
+HEADLINE_DAYS = 7      # a notice this recent leads the Oysters headline
 MIN_HISTORY_DAYS = 365 * 5     # don't describe "a typical year" from less than five years of readings
 PEAK_SHARE = 0.75              # a month is "peak" if it's within 75% of the busiest month's share of days
 
@@ -49,10 +51,24 @@ def history(daily: pd.DataFrame, gid: str, thresholds: list[float], asof: pd.Tim
     return out
 
 
+def _notices(region: Region, asof: pd.Timestamp) -> dict:
+    """MDMR's own oyster season notices, repeated as published (openings, closures, area changes)."""
+    from ..adapters import mdmr
+    m = mdmr.recent(region, "oyster", asof, NOTICE_DAYS)
+    return {"notices": m["notices"], "notices_available": m["available"], "notices_link": m["link"]}
+
+
+def headline(sec, asof) -> str | None:
+    """A notice from the past week leads: MDMR's word beats anything we infer from the river."""
+    from ..adapters import mdmr
+    return mdmr.headline(sec.get("notices"), asof, HEADLINE_DAYS) if sec else None
+
+
 def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | None:
     cfg = _cfg(region)
     if not cfg:
         return None
+    notices = _notices(region, asof)
     gid = cfg["gauge"]
     gauge = region.site(gid)
     now = pd.Timestamp.now(tz="UTC")
@@ -71,7 +87,7 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | N
             stage, time = float(d.value.iloc[-1]), pd.Timestamp(d.date.iloc[-1]).tz_localize(region.timezone)
     if stage is None:
         return {"available": False, "plan_name": cfg["plan_name"], "plan_url": cfg["plan_url"],
-                "status_url": cfg.get("status_url"), "hotline": cfg.get("hotline")}
+                "status_url": cfg.get("status_url"), "hotline": cfg.get("hotline"), **notices}
     stale = time is not None and (now - pd.Timestamp(time).tz_convert("UTC")) > pd.Timedelta(hours=36)
 
     fc_path = region.data_dir / "stage_forecast.parquet"
@@ -117,7 +133,7 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | N
         "rain": {"site": rain_site, "yesterday_in": rain_in, "approximate": True},
         "groups": groups,
         "plan_name": cfg["plan_name"], "plan_url": cfg["plan_url"],
-        "status_url": cfg.get("status_url"), "hotline": cfg.get("hotline"),
+        "status_url": cfg.get("status_url"), "hotline": cfg.get("hotline"), **notices,
     }
 
 

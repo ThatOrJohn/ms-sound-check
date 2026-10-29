@@ -186,3 +186,35 @@ test("a beach link from the map opens the full beach list to that beach", async 
   await expect(page.locator(`#beach-${clear.id}`)).toBeVisible();
   await expect(page.locator(`#beach-${clear.id}`)).toContainText(clear.name);
 });
+
+test("the oyster section lists MDMR's own season notices, newest first, with links to the full notice", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const w = latest.oyster_watch;
+  test.skip(!w || w.notices_available === undefined, "no oyster watch in this build");
+  await page.goto("for/oyster/");
+  const sec = page.locator("section.oyster-watch");
+  await expect(sec.getByRole("heading", { name: "Latest from MDMR" })).toBeVisible();
+  if (!w.notices_available) return await expect(sec).toContainText("couldn't be checked");
+  if (!w.notices.length) return await expect(sec).toContainText("No oyster season notices from MDMR in the past year");
+  const first = sec.locator("ol.notices li").first();
+  await expect(first.getByRole("link", { name: w.notices[0].title })).toHaveAttribute("href", /dmr\.ms\.gov/);
+});
+
+test("river flow shows on phones as a strip under the map", async ({ page, request }, info) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const river = latest.cards.find((c: { kind: string; minor?: boolean }) => c.kind === "river" && !c.minor);
+  await page.goto("");
+  const [strip, panel] = [page.locator(".map-rivers-row"), page.locator(".map-rivers")];
+  await expect(info.project.name === "phone" ? strip : panel).toContainText(river.short ?? river.name, { timeout: 20_000 });
+  await expect(info.project.name === "phone" ? panel : strip).toBeHidden();
+});
+
+test("Dauphin Island shows at the map's east edge as a labeled reference, not a station", async ({ page, request }, info) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const ref = latest.reference?.find((r: { salinity: number | null }) => r.salinity !== null);
+  test.skip(!ref, "no fresh reference reading in this build");
+  await page.goto("");
+  const chip = page.locator(info.project.name === "phone" ? ".map-ref-row" : ".map-ref");
+  await expect(chip).toContainText(`${ref.salinity.toFixed(1)} ppt`, { timeout: 20_000 });
+  await expect(chip).toContainText(`Reference, ${ref.km} km east of ${ref.nearest}`);
+});

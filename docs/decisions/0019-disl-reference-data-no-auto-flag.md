@@ -26,3 +26,11 @@ What does hold: KATA's highest daily value in 15 years is 34.9 ppt, so 36-40 ppt
 - Free reference data for the Mobile Bay side, and for a later check against a closer station.
 - One more source call per run, through `_try`; a failure only skips the reference rows.
 - Revisit if a closer independent station (for example Grand Bay NERR) gives a tighter gap.
+
+## Update 2026-10-28: shown at the map's east edge
+DISL (30.2513, -88.0778) is about 2 km past the basemap's east edge (-88.1) and well past the default view, so it
+appears as a text chip pinned to the map's lower right ("Dauphin Island, AL → 24.1 ppt, Reference, 50 km east of
+East Sound"), and on phones as a line in the strip under the map. It has no dot and stays out of the salinity sketch,
+so it can't pass for one of our stations or bend the interpolation across a different part of the Sound. Its daily
+mean hides once it is more than 3 days old (`REFERENCE_MAX_DAYS` in `msc/build.py`) and during replay.
+

@@ -1,0 +1,26 @@
+---
+import type { MdmrNotice } from "../lib/types";
+import { fmtDate } from "../lib/format";
+
+// MDMR's latest season notices for one topic, in its own words (title and opening lines).
+interface Props { notices: MdmrNotice[]; available: boolean; topic: string; link: string; linkText: string }
+const { notices, available, topic, link, linkText } = Astro.props;
+---
+<h3 class="notices-sub">Latest from MDMR</h3>
+{!available ? (
+  <p class="quiet-note">{"MDMR's notices couldn't be checked in the last two days. "}<a href={link}>{`See ${linkText}`}</a>.</p>
+) : notices.length === 0 ? (
+  <p class="quiet-note">{`No ${topic} season notices from MDMR in the past year. `}<a href={link}>{`See ${linkText}`}</a>.</p>
+) : (
+  <ol class="notices">
+    {notices.map((n) => (
+      <li>
+        <time datetime={n.date}>{fmtDate(n.date, { month: "short", day: "numeric", year: "numeric" })}</time>
+        <div>
+          <a href={n.link}>{n.title}</a>
+          {n.summary && <p>{n.summary}</p>}
+        </div>
+      </li>
+    ))}
+  </ol>
+)}

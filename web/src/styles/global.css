@@ -176,7 +176,7 @@ select, .btn {
 /* More specific than MapLibre's own .maplibregl-map { position: relative }, which would collapse this to 0px. */
 .map-wrap > .map { position: absolute; inset: 0; width: 100%; height: 100%; }
 .map-msg { position: absolute; top: 12px; left: 12px; max-width: min(340px, calc(100% - 140px)); background: var(--glass); border: 1px solid var(--hair); padding: 10px 12px; border-radius: 10px; margin: 0; font-size: 0.85rem; z-index: 2; }
-.glass, .map-layers, .map-rivers {
+.glass, .map-layers, .map-rivers, .map-ref {
   background: var(--glass); border: 1px solid var(--hair); border-radius: 12px;
   backdrop-filter: saturate(1.5) blur(14px); -webkit-backdrop-filter: saturate(1.5) blur(14px);
   box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.35);
@@ -213,8 +213,14 @@ select, .btn {
 @media (min-width: 900px) { .replay-note { flex-basis: auto; } }
 .map-note { margin: 4px 0 0; color: var(--ink-soft); font-size: 0.75rem; line-height: 1.35; }
 .map-rivers { position: absolute; left: 12px; bottom: 34px; display: grid; gap: 5px; font-size: 0.78rem; padding: 9px 12px; }
-.map-rivers .bar { display: inline-block; width: 4px; background: var(--fresh); border-radius: 2px; margin-right: 8px; vertical-align: middle; }
-.map-rivers b { font-weight: 600; }
+.map-rivers .bar, .map-rivers-row .bar { display: inline-block; width: 4px; background: var(--fresh); border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+.map-rivers b, .map-rivers-row b { font-weight: 600; }
+.map-rivers-row { display: none; }
+/* A reference site just past the east edge (Dauphin Island): text only, no dot, so it can't pass for a station. */
+.map-ref { position: absolute; right: 52px; bottom: 34px; margin: 0; display: grid; gap: 1px; justify-items: end;
+  padding: 7px 11px; font-size: 0.76rem; text-align: right; }
+.map-ref b { font: 600 0.86rem var(--mono); }
+.map-ref-note { color: var(--ink-soft); font-size: 0.7rem; }
 /* MapLibre's controls, in our palette (they ship light-only). */
 .sound .maplibregl-ctrl.maplibregl-ctrl-attrib,
 .sound .maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact { font-size: 10.5px; background: var(--glass); color: var(--ink-soft); border-radius: 8px; }
@@ -444,7 +450,7 @@ select, .btn {
 
 /* ---------- shrimp season ---------- */
 .shrimp-season > p { max-width: var(--measure); color: var(--ink-soft); }
-.shrimp-sub { font: 500 0.7rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 22px 0 10px; }
+.shrimp-sub, .notices-sub { font: 500 0.7rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 22px 0 10px; }
 .notices { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: var(--block); }
 .notices li { display: grid; grid-template-columns: 7.5em 1fr; gap: 14px; align-items: start; background: var(--paper);
   border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
@@ -534,6 +540,12 @@ select, .btn {
   .map-wrap { height: 420px; }
   .map-layers { top: 8px; right: 8px; max-width: 190px; font-size: 0.8rem; }
   .map-rivers { display: none; }
+  .map-ref { display: none; }
+  .map-rivers-row { display: grid; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--hair); font-size: 0.76rem; }
+  .map-rivers-row .rows { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+  .map-rivers-row .rows > div { white-space: nowrap; }
+  .map-ref-row { margin: 0; color: var(--ink-soft); }
+  .map-ref-row b { color: var(--ink); font-family: var(--mono); }
   .scale-bar { width: 64px; }
   .masthead-row { gap: 6px 14px; }
   .nav { gap: 14px; font-size: 0.84rem; width: 100%; }

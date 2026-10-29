@@ -15,6 +15,9 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 - Station charts, beaches, oyster watch and fishing outlook restyled to match.
 
 ### Added
+- Oyster season notices: the Oysters section lists MDMR's latest oyster notices (season openings, closings, growing-area changes) with their opening lines and links, and a notice from the past week leads the Oysters headline in MDMR's own words.
+- River flow on phones: the river readings that float over the map on wider screens now show as a compact strip under the map on phones.
+- Dauphin Island salinity at the map's east edge: the Dauphin Island Sea Lab's daily reading, labeled as a reference about 50 km east of our easternmost station. It's for comparison only and never used to flag our stations.
 - Tide strip under the map: NOAA's predicted tide at Gulfport Harbor for the last 12 hours and the next 36, with a "now" marker, each high and low labeled, and a sentence on which way it's heading and when it next turns. It notes that wind can push the water above or below the prediction ([0025](docs/decisions/0025-tide-strip-predictions-in-the-browser.md)).
 - Beach popups on the map: hover over a beach segment (or tap it on a phone) to see its name, status, the reason for any advisory and how long it has lasted, or when a clear beach was last sampled. The popup links to that beach in the Beaches section.
 - Warm-water bacteria (Vibrio) note on the Coast, Oysters and Fishing pages: when the water at a station is warm (68°F and up) and moderately salty (5–25 ppt), the conditions where Vibrio grows fastest, a short section names the stations, explains who is most at risk and how to avoid infection (cover cuts, cook shellfish), and links to the Mississippi State Department of Health and the CDC. It's normal most of April–October, so it's a plain note, not an alert, and it disappears when the water cools ([0024](docs/decisions/0024-vibrio-as-seasonal-note.md)).

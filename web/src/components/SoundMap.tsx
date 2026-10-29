@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MLMap, MapLayerMouseEvent, Popup, StyleSpecification } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
-import type { Replay, SatelliteLayer } from "../lib/types";
+import type { ReferenceSite, Replay, SatelliteLayer } from "../lib/types";
 import { beachDetail } from "../lib/format";
 
 export interface MapStation {
@@ -22,6 +22,8 @@ interface Props {
   satellite?: Record<string, SatelliteLayer>; dataBase?: string;
   /** The last 30 days, for the replay slider. */
   replay?: Replay;
+  /** Reference sites past the map's east edge (Dauphin Island): a chip at that edge, never a station dot. */
+  reference?: ReferenceSite[];
 }
 const NO_RIVERS: string[] = [];
 
@@ -219,7 +221,7 @@ function readLayers(personaId: string | undefined, defaultLayers?: string[]): Re
 }
 
 export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basemapBase, beachesUrl, personaId, defaultLayers,
-  beachLinks = false, satellite, dataBase, replay }: Props) {
+  beachLinks = false, satellite, dataBase, replay, reference }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<Popup | null>(null);
@@ -460,6 +462,15 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
   const fill = SAT_KEYS.find((k) => layers[k] && satellite?.[k]);
   const sat = fill ? satellite![fill] : null;
   const span = sat ? (sat.from === sat.to ? fmtDay(sat.to) : `${fmtDay(sat.from)}–${fmtDay(sat.to)}`) : "";
+  const refs = past ? [] : (reference ?? []).filter((r) => r.salinity !== null && r.east);
+  const riverRows = rivers.map((r) => {
+    const pct = past ? replay!.flow_pct[r.id]?.[frame] : r.percentile;
+    const band = past ? BAND(pct) : r.band;
+    return (
+      <div key={r.name}><span className="bar" style={{ height: 6 + ((pct ?? 50) / 100) * 10 }} />
+        <b>{r.name}</b> {past ? (band ? FLOW_WORDS[band] : "no reading") : `${r.display}${band ? `, ${FLOW_WORDS[band]}` : ""}`}</div>
+    );
+  });
   return (
     <>
     <div className="map-wrap">
@@ -500,16 +511,23 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
         {layers.salinity && !noBasemap && <p className="map-note">Estimated between a handful of stations. A sketch, not a measurement.</p>}
         {noBasemap && <p className="map-note">Depth layers need the one-time basemap prep.</p>}
       </details>
-      <div className="map-rivers" aria-hidden="true">
-        {rivers.map((r) => {
-          const pct = past ? replay!.flow_pct[r.id]?.[frame] : r.percentile;
-          const band = past ? BAND(pct) : r.band;
-          return (
-            <div key={r.name}><span className="bar" style={{ height: 6 + ((pct ?? 50) / 100) * 10 }} />
-              <b>{r.name}</b> {past ? (band ? FLOW_WORDS[band] : "no reading") : `${r.display}${band ? `, ${FLOW_WORDS[band]}` : ""}`}</div>
-          );
-        })}
-      </div>
+      <div className="map-rivers" aria-hidden="true">{riverRows}</div>
+      {refs.map((r) => (
+        <p key={r.id} className="map-ref" title={`${r.name}. Not one of our stations: shown for comparison only.`}>
+          <span className="map-ref-place">{`${r.place ?? r.name} `}<span aria-hidden="true">→</span></span>
+          <b>{`${r.salinity!.toFixed(1)} ppt`}</b>
+          <span className="map-ref-note">{`Reference, ${r.km} km east of ${r.nearest}`}</span>
+        </p>
+      ))}
+    </div>
+    {/* Phones: the same rows as a strip under the map, which is too small to float them over. */}
+    <div className="map-rivers-row">
+      <div className="rows" aria-hidden="true">{riverRows}</div>
+      {refs.map((r) => (
+        <p key={r.id} className="map-ref-row">
+          {`${r.place ?? r.name}: `}<b>{`${r.salinity!.toFixed(1)} ppt`}</b>{`. Reference, ${r.km} km east of ${r.nearest}.`}
+        </p>
+      ))}
     </div>
     {replay && replay.days.length > 1 && (
       <div className="replay">

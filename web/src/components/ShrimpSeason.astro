@@ -1,6 +1,6 @@
 ---
 import type { Latest, ShrimpSeason } from "../lib/types";
-import { fmtDate } from "../lib/format";
+import MdmrNotices from "./MdmrNotices.astro";
 import OfficialSources from "./OfficialSources.astro";
 
 interface Props { season: ShrimpSeason; data: Latest }
@@ -34,24 +34,8 @@ const mdmrLink = season.link ?? "https://dmr.ms.gov/";
     </>
   )}
 
-  <h3 class="shrimp-sub">Latest from MDMR</h3>
-  {!season.notices_available ? (
-    <p class="quiet-note">{"MDMR's notices couldn't be checked in the last two days. "}<a href={mdmrLink}>See MDMR's shrimp page</a>.</p>
-  ) : season.notices.length === 0 ? (
-    <p class="quiet-note">{"No shrimp season notices from MDMR in the past year. "}<a href={mdmrLink}>See MDMR's shrimp page</a>.</p>
-  ) : (
-    <ol class="notices">
-      {season.notices.map((n) => (
-        <li>
-          <time datetime={n.date}>{fmtDate(n.date, { month: "short", day: "numeric", year: "numeric" })}</time>
-          <div>
-            <a href={n.link}>{n.title}</a>
-            {n.summary && <p>{n.summary}</p>}
-          </div>
-        </li>
-      ))}
-    </ol>
-  )}
+  <MdmrNotices notices={season.notices} available={season.notices_available} topic="shrimp" link={mdmrLink}
+    linkText="MDMR's shrimp page" />
   <p class="fish-src">{"Notices: MDMR press releases (title and opening lines; the full notice has the boundaries). "}
     {"Wind: National Weather Service forecast for the Gulfport waterfront; the color goes by the windier of day and night "}
     {"(light up to 10 mph, moderate to 15, breezy to 20). Not for navigation or harvest decisions. "}

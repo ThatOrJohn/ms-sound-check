@@ -38,12 +38,13 @@ def summary(excerpt: str) -> str:
     return t[:SUMMARY_CHARS].rsplit(" ", 1)[0].rstrip(",;:") + "…"
 
 
-def normalize(posts: list[dict], title_pattern: str) -> list[dict]:
+def normalize(posts: list[dict], title_pattern: str, exclude: str | None = None) -> list[dict]:
     pat = re.compile(title_pattern, re.I)
+    skip = re.compile(exclude, re.I) if exclude else None
     out = []
     for p in posts:
         title = _text(p.get("title", {}).get("rendered", ""))
-        if not pat.search(title):
+        if not pat.search(title) or (skip and skip.search(title)):
             continue
         out.append({"id": p.get("id"), "date": (p.get("date") or "")[:10], "title": title,
                     "summary": summary(p.get("excerpt", {}).get("rendered", "")), "link": p.get("link")})
@@ -64,7 +65,7 @@ def fetch(region: Region) -> dict | None:
         posts = r.json()
         if not isinstance(posts, list):
             raise RuntimeError(f"unexpected response: {str(posts)[:200]}")
-        topics[topic] = normalize(posts, t["title"])
+        topics[topic] = normalize(posts, t["title"], t.get("exclude"))
     return {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), "source": cfg.get("name"), "topics": topics}
 
 
@@ -82,3 +83,22 @@ def load(region: Region, topic: str) -> list[dict] | None:
     if pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > MAX_AGE:
         return None
     return js["topics"].get(topic)
+
+
+def recent(region: Region, topic: str, asof: pd.Timestamp, days: int = 365, count: int = 5) -> dict:
+    """The newest notices for one topic from the past `days`, for a section's "Latest from MDMR" list.
+    `available` is False when the snapshot is missing or stale (the page then says it couldn't check)."""
+    notices = load(region, topic)
+    cutoff = (asof - pd.Timedelta(days=days)).strftime("%Y-%m-%d")
+    cfg = (region.extras or {}).get("mdmr_notices") or {}
+    return {"notices": [n for n in notices or [] if cutoff <= n["date"] <= asof.strftime("%Y-%m-%d")][:count],
+            "available": notices is not None, "link": cfg.get("topics", {}).get(topic, {}).get("link"),
+            "source": cfg.get("name")}
+
+
+def headline(notices: list[dict], asof: pd.Timestamp, days: int = 7) -> str | None:
+    """MDMR's newest notice, in its own words, if it's from the past `days`."""
+    if not notices or notices[0]["date"] < (asof - pd.Timedelta(days=days)).strftime("%Y-%m-%d"):
+        return None
+    n = notices[0]
+    return f"MDMR, {pd.Timestamp(n['date']).strftime('%b %-d')}: {n['title'].rstrip('.')}."

@@ -8,6 +8,8 @@ some years (2025) miss by weeks. Published as a lean, never a date.
 """
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -67,26 +69,48 @@ def _wind_days(region, asof):
 def section(region, asof):
     """MDMR's recent shrimp notices plus a 3-day wind outlook. None if neither source has anything current."""
     from ..adapters import mdmr
-    cfg = (region.extras or {}).get("mdmr_notices") or {}
-    notices = mdmr.load(region, "shrimp")
-    cutoff = (asof - pd.Timedelta(days=NOTICE_DAYS)).strftime("%Y-%m-%d")
-    recent = [n for n in notices or [] if cutoff <= n["date"] <= asof.strftime("%Y-%m-%d")][:NOTICE_COUNT]
+    m = mdmr.recent(region, "shrimp", asof, NOTICE_DAYS, NOTICE_COUNT)
     days = _wind_days(region, asof)
-    if notices is None and not days:
+    if not m["available"] and not days:
         return None
-    return {"notices": recent, "notices_available": notices is not None,
-            "link": cfg.get("topics", {}).get("shrimp", {}).get("link"), "source": cfg.get("name"),
+    return {"notices": m["notices"], "notices_available": m["available"], "link": m["link"], "source": m["source"],
             "days": days}
 
 
 def headline(sec, asof) -> str | None:
     """A notice from the past week leads: it's the one thing a shrimper can't see from the water."""
-    if not sec or not sec["notices"]:
-        return None
-    n = sec["notices"][0]
-    if n["date"] < (asof - pd.Timedelta(days=HEADLINE_DAYS)).strftime("%Y-%m-%d"):
-        return None
-    return f"MDMR, {pd.Timestamp(n['date']).strftime('%b %-d')}: {n['title'].rstrip('.')}."
+    from ..adapters import mdmr
+    return mdmr.headline(sec["notices"], asof, HEADLINE_DAYS) if sec else None
+
+
+_OPENS = re.compile(r"shrimp season (?:opens|to open|will open)\b", re.I)
+_DATE = re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2})\b")
+
+
+def openings_check(region) -> list[str]:
+    """Compare MDMR's spring "shrimp season opens" notices with data/shrimp_openings.csv, which the season lean
+    trains on. Returns one line per notice with no matching row (or a different date). Empty when they agree or
+    the notices snapshot is missing or stale."""
+    from ..adapters import mdmr
+    notices = mdmr.load(region, "shrimp")
+    if not notices:
+        return []
+    openings = pd.read_csv(REFERENCE / "shrimp_openings.csv", parse_dates=["open_date"])
+    have = dict(zip(openings.season, openings.open_date))
+    problems = []
+    for n in notices:
+        posted = pd.Timestamp(n["date"])
+        if not _OPENS.search(n["title"]) or not 3 <= posted.month <= 8:   # the fall reopenings aren't the season
+            continue
+        m = _DATE.search(n["title"].split("open", 1)[-1])
+        said = pd.Timestamp(f"{m.group(1)} {m.group(2)} {posted.year}") if m else None
+        if posted.year not in have:
+            problems.append(f"{posted.year} shrimp opening missing from shrimp_openings.csv "
+                            f"(MDMR {n['date']}: {n['title']}, {n['link']})")
+        elif said is not None and said != have[posted.year]:
+            problems.append(f"{posted.year} shrimp opening in shrimp_openings.csv is {have[posted.year]:%Y-%m-%d}, "
+                            f"MDMR said {said:%Y-%m-%d} ({n['title']}, {n['link']})")
+    return problems
 
 
 def season_lean(region, cfg, daily, normals, asof):
