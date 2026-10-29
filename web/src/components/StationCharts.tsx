@@ -7,6 +7,7 @@ import {
 } from "echarts/components";
 import { SVGRenderer } from "echarts/renderers";
 import type { SeriesPoint } from "../lib/types";
+import { getRefYear, onRefYear, refValue, type RefYear } from "../lib/refyear";
 
 echarts.use([LineChart, BarChart, CustomChart, GridComponent, TooltipComponent, MarkLineComponent,
   AxisPointerComponent, TitleComponent, AriaComponent, SVGRenderer]);
@@ -51,7 +52,7 @@ function fmtVal(v: number | null | undefined, unit: string) {
   return `${v.toFixed(1)} ${unit}`;
 }
 
-function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: number) {
+function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: number, ref: RefYear | null, asofYear: number) {
   // Show only the selected range so each axis scales to what's on screen.
   const panels = allPanels.map((p) => ({ ...p, points: p.points.slice(-days), expected: p.expected?.slice(-days) }));
   const last = panels[0]?.points.at(-1)?.[0];
@@ -97,6 +98,12 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
       }, {
         type: "line", xAxisIndex: i, yAxisIndex: i, symbol: "none", z: 2, silent: true, connectNulls: false,
         lineStyle: { color: t.ink, width: 1.2, type: [2, 3], opacity: 0.7 }, data: (p.expected ?? []).map((q) => [ts(q[0]), q[1]]),
+      });
+    }
+    if (ref && p.key === `${ref.site}:salinity`) {   // a year picked on the history picture, on the same dates
+      series.push({
+        type: "line", xAxisIndex: i, yAxisIndex: i, symbol: "none", z: 2, silent: true, connectNulls: false,
+        lineStyle: { color: t.soft, width: 1.4, opacity: 0.75 }, data: p.points.map((q) => [ts(q[0]), refValue(ref, q[0], asofYear)]),
       });
     }
     if (p.forecast?.length) {
@@ -155,7 +162,9 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
           const typ = pt && pt[3] !== null ? ` <span style="color:${t.soft}">(typical ${fmtVal(pt[3], p.unit)})</span>` : "";
           const exp = p.expected?.find((q) => new Date(`${q[0]}T12:00:00`).getTime() === items[0].axisValue);
           const expTxt = exp && exp[1] !== null ? ` <span style="color:${t.soft}">(neighbors suggest ${fmtVal(exp[1], p.unit)})</span>` : "";
-          return `<div>${p.title}: <b>${val}</b>${typ}${expTxt}</div>`;
+          const rv = ref && pt && p.key === `${ref.site}:salinity` ? refValue(ref, pt[0], asofYear) : null;
+          const refTxt = rv !== null ? ` <span style="color:${t.soft}">(${ref!.year - (asofYear - +pt![0].slice(0, 4))}: ${fmtVal(rv, p.unit)})</span>` : "";
+          return `<div>${p.title}: <b>${val}</b>${typ}${expTxt}${refTxt}</div>`;
         });
         return `<div style="font-weight:600;margin-bottom:4px">${date}</div>${rows.join("")}`;
       },
@@ -164,17 +173,19 @@ function buildOption(allPanels: Panel[], t: ReturnType<typeof tokens>, days: num
   };
 }
 
-export default function StationCharts({ panels, note }: { panels: Panel[]; note?: string }) {
+export default function StationCharts({ panels, note, asofYear }: { panels: Panel[]; note?: string; asofYear: number }) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<echarts.ECharts | null>(null);
   const [days, setDays] = useState(120);
+  const [ref, setRef] = useState<RefYear | null>(getRefYear);
+  useEffect(() => onRefYear(setRef), []);
   const height = panels.length * (PANEL_H + TITLE_H + GAP) - GAP + AXIS_H;
 
   useEffect(() => {
     if (!el.current) return;
     const c = echarts.init(el.current, null, { renderer: "svg" });
     chart.current = c;
-    const draw = () => c.setOption(buildOption(panels, tokens(), days) as any, true);
+    const draw = () => c.setOption(buildOption(panels, tokens(), days, ref, asofYear) as any, true);
     draw();
     const ro = new ResizeObserver(() => c.resize());
     ro.observe(el.current);
@@ -187,7 +198,7 @@ export default function StationCharts({ panels, note }: { panels: Panel[]; note?
       window.removeEventListener("sc-theme-change", draw);
       c.dispose();
     };
-  }, [panels, days]);
+  }, [panels, days, ref, asofYear]);
 
   return (
     <section className="panel" aria-labelledby="charts-h">
@@ -206,6 +217,7 @@ export default function StationCharts({ panels, note }: { panels: Panel[]; note?
         Charts share one time axis, upstream first: rain, then the river, then this station. Hover or tap for values.
         {panels.some((p) => p.forecast?.length) && " Dashed line past today: the official NWS forecast."}
         {note && <> {note}</>}
+        {ref && panels.some((p) => p.key === `${ref.site}:salinity`) && ` Solid gray line: ${ref.year} on the same dates.`}
       </p>
     </section>
   );

@@ -12,8 +12,10 @@ interface Props {
   current?: "overview" | "about";
   /** Share image name under og/ (src/pages/og/[name].png.ts). */
   ogImage?: string;
+  /** What the share image shows, when it isn't the title and description. */
+  ogAlt?: string;
 }
-const { title, description, regionName, current, ogImage } = Astro.props;
+const { title, description, regionName, current, ogImage, ogAlt } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 // The image changes every run under the same name, so the build time in the query keeps share caches honest.
 const ogUrl = ogImage && `${new URL(href(`og/${ogImage}.png`), Astro.site)}?v=${loadLatest().generated_at.replace(/\D/g, "").slice(0, 12)}`;
@@ -37,7 +39,7 @@ const ogUrl = ogImage && `${new URL(href(`og/${ogImage}.png`), Astro.site)}?v=${
         <meta property="og:image" content={ogUrl} />
         <meta property="og:image:width" content={String(OG_W)} />
         <meta property="og:image:height" content={String(OG_H)} />
-        <meta property="og:image:alt" content={`${title}. ${description}`} />
+        <meta property="og:image:alt" content={ogAlt ?? `${title}. ${description}`} />
         <meta name="twitter:card" content="summary_large_image" />
       </>
     )}

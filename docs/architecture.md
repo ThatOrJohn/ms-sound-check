@@ -72,6 +72,7 @@ provisional data.
 |---|---|---|
 | `vs_normal` | the latest reading is outside the 10th–90th percentile band for this time of year | "Pearl River is running high (30,100 cfs vs. a typical 2,970)" |
 | `run_below` | a value has stayed under a threshold for N straight days, with watch, warning and alert levels | oyster freshwater stress: under 2 ppt for 5 / 10 / 14 days |
+| `record` | the last 14 days rank top or bottom 3 among the same dates in every year on record ([0028](decisions/0028-every-year-on-record.md)) | "The Pearl River near Bogalusa is at its third-lowest late-October flow since 1998. Only 2000 and 2010 were lower." |
 | `custom` | a Python function (`module:function`) returns findings | `msc.models.shrimp:season_lean` |
 | `custom` (`steps:step_events`) | two or more stations step the same way within three days ([0016](decisions/0016-step-events-need-matching-stations.md)) | "Salinity jumped at Merrill Shell Bank and Point Cadet around October 15, by as much as 18 ppt" |
 

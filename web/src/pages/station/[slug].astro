@@ -4,7 +4,8 @@ import Base from "../../layouts/Base.astro";
 import ReadingRow from "../../components/ReadingRow";
 import StationCharts, { type Panel } from "../../components/StationCharts";
 import Freshness from "../../components/Freshness.astro";
-import { loadLatest, loadSite } from "../../lib/data";
+import HistoryPanel from "../../components/HistoryPanel.astro";
+import { loadHistory, loadLatest, loadSite } from "../../lib/data";
 import { SEV_LABEL, href } from "../../lib/format";
 import type { Card } from "../../lib/types";
 
@@ -46,6 +47,8 @@ const ownSal = loadSite(card.id)?.series.salinity;
 const chartNote = ownSal?.expected?.length
   ? `Dotted line and gray band: what nearby stations and river flow suggest for this spot (typically within ±${Math.round(ownSal.expected_mae ?? 0)} ppt). A sensor drifting away from it is a hint something's wrong.`
   : undefined;
+const histSlug = data.history?.stations[card.id];
+const hist = histSlug ? loadHistory(histSlug) : null;
 const own = data.findings.filter((f) => f.site === card.id || f.sites?.includes(card.id));
 const dates = Object.values(card.vars).map((v) => v.date).filter(Boolean).sort() as string[];
 const usgsUrl = card.id.startsWith("USGS-") ? `https://waterdata.usgs.gov/monitoring-location/${card.id}/` : null;
@@ -73,7 +76,14 @@ const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.disp
     ))}
   </section>
 
-  {panels.length > 0 && <StationCharts client:visible panels={panels} note={chartNote} />}
+  {panels.length > 0 && <StationCharts client:visible panels={panels} note={chartNote} asofYear={+data.asof.slice(0, 4)} />}
+
+  {hist && hist.years.length > 0 && (
+    <section class="panel" aria-labelledby="every-year-h" id="history">
+      <div class="panel-head"><h2 id="every-year-h">{`Every year since ${hist.years[0].year}`}</h2></div>
+      <HistoryPanel hist={hist} url={href(`data/${data.region.id}/history/${hist.slug}.json`)} pick />
+    </section>
+  )}
 
   <section class="upstream">
     {upstream.length > 0 && (<>

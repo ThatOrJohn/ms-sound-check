@@ -1,0 +1,31 @@
+---
+import HistoryPanel from "./HistoryPanel.astro";
+import HistoryLegend from "./HistoryLegend.astro";
+import { loadHistory } from "../lib/data";
+import { href } from "../lib/format";
+import type { Latest } from "../lib/types";
+
+// The home page's "28 years" section: the region's `history.home` stations side by side, and a takeaway line
+// written at build time from per-year counts (decision 0028).
+interface Props { data: Latest }
+const { data } = Astro.props;
+const h = data.history!;
+const stations = h.home.map((s) => ({ ...s, hist: loadHistory(s.slug) })).filter((s) => s.hist?.years.length);
+---
+{stations.length > 0 && (
+  <section class="group" aria-labelledby="g-history">
+    <div class="group-head">
+      <h2 id="g-history">{`${+data.asof.slice(0, 4) - h.since} years of the Sound`}</h2>
+      <p>{h.takeaway ?? `Daily salinity since ${h.since}, one row per year.`}</p>
+    </div>
+    <div class="history-pair">
+      {stations.map((s) => (
+        <div class="history-card">
+          <h3><a href={href(`station/${s.slug}/#history`)}>{s.short}</a></h3>
+          <HistoryPanel hist={s.hist!} url={href(`data/${data.region.id}/history/${s.slug}.json`)} compact legend={false} />
+        </div>
+      ))}
+    </div>
+    <HistoryLegend />
+  </section>
+)}

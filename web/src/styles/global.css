@@ -481,6 +481,22 @@ select, .btn {
 .panel-head .ranges .btn[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--hair); }
 .chart-note { font-size: 0.82rem; color: var(--ink-soft); margin: 8px 0 0; max-width: var(--measure); }
 .chart-box { width: 100%; min-height: 200px; }
+
+/* ---------- salinity history picture (decision 0028) ---------- */
+.stripes { margin-top: 12px; }
+.stripes-canvas { display: block; width: 100%; height: 180px; touch-action: manipulation; }
+.stripes-readout { font: 500 0.78rem/1.4 var(--mono); color: var(--ink-soft); margin: 4px 0 0; min-height: 1.4em; }
+.stripes-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--ink-soft); margin-bottom: 10px; }
+.stripes-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.stripes-table { margin-top: 10px; }
+.stripes-table > summary { display: inline-flex; align-items: center; list-style: none; }
+.stripes-table > summary::-webkit-details-marker { display: none; }
+.stripes-table table { border-collapse: collapse; width: 100%; max-width: var(--measure); margin-top: 10px; font-size: 0.86rem; }
+.stripes-table th, .stripes-table td { text-align: left; border-bottom: 1px solid var(--hair); padding: 5px 10px 5px 0; }
+.stripes-table thead th { color: var(--ink-soft); font-weight: 500; }
+.history-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; max-width: var(--block); }
+.history-card { background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); padding: 16px 18px 14px; min-width: 0; }
+.history-card h3 { font: 600 0.98rem/1.3 var(--sans); margin: 0; }
 .upstream { margin: 32px 0; max-width: var(--measure); }
 .upstream h2 { font-size: 1.05rem; }
 .upstream ul { padding-left: 1.2em; }

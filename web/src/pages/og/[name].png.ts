@@ -1,7 +1,7 @@
 // One share image per page, rebuilt with the data every run: og/index.png (Coast), og/<persona>.png,
 // og/station-<slug>.png and og/about.png. Base.astro points og:image at them.
 import type { APIRoute, GetStaticPaths } from "astro";
-import { loadLatest } from "../../lib/data";
+import { loadHistory, loadLatest } from "../../lib/data";
 import { bandWords, fmtDate, fmtTime, href } from "../../lib/format";
 import { render, type Card } from "../../lib/og";
 import { readoutTiles, split, type Tile } from "../../lib/readouts";
@@ -23,6 +23,10 @@ export const GET: APIRoute = async ({ props }) => {
     const p = data.personas.find((x) => x.id === props.persona)!;
     card = { eyebrow: `${data.region.name} · ${p.label}`, headline: data.headlines[p.id], stamp,
       tiles: readoutTiles(data, (slug) => href(`station/${slug}/`)) };
+    // The home image is the whole record: the history pictures and how many years they cover (decision 0028).
+    const stripes = p.id === "general" && data.history ? data.history.home.map((s) => loadHistory(s.slug)).filter((x) => x?.years.length) : [];
+    if (stripes.length) card = { ...card, tiles: [], stripes: stripes as NonNullable<typeof stripes[0]>[],
+      headline: `${+data.asof.slice(0, 4) - data.history!.since} years of the ${data.region.name}, one row per year` };
   } else if (props.station) {
     const c = data.cards.find((x) => x.id === props.station)!;
     const tiles: Tile[] = Object.entries(c.vars).filter(([, r]) => r.display && !r.stale && !r.suspect && !c.retired).map(([vn, r]) => {

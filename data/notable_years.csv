@@ -1,0 +1,21 @@
+# One line of context per year, shown next to "years like this one" matches (docs/decisions/0028). Hand-kept, like
+# spillway_openings.csv. Say what happened, never what it means for this year. Years without a row show bare.
+year,note
+1998,Hurricane Georges in late September
+2000,"Drought, with low rivers most of the year"
+2001,Tropical Storm Allison in June
+2002,Hurricanes Isidore and Lili in the fall
+2004,Hurricane Ivan in September
+2005,Hurricane Katrina in late August
+2008,"Bonnet Carré open 31 days in April; Hurricane Gustav in September"
+2010,"Deepwater Horizon oil spill, April to July"
+2011,Bonnet Carré open 42 days from May
+2012,Hurricane Isaac in late August
+2016,Bonnet Carré open 22 days in January
+2017,Hurricane Nate in October
+2018,Bonnet Carré open 22 days in March
+2019,Bonnet Carré open 122 days across two openings
+2020,"Bonnet Carré open 29 days in April; Hurricanes Sally and Zeta in the fall"
+2021,Hurricane Ida in late August
+2023,"Drought, with low rivers through the fall"
+2024,Hurricane Francine in September

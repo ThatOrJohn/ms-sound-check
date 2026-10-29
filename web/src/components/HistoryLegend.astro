@@ -1,0 +1,10 @@
+---
+interface Props { pick?: boolean }
+const { pick } = Astro.props;
+---
+<p class="chart-note stripes-key">
+  <span class="scale" aria-hidden="true"><span>River 0</span><span class="scale-bar"></span><span>25+ Gulf</span></span>
+  {"Each row is a year and each thin column a day, colored like the map: brown is fresh river water, green brackish, " +
+    "blue-green Gulf water. Gray means no reading, and the ring marks today. Faded rows have readings on fewer than 80% of " +
+    "their days and are left out of the counts." + (pick ? " Tap a row or pick a year to draw it on the salinity chart above." : "")}
+</p>

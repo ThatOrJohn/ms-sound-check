@@ -13,7 +13,7 @@ import pandas as pd
 
 from . import normals as nm
 from . import store
-from .config import SITE_OUT, VARIABLES, Region
+from .config import REFERENCE, SITE_OUT, VARIABLES, Region
 from .indicators import SEVERITY, evaluate, is_suspect
 from .units import convert, fmt, season_phrase, unit_label
 
@@ -278,6 +278,120 @@ def _tide_strip(region) -> dict | None:
     return {"station": st["id"], "name": st["name"], "events": events} if len(events) >= 2 else None
 
 
+def _cell(dates: pd.DatetimeIndex) -> np.ndarray:
+    """Column 0-365 in a 366-day row, so Mar 1 lines up in leap and common years (Feb 29 is empty in common ones)."""
+    leap = dates.is_leap_year
+    return np.asarray(dates.dayofyear - 1 + ((~leap) & (dates.month > 2)))
+
+
+def _history(region, daily, asof, qcs, out) -> dict | None:
+    """Every salinity station's whole record, one row per year (decision 0028), to history/<slug>.json, and a
+    summary for latest.json: which stations the home section shows, and its one-line takeaway."""
+    cfg = region.extras.get("history")
+    if not cfg:
+        return None
+    from . import history
+    lo, hi = cfg["fresh_below"], cfg["salty_above"]
+    (out / "history").mkdir(exist_ok=True)
+    stations = {}
+    for site in region.sites:
+        if site["kind"] not in ("sound", "estuary") or "salinity" not in site["vars"]:
+            continue
+        s = history.series(daily, site["id"], "salinity", asof)
+        if qcs.get(site["id"], {}).get("suspect"):   # QC looks at the last 3 days
+            s = s[s.index <= asof - pd.Timedelta(days=3)]
+        if s.empty:
+            continue
+        counted, cov = set(history.good_years(s, asof)), history.coverage(s)
+        years = []
+        for y, g in s.groupby(s.index.year):
+            vals = [None] * 366
+            for i, v in zip(_cell(g.index), g.values):
+                vals[i] = _r(v, 1)
+            years.append({"year": int(y), "counted": int(y) in counted, "coverage": _r(cov[y]),
+                          "mean": _r(g.mean(), 1), "under": int((g < lo).sum()), "over": int((g > hi).sum()),
+                          "values": vals})
+        slug = site.get("slug") or slugify(site["short"])
+        (out / "history" / f"{slug}.json").write_text(json.dumps(
+            {"id": site["id"], "slug": slug, "short": site["short"], "name": site["name"], "asof": asof.strftime("%Y-%m-%d"),
+             "fresh_below": lo, "salty_above": hi, "years": years}, separators=(",", ":")))
+        stations[site["id"]] = {"slug": slug, "short": site["short"], "first": years[0]["year"],
+                                "years": [y for y in years if y["counted"]]}
+    home = [sid for sid in cfg.get("home", []) if sid in stations]
+    if not home:
+        return None
+    return {"since": min(stations[sid]["first"] for sid in home), "fresh_below": lo, "salty_above": hi,
+            "home": [{"id": sid, "slug": stations[sid]["slug"], "short": stations[sid]["short"]} for sid in home],
+            "stations": {sid: st["slug"] for sid, st in stations.items()},
+            "takeaway": _history_takeaway(region, stations.get(cfg.get("takeaway_site", home[0])), lo, hi)}
+
+
+def _history_takeaway(region, st, lo, hi) -> str | None:
+    """'At Biloxi Back Bay, 2021 was fresher than the spillway year 2019: ...'. Counts only; never a forecast."""
+    if not st or len(st["years"]) < 10:
+        return None
+    from .models import spillway
+    ys = {y["year"]: y for y in st["years"]}
+    fresh = max(ys.values(), key=lambda y: y["under"])
+    salt = max(ys.values(), key=lambda y: y["over"])
+    spill = [ys[y] for y in sorted({o["year"] for o in spillway.openings(region)}) if y in ys]
+    big = max(spill, key=lambda y: y["under"], default=None)
+    if big and big["year"] != fresh["year"] and big["under"] < fresh["under"]:
+        first = (f"At {st['short']}, {fresh['year']} was fresher than the spillway year {big['year']}: "
+                 f"{fresh['under']} days under {lo} ppt, vs. {big['under']}.")
+    else:
+        first = f"At {st['short']}, {fresh['year']} was the freshest year: {fresh['under']} days under {lo} ppt."
+    # "Most years have fewer than N": the smallest multiple of 5 that more than half the years stay under.
+    n = next(n for n in range(5, 370, 5) if sum(y["over"] < n for y in ys.values()) > len(ys) / 2)
+    return f"{first} {salt['year']} was the saltiest, with {salt['over']} days over {hi} ppt; most years have fewer than {n}."
+
+
+def _similar_years(region, daily, asof) -> dict | None:
+    """Past years whose rivers over the last N days looked most like this year's (decision 0028). Background only:
+    the output never says what came next in those years (0008)."""
+    cfg = region.extras.get("similar_years")
+    if not cfg:
+        return None
+    from . import history
+    days, need = cfg["days"], cfg["min_days"]
+
+    def window(s, year):   # log10 flow on the same calendar days, keyed by month-day so leap years line up
+        end = history.same_day(asof, year)
+        w = s[(s.index > end - pd.Timedelta(days=days)) & (s.index <= end)]
+        w = w[w > 0]
+        return pd.Series(np.log10(w.values), index=w.index.strftime("%m-%d"))
+
+    series = {sid: history.series(daily, sid, "flow", asof) for sid in cfg["rivers"]}
+    now = {sid: window(s, asof.year) for sid, s in series.items()}
+    if any(len(w) < need for w in now.values()):
+        return None
+    years = set.intersection(*(set(history.good_years(s, asof)) for s in series.values())) - {asof.year}
+    rms = {}
+    for y in years:
+        sq = []
+        for sid, s in series.items():
+            j = pd.concat([now[sid], window(s, y)], axis=1, join="inner").dropna()
+            if len(j) < need:
+                break
+            sq.append(((j.iloc[:, 0] - j.iloc[:, 1]) ** 2).values)
+        else:
+            rms[y] = float(np.sqrt(np.concatenate(sq).mean()))
+    if len(rms) < cfg.get("min_years", 10):
+        return None
+    best = [y for y in sorted(rms, key=rms.get)[:cfg.get("top", 3)] if rms[y] <= cfg.get("max_rms", 0.5)]
+    if not best:
+        return None
+    notes = {}
+    p = REFERENCE / cfg.get("notes", "notable_years.csv")
+    if p.exists():
+        notes = {int(r.year): r.note for r in pd.read_csv(p, comment="#").itertuples()}
+    link = region.site(cfg["link_site"]) if cfg.get("link_site") else None
+    return {"days": days, "label": cfg["label"], "compared": len(rms),
+            "link_slug": (link.get("slug") or slugify(link["short"])) if link else None,
+            "link_short": link["short"] if link else None,
+            "years": [{"year": int(y), "rms": _r(rms[y]), "note": notes.get(y)} for y in best]}
+
+
 REPLAY_DAYS = 30
 
 
@@ -411,6 +525,8 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "satellite": satellite_layers,
         "reference": _reference(region, daily, asof),
         "replay": _replay(region, daily, normals, asof),
+        "history": _history(region, daily, asof, qcs, out),
+        "similar_years": _similar_years(region, daily, asof),
         "generated_at": generated_at.isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),

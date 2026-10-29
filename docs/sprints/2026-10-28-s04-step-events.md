@@ -29,6 +29,7 @@
 - [x] Share images: a 1200x630 PNG per page drawn at build time with satori + sharp, `og:image` with a build-time `?v=` ([0026](../decisions/0026-share-images-at-build-time.md)); river stage displays gained their "ft"
 - [x] Dauphin Island salinity as a labeled reference chip at the map's east edge (0019, update); not a station dot, never in the salinity fill
 - [x] Home layout: headline moved into a panel beside the map, above Signals; map header is now a labeled salinity key ([0027](../decisions/0027-headline-beside-the-map.md))
+- [x] 28 years of the Sound ([0028](../decisions/0028-every-year-on-record.md)): shared rules in `msc/history.py`; salinity history picture (`history/<slug>.json`, `HistoryStripes.tsx`) on station pages and in a home section, with a table alternative, a picked year drawn on the station chart, and the home share image; `record` indicator for river flow, Pearl stage and Sound salinity (unit tests in `tests/`, now run in CI); "years like this one" in the river section with `data/notable_years.csv`
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

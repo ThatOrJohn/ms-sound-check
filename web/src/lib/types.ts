@@ -3,7 +3,7 @@
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
 export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind";
-export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway" | "vibrio";
+export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway" | "vibrio" | "history";
 export type Kind2 = Kind | "gauge";
 
 export interface Persona {
@@ -167,7 +167,31 @@ export interface SatelliteLayer {
 /** Last 30 days for the map's replay: salinity per station, flow percentile per river (null = no reading). */
 export interface Replay { days: string[]; salinity: Record<string, (number | null)[]>; flow_pct: Record<string, (number | null)[]> }
 
+/** One year of a station's daily salinity (decision 0028). `values` has 366 cells, Jan 1 to Dec 31 of a leap year, so
+ *  Feb 29 is null in common years. `counted`: enough days (80%) to count in per-year numbers; the current year always is. */
+export interface HistoryYear {
+  year: number; counted: boolean; coverage: number; mean: number; under: number; over: number; values: (number | null)[];
+}
+/** web/public/data/<region>/history/<slug>.json */
+export interface HistoryFile {
+  id: string; slug: string; short: string; name: string; asof: string; fresh_below: number; salty_above: number;
+  years: HistoryYear[];
+}
+/** In latest.json: which stations have a history file, the two the home section shows, and its takeaway line. */
+export interface HistorySummary {
+  since: number; fresh_below: number; salty_above: number; home: { id: string; slug: string; short: string }[];
+  stations: Record<string, string>; takeaway: string | null;
+}
+
+/** Past years whose rivers over the last `days` days looked most like now, closest first. Background, never a forecast. */
+export interface SimilarYears {
+  days: number; label: string; compared: number; link_slug: string | null; link_short: string | null;
+  years: { year: number; rms: number; note: string | null }[];
+}
+
 export interface Latest {
+  history?: HistorySummary | null;
+  similar_years?: SimilarYears | null;
   spillway?: Spillway | null;
   vibrio?: Vibrio | null;
   satellite?: Record<string, SatelliteLayer>;

@@ -231,3 +231,33 @@ test("every page has a share image that exists and is 1200x630", async ({ page, 
     expect([png.readUInt32BE(16), png.readUInt32BE(20)], og!).toEqual([1200, 630]);   // IHDR width, height
   }
 });
+
+test("salinity history: home section, table alternative, and a picked year on the station chart", async ({ page }) => {
+  await page.goto("");
+  const home = page.locator("section", { has: page.locator("#g-history") });
+  await expect(home.getByRole("heading", { name: /years of the Sound/ })).toBeVisible();
+  await expect(home.locator("canvas.stripes-canvas")).toHaveCount(2);
+  await page.goto("station/west-sound/#year-2019");
+  const hist = page.locator("#history");
+  await expect(hist.getByRole("combobox")).toHaveValue("2019");
+  await hist.getByText("Show as table").click();
+  await expect(hist.getByRole("rowheader", { name: "2019" })).toBeVisible();
+  await page.locator(".chart-box").scrollIntoViewIfNeeded();
+  await expect(page.locator(".chart-note").first()).toContainText("2019 on the same dates");
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    const axe = await new AxeBuilder({ page }).include("#history").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+    expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
+  }
+});
+
+test("years like this one: the river section names past years, each linking to that year on the history picture", async ({ page }) => {
+  await page.goto("");
+  const line = page.locator(".similar-years");
+  test.skip(!(await line.count()), "no close match in the current data");
+  await expect(line).toContainText("not a forecast");
+  const link = line.getByRole("link").first();
+  const year = (await link.textContent())!.trim();
+  await link.click();
+  await expect(page.locator("#history").getByRole("combobox")).toHaveValue(year);
+});

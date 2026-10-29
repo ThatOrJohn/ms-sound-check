@@ -288,19 +288,42 @@ vibrio:
     - {label: Mississippi State Department of Health, url: "https://msdh.ms.gov/Page/23,31053,341.html"}
     - {label: CDC, url: "https://www.cdc.gov/vibrio/prevention/index.html"}
 
+# Salinity history picture (decision 0028): every day on record, one row per year, on each salinity station's page
+# and, for the `home` stations, in a section of its own. The takeaway line compares days under `fresh_below` and
+# over `salty_above` at `takeaway_site`.
+history:
+  home: [USGS-301429089145600, USGS-302318088512600]
+  takeaway_site: USGS-302318088512600
+  fresh_below: 5
+  salty_above: 25
+
+# "Years like this one" (decision 0028): the last `days` days of daily log flow in `rivers`, compared with the same days
+# in every past year (root-mean-square difference). The `top` closest are named in the river section as background,
+# never a forecast, each linking to that year on `link_site`'s history picture, with its line from `notes`.
+similar_years:
+  rivers: [USGS-02489500, USGS-02479000]
+  label: the Pearl and Pascagoula
+  days: 60
+  min_days: 50
+  top: 3
+  min_years: 10
+  max_rms: 0.5                     # log10 flow; past this, nothing is close enough to name
+  link_site: USGS-301429089145600
+  notes: notable_years.csv
+
 # Personas re-rank indicators and reorder cards. Add one by adding an entry here.
 personas:
   - id: general
     label: Coast (general)
     blurb: What the Sound is doing this week and whether any of it matters.
     focus: [general, oyster, shrimp, fish]
-    card_order: [beaches, sound, vibrio, river, spillway, rain, weather, estuary]
+    card_order: [beaches, sound, vibrio, river, history, spillway, rain, weather, estuary]
     map_layers: [depth, rivers, beaches]
   - id: oyster
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
-    card_order: [oyster_watch, spillway, sound, vibrio, river, rain, estuary, weather, beaches]
+    card_order: [oyster_watch, spillway, sound, vibrio, river, history, rain, estuary, weather, beaches]
     map_layers: [depth, contours, rivers, salinity]
   - id: shrimp
     label: Shrimp
@@ -344,6 +367,52 @@ indicators:
     topics: [general, oyster, shrimp, fish]
     low_text: "The {site} is running low ({value} vs. a typical {p50}). Expect saltier water downstream."
     high_text: "The {site} is running high ({value} vs. a typical {p50}). Expect fresher water downstream while it stays up."
+
+  # Where the last two weeks rank among the same dates in every year on record (decision 0028). Each year's
+  # `window`-day mean needs `min_days` days of data; only a top or bottom `top` rank is said. Replaces the plain
+  # vs_normal finding for the same station. Water temperature stays out until its trend question is settled.
+  - id: river_record
+    type: record
+    var: flow
+    kinds: [river]
+    window: 14
+    min_days: 10
+    top: 3
+    topics: [general, oyster, shrimp, fish]
+    low_word: lowest
+    high_word: highest
+    low_cmp: lower
+    high_cmp: higher
+    low_text: "The {site} is at its {rank} {season} flow since {since}."
+    high_text: "The {site} is at its {rank} {season} flow since {since}."
+  - id: stage_record
+    type: record
+    var: stage
+    sites: [NWS-PERL1]
+    window: 14
+    min_days: 10
+    top: 3
+    topics: [oyster, general]
+    low_word: lowest
+    high_word: highest
+    low_cmp: lower
+    high_cmp: higher
+    low_text: "The Pearl River at Pearl River, LA, is at its {rank} {season} level since {since}."
+    high_text: "The Pearl River at Pearl River, LA, is at its {rank} {season} level since {since}."
+  - id: salinity_record
+    type: record
+    var: salinity
+    kinds: [sound]
+    window: 14
+    min_days: 10
+    top: 3
+    topics: [general, fish, oyster]
+    low_word: freshest
+    high_word: saltiest
+    low_cmp: fresher
+    high_cmp: saltier
+    low_text: "{site} has its {rank} {season} water since {since}."
+    high_text: "{site} has its {rank} {season} water since {since}."
 
   # Oyster freshwater stress. Threshold from NGI/USM spillway research (2026):
   # mortality when salinity stays below ~2 ppt for more than two weeks.

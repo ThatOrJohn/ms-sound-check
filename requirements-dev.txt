@@ -2,3 +2,4 @@
 -r requirements.txt
 pillow          # basemap: read elevation TIFFs, write depth images
 matplotlib      # basemap: depth contours
+pytest          # unit tests in tests/ (CI installs it too)

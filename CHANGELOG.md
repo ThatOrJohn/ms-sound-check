@@ -3,6 +3,11 @@
 User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## 2026-10-28
+### Added
+- Salinity history picture: every day since 1998 at a station, one row per year, colored like the map. Station pages show the full picture, and a "28 years of the Sound" section on the Coast and Oysters pages shows West Sound and Biloxi Back Bay side by side, with a line on the freshest and saltiest years. Pick a year (or tap its row) to draw it on the station's salinity chart. A "Show as table" button lists each year's average and days under 5 and over 25 ppt. The home page's share image is now this picture ([0028](docs/decisions/0028-every-year-on-record.md)).
+- "In the record" signals: when the last two weeks rank among the three highest or lowest for those dates since records began, Signals say so, for example "The Pearl River near Bogalusa is at its third-lowest late-October flow since 1998. Only 2000 and 2010 were lower." This takes the place of the plain "running low" note for that station.
+- "Years like this one": the river section names the three past years whose Pearl and Pascagoula flows over the last 60 days looked most like this year's, with a short note on each, and links each to that year on the West Sound history picture. It's background, not a forecast.
+
 ### Changed
 - The map's Layers panel keeps one width as you turn layers on and off. It no longer slides under the Dauphin Island reading or, on phones, the zoom buttons: when the map is too short to fit everything, the panel scrolls.
 - The map comes up sooner on the home page: the headline now sits in a panel beside the map, above Signals, instead of across the top. On phones and tablets it comes right after the key readings. The map's header now says what the dot colors mean ("Dot color: salinity (ppt)", river 0 to 25+ Gulf) in place of "The Sound, live" ([0027](docs/decisions/0027-headline-beside-the-map.md)).

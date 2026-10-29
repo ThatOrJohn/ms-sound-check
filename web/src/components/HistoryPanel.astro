@@ -1,0 +1,38 @@
+---
+import HistoryStripes from "./HistoryStripes";
+import HistoryLegend from "./HistoryLegend.astro";
+import type { HistoryFile } from "../lib/types";
+
+// One station's history picture plus its text alternative: each year's mean and days under/over the cutoffs (0028).
+// legend: false where a section shows one key for several pictures.
+interface Props { hist: HistoryFile; url: string; pick?: boolean; compact?: boolean; legend?: boolean }
+const { hist, url, pick, compact, legend = true } = Astro.props;
+const last = hist.years.at(-1)!.year;
+const rows = hist.years.slice().reverse();
+---
+<div class="history-panel">
+  {pick  /* a #year-YYYY link has to work before the picture scrolls into view */
+    ? <HistoryStripes client:load url={url} short={hist.short} pick compact={compact} />
+    : <HistoryStripes client:visible url={url} short={hist.short} compact={compact} />}
+  {legend && <HistoryLegend pick={pick} />}
+  <details class="stripes-table">
+    <summary class="btn">Show as table</summary>
+    <table>
+      <caption class="visually-hidden">{`Salinity at ${hist.short} by year`}</caption>
+      <thead><tr>
+        <th scope="col">Year</th><th scope="col">Average</th>
+        <th scope="col">{`Days under ${hist.fresh_below} ppt`}</th><th scope="col">{`Days over ${hist.salty_above} ppt`}</th>
+        <th scope="col">Note</th>
+      </tr></thead>
+      <tbody>
+        {rows.map((y) => (
+          <tr>
+            <th scope="row">{y.year}</th>
+            <td>{`${y.mean.toFixed(1)} ppt`}</td><td>{y.under}</td><td>{y.over}</td>
+            <td>{y.year === last ? "So far this year" : y.counted ? "" : `Readings on ${Math.round(y.coverage * 100)}% of days; not counted`}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </details>
+</div>

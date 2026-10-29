@@ -3,6 +3,7 @@
 Rule types (configured per region in regions/<id>.yaml):
   vs_normal   latest value outside the p<low>/p<high> band for this time of year
   run_below   consecutive days under a threshold (e.g. oyster freshwater stress)
+  record      the last two weeks ranked against the same dates in every year on record (top or bottom 3)
   custom      a Python function "module:function" for anything model-like
 
 A finding is a dict: indicator, site, severity, topics, text, plus details.
@@ -101,6 +102,44 @@ def run_below(region, cfg, daily, normals, asof):
     return out
 
 
+ORDINAL = {1: "", 2: "second-", 3: "third-", 4: "fourth-", 5: "fifth-"}
+
+
+def _years(ys: list[int]) -> str:
+    ys = [str(y) for y in ys]
+    return ys[0] if len(ys) == 1 else f"{', '.join(ys[:-1])} and {ys[-1]}"
+
+
+def record(region, cfg, daily, normals, asof):
+    """Today's mean over the last `window` days, ranked against the same calendar days in every year on record
+    (decision 0028). Only a top or bottom `top` rank becomes a finding."""
+    from . import history
+    out = []
+    window, top = cfg.get("window", 14), cfg.get("top", 3)
+    for site in _sites_for(region, cfg):
+        s = history.series(daily, site["id"], cfg["var"], asof)
+        if s.empty or (asof - s.index[-1]).days > STALE_DAYS:
+            continue
+        means = history.window_means(s, asof, window, cfg.get("min_days", 10))
+        if asof.year not in means or len(means) < cfg.get("min_years", 10):
+            continue
+        ranked = sorted(means, key=means.get)
+        for side, order in (("low", ranked), ("high", ranked[::-1])):
+            rank = order.index(asof.year) + 1
+            if rank > top:
+                continue
+            others = order[:rank - 1]
+            text = cfg[f"{side}_text"].format(
+                site=site["name"], rank=ORDINAL[rank] + cfg[f"{side}_word"], since=min(means),
+                season=season_phrase(asof).replace(" ", "-"))
+            if others:
+                text += f" Only {_years(others)} {'was' if len(others) == 1 else 'were'} {cfg[f'{side}_cmp']}."
+            out.append({"indicator": cfg["id"], "site": site["id"], "severity": "notice",
+                        "topics": cfg.get("topics", []), "text": text, "side": side, "rank": rank,
+                        "years": len(means), "var": cfg["var"], "date": s.index[-1].strftime("%Y-%m-%d")})
+    return out
+
+
 def _in_season(cfg: dict, asof: pd.Timestamp) -> bool:
     if "active" not in cfg:
         return True
@@ -114,20 +153,26 @@ def custom(region, cfg, daily, normals, asof):
     return getattr(importlib.import_module(mod), fn)(region, cfg, daily, normals, asof)
 
 
-RULES = {"vs_normal": vs_normal, "run_below": run_below, "custom": custom}
+RULES = {"vs_normal": vs_normal, "run_below": run_below, "record": record, "custom": custom}
 
 
 def evaluate(region: Region, daily: pd.DataFrame, normals: pd.DataFrame,
              asof: pd.Timestamp, suspect: set | None = None) -> list[dict]:
     """suspect: {(site, var)} whose latest readings failed QC; they never produce findings."""
     findings = []
+    plain = set()   # ids of vs_normal indicators
     for cfg in region.indicators:
         if not _in_season(cfg, asof):
             continue
+        if cfg["type"] == "vs_normal":
+            plain.add(cfg["id"])
         try:
             findings += RULES[cfg["type"]](region, cfg, daily, normals, asof)
         except Exception:  # one broken indicator must not take down the page
             log.exception("indicator %s failed", cfg.get("id"))
+    # A record line says what "running low" would, more precisely: keep only the record.
+    records = {(f["site"], f["var"]) for f in findings if f.get("rank")}
+    findings = [f for f in findings if not (f["indicator"] in plain and (f.get("site"), f.get("var")) in records)]
     if suspect:
         findings = [f for f in findings if (f.get("site"), f.get("var")) not in suspect]
     findings.sort(key=lambda f: -SEVERITY.get(f["severity"], 0))

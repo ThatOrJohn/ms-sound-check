@@ -4,6 +4,7 @@ import type { Map as MLMap, MapLayerMouseEvent, Popup, StyleSpecification } from
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { ReferenceSite, Replay, SatelliteLayer } from "../lib/types";
 import { beachDetail } from "../lib/format";
+import { salinityRGB } from "../lib/salinity";
 
 export interface MapStation {
   id: string; short: string; kind: string; lon: number; lat: number; href: string;
@@ -60,11 +61,6 @@ function tokens() {
 }
 type Tokens = ReturnType<typeof tokens>;
 const rgb = (hex: string) => { const n = parseInt(hex.replace("#", ""), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
-function salinityRGB(v: number, t: Tokens): number[] {
-  const [a, b, c] = [rgb(t.fresh), rgb(t.brackish), rgb(t.gulf)];
-  const mix = (x: number[], y: number[], k: number) => x.map((xi, i) => Math.round(xi + (y[i] - xi) * k));
-  return v <= 12 ? mix(a, b, Math.max(0, v) / 12) : mix(b, c, Math.min(1, (v - 12) / 13));
-}
 const css = (c: number[]) => `rgb(${c.join(",")})`;
 const mix = (x: number[], y: number[], k: number) => x.map((xi, i) => Math.round(xi + (y[i] - xi) * k));
 /** Gray level 1-255 from a satellite PNG -> color. Clarity runs clear (Gulf water) to murky (river water). */
