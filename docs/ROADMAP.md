@@ -3,7 +3,7 @@
 Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Now
-**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) and "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)).
+**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)).
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -11,11 +11,11 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
-- **Beach advisory heads-up**: `beach_history.parquet` plus rainfall could show how often MDEQ advisories follow heavy
-  rain and how soon, for a "likely after rain like this" note between the weekly samples. Never says a beach is closed.
-- **Better event explanations**: wind and rivers explain under half of the events ([0017](decisions/0017-step-events-describe-wind-and-rivers.md)). The Mississippi River added nothing beyond chance ([0020](decisions/0020-mississippi-flow-not-added-to-event-text.md)). Left to test: Gulf water level at Dauphin Island (NOAA CO-OPS 8735180; pull slowly, the API refused a fast bulk request).
-- **Smaller rivers in the virtual sensors**: run an experiment with the Wolf and Biloxi gauges as inputs for West Sound and Biloxi Back Bay. They're shown but not used today ([0021](decisions/0021-smaller-rivers-shown-not-weighed.md)).
-- **Weekly digest**: Bluesky post + RSS from the same build. The home page's share image (`og/index.png`) can be the post's picture.
+- **Smaller rivers in the virtual sensors**: `scripts/experiment_minor_rivers.py` compares the models with and without the
+  Wolf and Biloxi gauges (last two years and 2019-2020, overall and on fresh days). Run the `experiment` workflow task
+  (LightGBM won't load on the dev Mac) and add them only on a clear, consistent gain ([0021](decisions/0021-smaller-rivers-shown-not-weighed.md)).
+- **Turn on the Bluesky digest**: the post step is built and waiting for the `BLUESKY_HANDLE` and `BLUESKY_APP_PASSWORD`
+  secrets ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)).
 
 ## Later
 - **West-to-east salinity strip**: one gradient bar from the Pearl River mouth to East Sound, each station placed by
@@ -31,6 +31,8 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - Harmful algal bloom notices beyond beaches.
 
 ## Parked
+- **Beach advisory heads-up after rain**: the effect in MDEQ's 2015-2025 samples faded after 2021 and shows no
+  dose-response ([0029](decisions/0029-no-beach-rain-heads-up.md)). Retest in a year or two.
 - **Salinity forecast**: no edge over persistence during the events that matter ([0008](decisions/0008-no-salinity-forecast.md)).
 - **Databricks**: free-tier limits and nothing to gain at this data size ([0003](decisions/0003-no-databricks.md)).
 - **Dock price tracker**: needs committed contributors ([seed.md](seed.md)).

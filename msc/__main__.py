@@ -7,6 +7,7 @@
   python -m msc build     --region ms     write site/data/<region>/*.json
   python -m msc run       --region ms     ingest + build (what the schedule runs)
   python -m msc check     --region ms     fail if the newest water reading is stale or a shrimp opening is missing
+  python -m msc post      --region ms     post this week's digest to Bluesky (needs BLUESKY_HANDLE/BLUESKY_APP_PASSWORD)
   python -m msc basemap                   one-time: depth shading + contours for the map (commit the output)
   python -m msc rivers                    one-time: river lines for the map from OpenStreetMap (commit the output)
 
@@ -40,9 +41,9 @@ _try.failures = []
 
 
 def cmd_backfill(region, args):
-    from .adapters import gcoos, openmeteo, usgs
+    from .adapters import coops, gcoos, openmeteo, usgs
     for label, fn in [("usgs backfill", usgs.backfill_daily), ("rain backfill", openmeteo.backfill_daily),
-                      ("reference backfill", gcoos.daily),
+                      ("reference backfill", gcoos.daily), ("water level backfill", coops.backfill),
                       ("wind backfill", openmeteo.wind_backfill)]:
         df = _try(label, fn, region, start=args.start)
         if df is not None:
@@ -85,6 +86,10 @@ def cmd_ingest(region, args):
     ref = _try("reference salinity", gcoos.daily, region)
     if ref is not None and not ref.empty:
         store.upsert_daily(region, ref)
+    from .adapters import coops
+    level = _try("gulf water level", coops.recent, region)
+    if level is not None and not level.empty:
+        store.upsert_daily(region, level)
     from .adapters import tides
     tide_rows = _try("tides", tides.fetch, region)
     if tide_rows:
@@ -124,6 +129,9 @@ def cmd_build(region, args):
     fc = pd.read_parquet(fc_path) if fc_path.exists() else None
     latest = build(region, daily, normals, asof, fc)
     log.info("built %s: %d findings, asof %s", region.id, len(latest["findings"]), latest["asof"])
+    if not args.asof:   # a look at a past date never adds to the digest
+        from . import digest
+        _try("weekly digest", digest.update, region, latest)
 
 
 def cmd_check(region, args) -> int:
@@ -153,13 +161,15 @@ def cmd_check(region, args) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="msc")
-    ap.add_argument("command", choices=["backfill", "normals", "train", "ingest", "build", "run", "check", "basemap", "rivers"])
+    ap.add_argument("command", choices=["backfill", "normals", "train", "ingest", "build", "run", "check", "post", "basemap", "rivers"])
     ap.add_argument("--region", default="ms")
     ap.add_argument("--start", default="1998-01-01", help="backfill start date")
     ap.add_argument("--days", type=int, default=7, help="ingest lookback days")
     ap.add_argument("--asof", help="build as of this date (testing)")
     ap.add_argument("--stride", type=int, default=1, help="basemap: take every Nth grid cell (1 = full 3 arc-second)")
     ap.add_argument("--max-age-days", type=int, default=2, help="check: oldest acceptable newest reading")
+    ap.add_argument("--site-url", default="", help="post: the site's public address, for the link card")
+    ap.add_argument("--image", default="web/dist/og/index.png", help="post: picture for the link card")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     region = load_region(args.region)
@@ -183,6 +193,10 @@ def main(argv=None) -> int:
         return 0
     if args.command == "check":
         return cmd_check(region, args)
+    if args.command == "post":
+        from . import digest
+        digest.post(region, args.site_url, args.image)
+        return 0
     if args.command == "run":
         cmd_ingest(region, args)
         cmd_build(region, args)

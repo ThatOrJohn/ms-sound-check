@@ -47,7 +47,9 @@ build a region picker until a second region exists.
 | MDMR WordPress REST API | shrimp season notices (press releases, filtered by title) for the Shrimp page | `mdmr.fetch`, every run | free, no key |
 | NWS National Water Prediction Service | observed and forecast stage at NORL1 (Mississippi River at New Orleans) for the spillway watch | `spillway.fetch`, every run; saved as `spillway.json` | free, no key |
 | NOAA CoastWatch ERDDAP | satellite water clarity (VIIRS Kd490, 750 m) and surface temperature (ACSPO, 2 km) for map layers | `coastwatch.fetch`, every run; newest clear view per pixel over a few days | free, no key |
+| NOAA CO-OPS (water level) | daily mean water level at Dauphin Island (8735180) for step-event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) | `coops.recent` every run (6-minute preliminary); `coops.backfill` one year per request, paused | free, no key; refuses fast bulk pulls |
 | `data/spillway_openings.csv` | Bonnet Carré Spillway openings since 1937, kept by hand | read by `models/spillway.py` | — |
+| `data/notable_years.csv` | one line of context per year for "years like this one", kept by hand | read by `build.py` ([0028](decisions/0028-every-year-on-record.md)) | — |
 | Open-Meteo | observed and forecast daily rain, local and basin-averaged | `openmeteo.*` | free, no key, **non-commercial terms**; revisit if sponsorship happens |
 
 Salinity is computed from specific conductance (PSS-78 via `gsw`), not taken

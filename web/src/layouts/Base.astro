@@ -29,6 +29,7 @@ const ogUrl = ogImage && `${new URL(href(`og/${ogImage}.png`), Astro.site)}?v=${
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={href("favicon.svg")} type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title={`Sound Check: ${regionName} weekly`} href={href("digest.xml")} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

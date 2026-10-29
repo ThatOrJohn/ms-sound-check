@@ -131,6 +131,8 @@ as they're done, write the outcome, update `docs/ROADMAP.md` and `CHANGELOG.md`.
 | Every spring (March to May) | The Shrimp page shows a season "lean" from spring water temperature. When MDMR announces the opening date, add a row to `data/shrimp_openings.csv` and note in the roadmap whether the lean was right. |
 | When the Corps opens the Bonnet Carré Spillway | Add a row to `data/spillway_openings.csv` with a blank `days`; fill in `days` when it closes. The site only says it's open from this file ([0022](docs/decisions/0022-spillway-watch-from-the-river.md)). |
 | Monthly (automatic) | CI recomputes normals and retrains the virtual sensors. Glance at that run's log if you're curious. |
+| Whenever a year has a big event (hurricane, spillway opening, drought) | Add a line to `data/notable_years.csv`. It's the note shown when that year comes up as a "year like this one" ([0028](docs/decisions/0028-every-year-on-record.md)). |
+| Once, to turn on the Bluesky digest | Create the account, make an app password (Settings → Privacy and security → App passwords), and add repo secrets `BLUESKY_HANDLE` and `BLUESKY_APP_PASSWORD`. The Friday digest posts from then on; the RSS feed works without it ([0031](docs/decisions/0031-weekly-digest-rss-and-bluesky.md)). |
 | If MDMR revises its shellfish plan | Update the oyster watch's thresholds and `plan_url` in `regions/ms.yaml`, and add a decision record. |
 
 ## When something breaks

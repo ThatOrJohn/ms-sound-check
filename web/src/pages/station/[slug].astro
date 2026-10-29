@@ -7,11 +7,11 @@ import Freshness from "../../components/Freshness.astro";
 import HistoryPanel from "../../components/HistoryPanel.astro";
 import { loadHistory, loadLatest, loadSite } from "../../lib/data";
 import { SEV_LABEL, href } from "../../lib/format";
-import type { Card } from "../../lib/types";
+import { INPUT_KINDS, type Card } from "../../lib/types";
 
 export const getStaticPaths = (() =>
-  // Wind is an input to the models and the fishing outlook, not a station anyone browses to.
-  loadLatest().cards.filter((c) => c.kind !== "wind").map((c) => ({ params: { slug: c.slug }, props: { id: c.id } }))) satisfies GetStaticPaths;
+  // Wind and water level are inputs to the models and event text, not stations anyone browses to.
+  loadLatest().cards.filter((c) => !INPUT_KINDS.includes(c.kind)).map((c) => ({ params: { slug: c.slug }, props: { id: c.id } }))) satisfies GetStaticPaths;
 
 const data = loadLatest();
 const card = data.cards.find((c) => c.id === Astro.props.id)!;

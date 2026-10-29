@@ -2,7 +2,9 @@
 
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
-export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind";
+export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind" | "water_level";
+/** Inputs to the models and event text, not stations anyone browses to. */
+export const INPUT_KINDS: Kind[] = ["wind", "water_level"];
 export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway" | "vibrio" | "history";
 export type Kind2 = Kind | "gauge";
 
@@ -188,6 +190,9 @@ export interface SimilarYears {
   days: number; label: string; compared: number; link_slug: string | null; link_short: string | null;
   years: { year: number; rms: number; note: string | null }[];
 }
+
+/** One week's digest entry (web/public/data/<region>/digest.json, newest first). */
+export interface DigestEntry { id: string; date: string; title: string; headline: string; lines: string[] }
 
 export interface Latest {
   history?: HistorySummary | null;

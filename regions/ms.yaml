@@ -167,6 +167,18 @@ sites:
     note: Hourly wind over the middle of the Sound (ERA5 reanalysis for history, model analysis for recent days), averaged by day.
     points: [[30.25, -89.0]]
     vars: [wind_u, wind_v, wind_max]
+  # Measured water level (NOAA CO-OPS), daily mean above mean sea level. Context for salinity step events only
+  # (decision 0030); not shown as a card or station page.
+  - id: NOAA-8735180
+    name: Dauphin Island water level
+    short: Gulf water level
+    kind: water_level
+    source: coops
+    station: "8735180"
+    lat: 30.25
+    lon: -88.075
+    vars: [water_level]
+    note: NOAA's tide gauge at Dauphin Island, AL. Its daily mean shows wind and Gulf pushing water up or drawing it down.
   - id: rain-hancock
     name: Hancock County rainfall
     short: Hancock County rain
@@ -311,6 +323,13 @@ similar_years:
   link_site: USGS-301429089145600
   notes: notable_years.csv
 
+# Weekly digest (decision 0031): the first scheduled build on or after `weekday` at `hour` (region time) adds an entry
+# to the RSS feed, and `python -m msc post` posts it to Bluesky when credentials are set. `keep`: entries in the feed.
+digest:
+  weekday: friday
+  hour: 6
+  keep: 12
+
 # Personas re-rank indicators and reorder cards. Add one by adding an entry here.
 personas:
   - id: general
@@ -441,6 +460,8 @@ indicators:
     wind_site: wind-sound              # wind and river context for each event (decision 0017)
     river_sites: [USGS-02489500, USGS-02479000]
     river_label: the Pearl and Pascagoula rivers
+    level_site: NOAA-8735180          # Gulf water level, described when it moved 8 cm (3 in) or more (decision 0030)
+    level_label: the water at Dauphin Island, AL,
     lead_min_stations: 3            # an event this wide leads the headline of personas whose first focus is one of lead_topics
     lead_topics: [oyster, fish]
     up_short: "Salinity jumped at {n} stations around {when}, by up to {change} {unit}. That usually means saltier Gulf water moved in."

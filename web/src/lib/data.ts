@@ -2,7 +2,7 @@
 // so every page is pre-rendered with current numbers.
 import fs from "node:fs";
 import path from "node:path";
-import type { HistoryFile, Latest, SiteFile } from "./types";
+import type { DigestEntry, HistoryFile, Latest, SiteFile } from "./types";
 
 export const REGION = process.env.REGION || "ms";
 const dataDir = path.join(process.cwd(), "public", "data", REGION);
@@ -19,4 +19,9 @@ export function loadSite(id: string): SiteFile | null {
 export function loadHistory(slug: string): HistoryFile | null {
   const p = path.join(dataDir, "history", `${slug}.json`);
   return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : null;
+}
+
+export function loadDigest(): DigestEntry[] {
+  const p = path.join(dataDir, "digest.json");
+  return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : [];
 }

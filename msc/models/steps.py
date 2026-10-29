@@ -69,13 +69,16 @@ COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "wes
 MPS_TO_MPH = 2.237
 STEADY_WIND_MPS = 3.0         # a 3-day mean wind vector at least this strong is worth mentioning (about 7 mph)
 RIVER_RISE, RIVER_FALL = 0.5, -0.25
+LEVEL_MOVE_M = 0.08           # Gulf water level change worth mentioning (decision 0030)
+M_TO_IN = 39.37
 
 
 def context(daily: pd.DataFrame, cfg: dict, onset: pd.Timestamp) -> str | None:
     """What the wind and the rivers were doing in the days before an event, as plain facts.
 
     Not a cause: across 1998-2026 only about 44% of freshening events followed a river rise of 50% or more
-    (decision 0017), so we describe the conditions and say when nothing stands out.
+    (decision 0017), so we describe the conditions and say when nothing stands out. The Gulf water level joined
+    in 0030: 59% of drops followed a rise of 8 cm or more, against 18% of all days.
     """
     days = pd.date_range(onset - pd.Timedelta(days=AFTER - 1), onset)
     wind = daily[(daily.site == cfg.get("wind_site")) & daily["var"].isin(["wind_u", "wind_v"]) & daily.date.isin(days)]
@@ -83,9 +86,13 @@ def context(daily: pd.DataFrame, cfg: dict, onset: pd.Timestamp) -> str | None:
     flows = daily[daily.site.isin(cfg.get("river_sites", [])) & (daily["var"] == "flow")]
     flows = flows.pivot_table(index="date", columns="site", values="value")
     now = flows.reindex(days).mean()
-    prior = flows.reindex(pd.date_range(onset - pd.Timedelta(days=BEFORE + AFTER - 1), onset - pd.Timedelta(days=AFTER))).mean()
+    prior_days = pd.date_range(onset - pd.Timedelta(days=BEFORE + AFTER - 1), onset - pd.Timedelta(days=AFTER))
+    prior = flows.reindex(prior_days).mean()
     change = ((now / prior) - 1).dropna()
-    if len(wind) < AFTER - 1 and change.empty:
+    level = daily[(daily.site == cfg.get("level_site")) & (daily["var"] == "water_level")].set_index("date").value
+    lvl_now, lvl_prior = level.reindex(days), level.reindex(prior_days)
+    lvl = float(lvl_now.mean() - lvl_prior.mean()) if lvl_now.count() >= AFTER - 1 and lvl_prior.count() >= MIN_BEFORE else None
+    if len(wind) < AFTER - 1 and change.empty and lvl is None:
         return None
     parts = []
     if len(wind) >= AFTER - 1:
@@ -101,9 +108,12 @@ def context(daily: pd.DataFrame, cfg: dict, onset: pd.Timestamp) -> str | None:
             parts.append(f"{label} rose about {round(r * 100, -1):.0f}%")
         elif r <= RIVER_FALL:
             parts.append(f"{label} fell about {round(-r * 100, -1):.0f}%")
+    if lvl is not None and abs(lvl) >= LEVEL_MOVE_M:
+        parts.append(f"{cfg.get('level_label', 'the Gulf water level')} {'rose' if lvl > 0 else 'fell'} "
+                     f"about {round(abs(lvl) * M_TO_IN):.0f} inches")
     if parts:
-        return "In the days before, " + " and ".join(parts) + "."
-    return "Winds were light and river flow didn't change much in the days before, so our data doesn't point to a cause."
+        return "In the days before, " + _join(parts) + "."
+    return "Winds were light and river flow and water levels didn't change much in the days before, so our data doesn't point to a cause."
 
 
 def step_events(region: Region, cfg: dict, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.Timestamp):

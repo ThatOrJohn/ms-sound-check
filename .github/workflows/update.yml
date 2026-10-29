@@ -103,6 +103,16 @@ jobs:
           npx playwright install --with-deps chromium
           npx playwright test
 
+      # Weekly digest to Bluesky (decision 0031). Only on the schedule, only when the build added this week's entry,
+      # and only if the BLUESKY_HANDLE / BLUESKY_APP_PASSWORD secrets exist; a failure never blocks the update.
+      - name: Post the weekly digest
+        if: github.event_name == 'schedule' && github.event.schedule != '43 7 1 * *'
+        continue-on-error: true
+        env:
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+        run: python -m msc post --region "$REGION" --site-url "${{ steps.pages.outputs.base_url }}/" --image web/dist/og/index.png
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: playwright-report, path: web/playwright-report, retention-days: 7 }
@@ -157,6 +167,10 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
+      - name: Smaller rivers in the virtual sensors (decision 0021)
+        run: |
+          python scripts/experiment_minor_rivers.py | tee minor.txt
+          { echo '## Smaller rivers experiment'; echo '```'; cat minor.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Drivers experiment (Mississippi River + wind)
         run: |
           python scripts/experiment_drivers.py | tee experiment.txt

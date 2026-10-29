@@ -261,3 +261,14 @@ test("years like this one: the river section names past years, each linking to t
   await link.click();
   await expect(page.locator("#history").getByRole("combobox")).toHaveValue(year);
 });
+
+test("the weekly digest feed is valid RSS and every page links to it", async ({ page, request }) => {
+  await page.goto("");
+  const feed = await page.locator('link[rel="alternate"][type="application/rss+xml"]').getAttribute("href");
+  const res = await request.get(feed!);
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toMatch(/xml/);   // static hosts serve .xml as text/xml; readers accept it
+  const xml = await res.text();
+  expect(xml).toContain("<rss version=\"2.0\">");
+  expect(xml).toContain("Not for navigation or harvest decisions");
+});

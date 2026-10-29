@@ -4,13 +4,14 @@ import type { APIRoute, GetStaticPaths } from "astro";
 import { loadHistory, loadLatest } from "../../lib/data";
 import { bandWords, fmtDate, fmtTime, href } from "../../lib/format";
 import { render, type Card } from "../../lib/og";
+import { INPUT_KINDS } from "../../lib/types";
 import { readoutTiles, split, type Tile } from "../../lib/readouts";
 
 export const getStaticPaths = (() => {
   const data = loadLatest();
   return [
     ...data.personas.map((p) => ({ params: { name: p.id === "general" ? "index" : p.id }, props: { persona: p.id } })),
-    ...data.cards.filter((c) => c.kind !== "wind").map((c) => ({ params: { name: `station-${c.slug}` }, props: { station: c.id } })),
+    ...data.cards.filter((c) => !INPUT_KINDS.includes(c.kind)).map((c) => ({ params: { name: `station-${c.slug}` }, props: { station: c.id } })),
     { params: { name: "about" }, props: {} },
   ];
 }) satisfies GetStaticPaths;

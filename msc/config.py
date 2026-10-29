@@ -25,6 +25,7 @@ VARIABLES = {
     "wind_u":     {"unit": "m/s",  "agg": "mean", "label": "Wind toward east"},
     "wind_v":     {"unit": "m/s",  "agg": "mean", "label": "Wind toward north"},
     "wind_max":   {"unit": "m/s",  "agg": "max",  "label": "Peak wind"},
+    "water_level": {"unit": "m",   "agg": "mean", "label": "Water level"},
 }
 
 
@@ -60,5 +61,5 @@ def load_region(region_id: str) -> Region:
         units=raw.get("units", {}), sites=raw["sites"], personas=raw.get("personas", []),
         indicators=raw.get("indicators", []), map=raw.get("map", {}),
         extras={k: raw[k] for k in ("beaches", "tides", "mdmr_notices", "reference", "ungauged_rivers",
-                                     "spillway", "satellite", "vibrio", "history", "similar_years") if k in raw},
+                                     "spillway", "satellite", "vibrio", "history", "similar_years", "digest") if k in raw},
     )

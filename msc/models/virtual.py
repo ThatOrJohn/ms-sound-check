@@ -57,7 +57,8 @@ def _k(prefix: str, site_id: str) -> str:
     return f"{prefix}_{re.sub(r'[^A-Za-z0-9]', '_', site_id)}"
 
 
-def features(region: Region, wide: pd.DataFrame, target: str) -> pd.DataFrame:
+def features(region: Region, wide: pd.DataFrame, target: str, minor: bool = False) -> pd.DataFrame:
+    """minor: also use the minor rivers (scripts/experiment_minor_rivers.py; not in the live models, decision 0021)."""
     X = pd.DataFrame(index=wide.index)
     for s in salinity_sites(region):
         if s["id"] == target or s.get("retired"):       # retired stations are never inputs (they're gone)
@@ -68,7 +69,7 @@ def features(region: Region, wide: pd.DataFrame, target: str) -> pd.DataFrame:
             X[_k("sal", s["id"])] = v.where(~v.apply(lambda x: is_suspect("salinity", x) if pd.notna(x) else False))
     for s in region.sites_by(kind="river"):
         col = (s["id"], "flow")
-        if col in wide and not s.get("minor"):          # minor rivers aren't inputs (yet): see decision 0021
+        if col in wide and (minor or not s.get("minor")):   # minor rivers aren't live inputs: see decision 0021
             q = np.log10(wide[col].clip(lower=1))
             X[_k("q", s["id"])] = q
             X[_k("q7", s["id"])] = q.rolling(7, min_periods=4).mean()

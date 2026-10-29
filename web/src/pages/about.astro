@@ -49,6 +49,7 @@ const data = loadLatest();
         <tr><td>Beach advisories and closures</td><td>Mississippi Department of Environmental Quality's Beach Monitoring Program, which samples 21 beaches for Enterococcus bacteria and posts advisories for bacteria, debris and algal blooms.</td></tr>
         <tr><td>Shrimp and oyster season notices</td><td>Mississippi Department of Marine Resources press releases. We show the title, date and opening lines and link to the full notice, which is the rule.</td></tr>
         <tr><td>Dauphin Island salinity (map, east edge)</td><td>Dauphin Island Sea Lab, served by GCOOS: a daily average of its quality-checked hourly readings. It sits on the Mobile Bay side, about 50 km east of our easternmost station, so it's shown for comparison only and never used to flag our stations.</td></tr>
+        <tr><td>Gulf water level (event notes)</td><td>NOAA's tide gauge at Dauphin Island, AL: the daily average water level, which cancels most of the tide and shows wind and the Gulf pushing water up or drawing it down. It's mentioned when salinity jumps or drops at several stations at once, as one more fact about the days before.</td></tr>
         <tr><td>Mississippi River at New Orleans</td><td>National Weather Service stage and two-week forecast at the Carrollton gauge (NORL1). Past spillway openings come from the Corps' operation history.</td></tr>
         <tr><td>Satellite water clarity and surface temperature</td><td>NOAA CoastWatch: VIIRS water clarity (Kd490) at 750 m and multi-satellite surface temperature at about 2 km. Each map layer is the newest cloud-free view of each spot over the last few days, and the map says which days. Clouds leave gaps.</td></tr>
         <tr><td>Rain, observed and forecast</td><td>Open-Meteo. Basin totals average a few points across each watershed, so treat them as approximate.</td></tr>
@@ -102,6 +103,10 @@ const data = loadLatest();
     <p>This is a hobby project, not an official source; see <a href="#official">the official sources above</a> for closures,
       advisories, seasons and regulations. Station details are on each <a href={href()}>station page</a>.</p>
   
+    <h2>Weekly digest</h2>
+    <p>Each Friday morning a short summary of the week goes into the <a href={href("digest.xml")}>RSS feed</a>: the
+      headline, anything unusual, and the beaches. It says nothing the site doesn't.</p>
+
     <h2>Feedback and source code</h2>
     <p>Sound Check is open source under the MIT license. If a number looks wrong or a sentence is confusing, please
       <a href="https://github.com/ThatOrJohn/ms-sound-check/issues" rel="noopener">open an issue on GitHub</a>. Corrections to
