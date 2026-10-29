@@ -122,14 +122,8 @@ select, .btn {
 .nav > a { text-decoration: none; color: var(--ink-soft); }
 .nav > a:hover, .nav > a[aria-current="page"] { color: var(--ink); }
 
-/* ---------- hero ---------- */
-.hero { padding: 28px 0 8px; }
-.hero-bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; margin-bottom: 40px; }
-.hero h1 {
-  font: 600 clamp(1.6rem, 3.2vw, 2.6rem)/1.1 var(--sans); letter-spacing: -0.032em;
-  margin: 12px 0 14px; max-width: 32ch;
-}
-.persona-blurb { margin: 0; color: var(--ink-soft); font-size: 0.98rem; max-width: var(--measure); }
+/* ---------- persona bar ---------- */
+.hero-bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; padding-top: 24px; margin-bottom: 20px; }
 .asof {
   display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0;
   font: 500 0.72rem/1.4 var(--mono); letter-spacing: 0.03em; color: var(--ink-soft);
@@ -143,7 +137,7 @@ select, .btn {
 
 /* ---------- readouts: the numbers that sum up the Sound ---------- */
 .readouts {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin: 32px 0 20px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin: 16px 0 20px;
   background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden;
 }
 .readout { padding: 16px 18px 15px; border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair); margin: 0 -1px -1px 0; min-width: 0; }
@@ -164,12 +158,18 @@ select, .btn {
 .meter[data-pos="off"] .meter-dot { background: var(--amber); }
 .meter[data-pos="far"] .meter-dot { background: var(--marker-red); }
 
-/* ---------- console: map + signals rail ---------- */
+/* ---------- console: map, with the headline and signals rail beside it ---------- */
 .console { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; margin: 0 0 12px; }
+.console > .side { grid-column: 2; grid-row: 1; position: sticky; top: 74px; max-height: calc(100vh - 90px);
+  display: flex; flex-direction: column; gap: 20px; }
+.console > .sound { grid-column: 1; grid-row: 1; }
+.brief { padding: 18px 20px 20px; flex: none; }
+.brief h1 { font: 600 1.32rem/1.25 var(--sans); letter-spacing: -0.022em; margin: 10px 0 12px; }
+.persona-blurb { margin: 0; color: var(--ink-soft); font-size: 0.86rem; line-height: 1.45; max-width: var(--measure); }
 .panel-flat, .rail {
   background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); box-shadow: var(--shadow);
 }
-.panel-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--hair); }
+.panel-title { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--hair); }
 .panel-title h2 { margin: 0; }
 .sound { margin: 0; overflow: hidden; }
 .map-wrap { position: relative; height: clamp(420px, 58vh, 620px); background: var(--water); }
@@ -286,7 +286,7 @@ select, .btn {
 .station-list .sub { color: var(--ink-soft); font-size: 0.82rem; text-align: right; }
 
 /* Signals rail. */
-.rail { position: sticky; top: 74px; max-height: calc(100vh - 90px); overflow: auto; }
+.rail { min-height: 0; overflow: auto; }
 .rail-head { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--hair);
   position: sticky; top: 0; background: var(--paper); z-index: 1; }
 .rail-head h2 { margin: 0; }
@@ -527,12 +527,13 @@ select, .btn {
 
 @media (max-width: 1080px) {
   .console { grid-template-columns: 1fr; }
-  .rail { position: static; max-height: none; order: -1; }
+  .console > .side, .console > .sound { grid-column: auto; grid-row: auto; }
+  .console > .side { position: static; max-height: none; }
+  .brief h1 { font-size: clamp(1.35rem, 3.4vw, 1.75rem); max-width: 36ch; }
   .rail-head { position: static; }
 }
 @media (max-width: 640px) {
-  .hero { padding-top: 18px; }
-  .hero-bar { margin-bottom: 24px; }
+  .hero-bar { padding-top: 16px; margin-bottom: 16px; }
   .hero-bar .seg { width: 100%; }
   .hero-bar .seg > a { flex: 1; justify-content: center; padding-inline: 6px; }
   .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }

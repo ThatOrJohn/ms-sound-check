@@ -28,6 +28,7 @@
 - [x] River panel on phones: the same rows as a strip under the map below 640 px
 - [x] Share images: a 1200x630 PNG per page drawn at build time with satori + sharp, `og:image` with a build-time `?v=` ([0026](../decisions/0026-share-images-at-build-time.md)); river stage displays gained their "ft"
 - [x] Dauphin Island salinity as a labeled reference chip at the map's east edge (0019, update); not a station dot, never in the salinity fill
+- [x] Home layout: headline moved into a panel beside the map, above Signals; map header is now a labeled salinity key ([0027](../decisions/0027-headline-beside-the-map.md))
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

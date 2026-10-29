@@ -11,7 +11,7 @@ generated site. The goal is "Apple meets Palantir": calm and precise, with numbe
 One family, Geist (Variable for text, Mono for small uppercase labels), with tabular figures everywhere. Quiet surfaces
 separated by hairlines and soft shadows; translucent "glass" panels only where they float over the map. The home page
 reads top to bottom as a briefing: headline, a strip of key readouts, the map with a sticky signals rail, then numbered
-sections. Readings carry a percentile meter showing where today sits among every year's readings for the date.
+sections. (Since [0027](0027-headline-beside-the-map.md) the headline sits beside the map, above the signals rail.) Readings carry a percentile meter showing where today sits among every year's readings for the date.
 Personas and theme use segmented controls.
 
 ## Why

@@ -59,15 +59,10 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 ---
 <script>import "../lib/live";</script>
 
-<section class="hero" aria-labelledby="headline">
-  <div class="hero-bar">
-    <PersonaPicker personas={data.personas} current={persona.id} paths={paths} />
-    <Freshness newest={newest} generatedAt={data.generated_at} />
-  </div>
-  <p class="eyebrow">{data.region.name} · {persona.label}</p>
-  <h1 id="headline">{data.headlines[persona.id]}</h1>
-  <p class="persona-blurb">{persona.blurb}</p>
-</section>
+<div class="hero-bar">
+  <PersonaPicker personas={data.personas} current={persona.id} paths={paths} />
+  <Freshness newest={newest} generatedAt={data.generated_at} />
+</div>
 
 <OfficialSources data={data} />
 
@@ -84,10 +79,37 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 )}
 
 <div class="console">
+  <div class="side">
+    <section class="brief panel-flat" aria-labelledby="headline">
+      <p class="eyebrow">{data.region.name} · {persona.label}</p>
+      <h1 id="headline">{data.headlines[persona.id]}</h1>
+      <p class="persona-blurb">{persona.blurb}</p>
+    </section>
+
+    <aside class="rail" aria-labelledby="findings-h" tabindex="0">
+      <div class="rail-head">
+        <h2 id="findings-h" class="eyebrow">Signals</h2>
+        <span class="count" data-hot={alertCount > 0 ? "" : undefined}>{findings.length ? `${findings.length} active` : "All quiet"}</span>
+      </div>
+      {findings.length ? (
+        <ul class="signals">
+          {findings.map((f) => (
+            <li class="finding" data-sev={f.severity}>
+              <span class="sev">{SEV_LABEL[f.severity]}</span>
+              <span class="finding-text">{f.text}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="quiet-note">Nothing stands out for {persona.label.toLowerCase()} right now. Everything is within the normal range for {data.season}.</p>
+      )}
+    </aside>
+  </div>
+
   <figure class="sound panel-flat" aria-labelledby="sound-cap">
     <div class="panel-title">
-      <h2 class="eyebrow">The Sound, live</h2>
-      <span class="scale" aria-hidden="true"><span>Fresh</span><span class="scale-bar"></span><span>Gulf</span></span>
+      <h2 class="eyebrow">Dot color: salinity (ppt)</h2>
+      <span class="scale" aria-hidden="true"><span>River 0</span><span class="scale-bar"></span><span>25+ Gulf</span></span>
     </div>
     <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} ungauged={ungauged.flatMap((r) => r.osm_names)}
       basemapBase={href("basemap/")} beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
@@ -98,25 +120,6 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
     <figcaption class="sound-foot" id="sound-cap">{"Stations are colored by salinity. River lines widen when the rivers run high; dashed lines are rivers without a flow gauge."}</figcaption>
     <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
   </figure>
-
-  <aside class="rail" aria-labelledby="findings-h">
-    <div class="rail-head">
-      <h2 id="findings-h" class="eyebrow">Signals</h2>
-      <span class="count" data-hot={alertCount > 0 ? "" : undefined}>{findings.length ? `${findings.length} active` : "All quiet"}</span>
-    </div>
-    {findings.length ? (
-      <ul class="signals">
-        {findings.map((f) => (
-          <li class="finding" data-sev={f.severity}>
-            <span class="sev">{SEV_LABEL[f.severity]}</span>
-            <span class="finding-text">{f.text}</span>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p class="quiet-note">Nothing stands out for {persona.label.toLowerCase()} right now. Everything is within the normal range for {data.season}.</p>
-    )}
-  </aside>
 </div>
 
 <div class="sections">
