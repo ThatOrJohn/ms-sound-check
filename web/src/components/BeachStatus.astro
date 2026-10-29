@@ -1,6 +1,6 @@
 ---
 import type { BeachSection, BeachStation, Latest } from "../lib/types";
-import { fmtDate } from "../lib/format";
+import { beachDetail, fmtDate } from "../lib/format";
 import OfficialSources from "./OfficialSources.astro";
 
 interface Props { beaches: BeachSection; data: Latest }
@@ -12,20 +12,9 @@ const byCounty = Object.entries(
     return acc;
   }, {}),
 );
-const reason = (s: BeachStation) => {
-  const e = (s.event ?? "").toLowerCase();
-  return e.includes("hab") || e.includes("algal") ? "algal bloom" : e.includes("debris") ? "debris" : "high bacteria";
-};
 const label = { clear: "Clear", advisory: "Advisory", closure: "Closed" } as const;
 const short = (iso: string | null) => (iso ? fmtDate(iso, { month: "short", day: "numeric" }) : null);
-const detail = (s: BeachStation) => {
-  let t = `${s.status === "closure" ? "Closed" : "Swimming advisory"} for ${reason(s)}`;
-  if (s.since) t += ` since ${short(s.since)}`;
-  if (s.days_flagged && s.days_flagged > 1) t += ` (${s.days_flagged} days so far)`;
-  t += ".";
-  if (s.from && s.to) t += ` Covers ${s.from} to ${s.to}.`;
-  return t;
-};
+const detail = (s: BeachStation) => beachDetail(s) + (s.from && s.to ? ` Covers ${s.from} to ${s.to}.` : "");
 const summary = flagged.length === 0
   ? `All ${beaches.total} monitored beaches are clear for swimming.`
   : `${flagged.length} of ${beaches.total} beaches ${flagged.length === 1 ? "has" : "have"} an advisory or closure. The rest are clear.`;
@@ -38,7 +27,7 @@ const summary = flagged.length === 0
   {flagged.length > 0 && (
     <ul class="beach-flags">
       {flagged.map((s) => (
-        <li data-status={s.status}>
+        <li data-status={s.status} id={`beach-${s.id}`}>
           <span class="beach-badge">{label[s.status]}</span>
           <div>
             <strong>{s.name}</strong>{s.location && <span class="beach-where">, {s.location}</span>}
@@ -56,7 +45,7 @@ const summary = flagged.length === 0
         <h3>{county} County</h3>
         <ul>
           {list.map((s) => (
-            <li data-status={s.status}>
+            <li data-status={s.status} id={s.status === "clear" ? `beach-${s.id}` : undefined}>
               <span class="beach-dot" aria-hidden="true"></span>
               <span class="beach-name">{s.name}</span>
               <span class="beach-sub">{label[s.status]}{s.last_sample && <>, sampled {short(s.last_sample)}</>}</span>
@@ -72,3 +61,15 @@ const summary = flagged.length === 0
     when re-sampling comes back clean.
   </p>
 </section>
+<script>
+  // Map popups link to a beach's row; clear beaches sit in the collapsed list, so open it first.
+  const reveal = () => {
+    const el = location.hash.startsWith("#beach-") ? document.getElementById(location.hash.slice(1)) : null;
+    const box = el?.closest("details");
+    if (!el || !box || box.open) return;
+    box.open = true;
+    el.scrollIntoView({ block: "center" });
+  };
+  window.addEventListener("hashchange", reveal);
+  reveal();
+</script>

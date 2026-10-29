@@ -212,13 +212,42 @@ def _beaches(region, asof):
                 days_flagged[s["id"]] = run
     counts = {k: sum(s["status"] == k for s in stations) for k in ("clear", "advisory", "closure")}
     samples = sorted(s["last_sample"] for s in stations if s.get("last_sample"))
+    stations = [{**s, "days_flagged": days_flagged.get(s["id"]), "reason": _beach_reason(s)} for s in stations]
     section = {
         "source": snap.get("source"), "link": region.extras["beaches"].get("link"),
         "fetched_at": snap.get("fetched_at"), "total": len(stations), "counts": counts,
         "latest_sample": samples[-1] if samples else None,
-        "stations": [{**s, "days_flagged": days_flagged.get(s["id"])} for s in stations],
+        "stations": stations,
     }
+    if geo:   # the map's beach popups say what the section says, so carry the same details on each segment
+        by_id = {s["id"]: s for s in stations}
+        keep = ("location", "reason", "since", "days_flagged", "last_sample")
+        geo = {**geo, "features": [{**f, "properties": {**f["properties"], **{k: by_id[f["properties"]["id"]].get(k) for k in keep}}}
+                                   if f["properties"].get("id") in by_id else f for f in geo["features"]]}
     return section, geo
+
+
+def _beach_reason(s: dict) -> str | None:
+    if s["status"] == "clear":
+        return None
+    e = (s.get("event") or "").lower()
+    return "algal bloom" if "hab" in e or "algal" in e else "debris" if "debris" in e else "high bacteria"
+
+
+def _tide_strip(region) -> dict | None:
+    """Highs and lows at the middle tide station (the one the Fishing card leads with), with UTC offsets so the
+    browser can place "now" on the curve without guessing the time zone."""
+    from .adapters import tides as tide_src
+    stations = region.extras.get("tides", [])
+    rows = tide_src.load(region)
+    if not stations or not rows:
+        return None
+    st = stations[len(stations) // 2]
+    # NOAA gives local clock times; in the repeated hour when daylight time ends, take the first (daylight) one.
+    local = lambda s: pd.Timestamp(s).tz_localize(region.timezone, ambiguous=True, nonexistent="shift_forward")
+    events = [{"time": local(t["time"]).isoformat(), "type": t["type"], "ft": t["ft"]}
+              for t in sorted(rows, key=lambda t: t["time"]) if t["station"] == st["id"]]
+    return {"station": st["id"], "name": st["name"], "events": events} if len(events) >= 2 else None
 
 
 REPLAY_DAYS = 30
@@ -342,6 +371,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "beaches": beach_section,
         "oyster_watch": oyster_section,
         "fishing_outlook": fishing_section,
+        "tide_strip": _tide_strip(region),
         "shrimp_season": shrimp_section,
         "spillway": spillway_section,
         "vibrio": vibrio_section,

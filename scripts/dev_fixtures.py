@@ -149,6 +149,8 @@ def apply(region):
                         "endTime": (day + pd.Timedelta(hours=30)).isoformat(), "isDaytime": False, "temperature": 62 - k,
                         "windSpeed": f"{max(0, lo - 5)} to {hi - 5} mph", "windDirection": dr, "shortForecast": "Clear",
                         "probabilityOfPrecipitation": {"value": pop // 2}})
+    for k in range(-1, len(winds)):   # tides start yesterday, like the real fetch
+        day = local + pd.Timedelta(days=k)
         for sid in ("8747437", "8745557", "8741533"):
             preds.append({"station": sid, "name": {"8747437": "Bay Waveland Yacht Club", "8745557": "Gulfport Harbor",
                                                    "8741533": "Pascagoula NOAA Lab"}[sid],

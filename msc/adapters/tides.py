@@ -19,12 +19,13 @@ def parse(station: dict, js: dict) -> list[dict]:
 
 
 def fetch(region: Region, days: int = 5) -> list[dict]:
+    """From yesterday on, so the map's tide strip can show the last half day as well as what's coming."""
     import requests
-    start = pd.Timestamp.now(tz=region.timezone).strftime("%Y%m%d")
+    start = (pd.Timestamp.now(tz=region.timezone) - pd.Timedelta(days=1)).strftime("%Y%m%d")
     out = []
     for st in region.extras.get("tides", []):
         r = requests.get(API, timeout=60, params={
-            "product": "predictions", "station": st["id"], "begin_date": start, "range": days * 24,
+            "product": "predictions", "station": st["id"], "begin_date": start, "range": (days + 1) * 24,
             "datum": "MLLW", "interval": "hilo", "units": "english", "time_zone": "lst_ldt",
             "format": "json", "application": "ms-sound-check"})
         r.raise_for_status()

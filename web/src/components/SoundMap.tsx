@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Map as MLMap, StyleSpecification } from "maplibre-gl";
+import type { Map as MLMap, MapLayerMouseEvent, Popup, StyleSpecification } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { Replay, SatelliteLayer } from "../lib/types";
+import { beachDetail } from "../lib/format";
 
 export interface MapStation {
   id: string; short: string; kind: string; lon: number; lat: number; href: string;
@@ -15,6 +16,8 @@ interface Props {
   /** OSM names of rivers with no flow gauge: drawn thin and named, never widened. */
   ungauged?: string[];
   beachesUrl?: string; personaId?: string; defaultLayers?: string[];
+  /** The page has a Beaches section, so beach popups can link to each beach's row (#beach-<id>). */
+  beachLinks?: boolean;
   /** Satellite layers and where their PNGs live (the region's data folder). */
   satellite?: Record<string, SatelliteLayer>; dataBase?: string;
   /** The last 30 days, for the replay slider. */
@@ -186,6 +189,18 @@ function stationData(stations: MapStation[], t: Tokens) {
     })),
   };
 }
+/** Popup for one beach segment. Built from DOM nodes, not HTML, since the names come from the feature service. */
+function beachPopup(p: Record<string, any>, link: boolean): HTMLElement {
+  const box = document.createElement("div");
+  const add = (tag: string, text: string, cls?: string) => {
+    const n = document.createElement(tag); n.textContent = text; if (cls) n.className = cls; box.append(n); return n;
+  };
+  add("strong", p.name ?? "Beach");
+  if (p.location) add("span", p.location, "beach-pop-where");
+  add("p", beachDetail(p));
+  if (link && p.id) (add("a", "Details in Beaches below") as HTMLAnchorElement).href = `#beach-${p.id}`;
+  return box;
+}
 function riverWidths(rivers: MapRiver[], pct: (r: MapRiver) => number | null | undefined): any[] {
   const match: any[] = ["match", ["get", "name"]];
   rivers.forEach((r) => r.osmNames.forEach((n) => match.push(n, riverWidth(pct(r)))));
@@ -204,9 +219,10 @@ function readLayers(personaId: string | undefined, defaultLayers?: string[]): Re
 }
 
 export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basemapBase, beachesUrl, personaId, defaultLayers,
-  satellite, dataBase, replay }: Props) {
+  beachLinks = false, satellite, dataBase, replay }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
+  const popupRef = useRef<Popup | null>(null);
   const tRef = useRef<Tokens | null>(null);
   const layersRef = useRef<Record<LayerKey, boolean>>(personaDefaults(defaultLayers));
   const replayingRef = useRef(false);
@@ -333,6 +349,9 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             layout: { "text-field": ["match", ["get", "status"], "closure", "Closed", "Advisory"],
               "text-font": ["Noto Sans Bold"], "text-size": 11, "text-anchor": "top", "text-offset": [0, 0.7] },
             paint: { "text-color": t.ink, "text-halo-color": t.paper, "text-halo-width": 1.6 } });
+          // An invisible, much wider copy of the segments to hover and tap: most are only a few pixels long.
+          map.addLayer({ id: "beach-hit", type: "line", source: "beaches", layout: { "line-cap": "round" },
+            paint: { "line-color": t.ink, "line-opacity": 0, "line-width": 22 } }, "station-ring");
         }
         applyLayers(map, layersRef.current);
         setReady(true);
@@ -342,6 +361,29 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
       map.on("click", "stations", (e) => { const h = e.features?.[0]?.properties?.href; if (h) window.location.assign(h); });
       map.on("mouseenter", "stations", () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", "stations", () => (map.getCanvas().style.cursor = ""));
+
+      // Beach popups: hover where there's a mouse, tap anywhere; a tap pins one until the next tap off the beach.
+      const popup = new ml.Popup({ closeButton: false, closeOnClick: false, focusAfterOpen: false, maxWidth: "260px", offset: 12, className: "beach-pop" });
+      popupRef.current = popup;
+      let pinned = false;
+      const canHover = matchMedia("(hover: hover)").matches;
+      const show = (e: MapLayerMouseEvent) => {
+        const f = e.features?.[0];
+        if (f) popup.setLngLat(e.lngLat).setDOMContent(beachPopup(f.properties, beachLinks)).addTo(map);
+      };
+      const onStation = (e: MapLayerMouseEvent) => map.getLayer("stations") && map.queryRenderedFeatures(e.point, { layers: ["stations"] }).length > 0;
+      map.on("mousemove", "beach-hit", (e) => {
+        if (onStation(e)) return;
+        map.getCanvas().style.cursor = "pointer";
+        if (canHover && !pinned) show(e);
+      });
+      map.on("mouseleave", "beach-hit", () => { map.getCanvas().style.cursor = ""; if (!pinned) popup.remove(); });
+      map.on("click", (e) => {
+        const hit = map.getLayer("beach-hit") && !onStation(e as MapLayerMouseEvent)
+          ? map.queryRenderedFeatures(e.point, { layers: ["beach-hit"] })[0] : undefined;
+        pinned = !!hit;
+        if (hit) show({ ...e, features: [hit] } as MapLayerMouseEvent); else popup.remove();
+      });
 
       const restyle = () => {
         setReady(false);
@@ -355,7 +397,7 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
       cleanup = () => { mq.removeEventListener("change", restyle); window.removeEventListener("sc-theme-change", restyle); map.remove(); };
     })().catch(() => setFailed(true));
     return () => { cancelled = true; cleanup(); };
-  }, [stations, rivers, ungauged, basemapBase, beachesUrl, personaId, defaultLayers, satellite, dataBase]);
+  }, [stations, rivers, ungauged, basemapBase, beachesUrl, beachLinks, personaId, defaultLayers, satellite, dataBase]);
 
   /** While replaying a past day, today's-only layers (fills, alert rings) are hidden so nothing mixes two dates. */
   function applyLayers(map: MLMap, l: Record<LayerKey, boolean>) {
@@ -365,7 +407,8 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     set("depth", l.depth); set("contours", l.contours); set("contour-labels", l.contours);
     set("salinity", l.salinity && !past); set("clarity", l.clarity && !past); set("sst", l.sst && !past);
     set("rivers", l.rivers); set("rivers-ungauged", l.rivers); set("beaches", l.beaches && !past);
-    set("beach-labels", l.beaches && !past); set("station-ring", !past);
+    set("beach-labels", l.beaches && !past); set("beach-hit", l.beaches && !past); set("station-ring", !past);
+    if (!l.beaches || past) popupRef.current?.remove();
   }
   function toggle(key: LayerKey) {
     const next = { ...layers, [key]: !layers[key] };

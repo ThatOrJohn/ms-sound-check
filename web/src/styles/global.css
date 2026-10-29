@@ -230,6 +230,41 @@ select, .btn {
 :root[data-theme="dark"] .sound .maplibregl-ctrl-icon,
 :root[data-theme="dark"] .sound .maplibregl-ctrl-attrib-button { filter: invert(0.9); }
 .sound-foot { font-size: 0.78rem; color: var(--ink-soft); padding: 10px 16px; border-top: 1px solid var(--hair); }
+/* Beach popups on the map (MapLibre's ship white-only). */
+.sound .beach-pop .maplibregl-popup-content { background: var(--paper); color: var(--ink); border: 1px solid var(--hair); border-radius: 10px;
+  box-shadow: var(--shadow); padding: 9px 12px; font-size: 0.8rem; line-height: 1.4; }
+.sound .beach-pop strong { display: block; font-weight: 600; }
+.sound .beach-pop .beach-pop-where { display: block; color: var(--ink-soft); font-size: 0.75rem; }
+.sound .beach-pop p { margin: 4px 0 0; }
+.sound .beach-pop a { display: inline-block; margin-top: 4px; color: var(--accent); }
+.sound .beach-pop.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.sound .beach-pop.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.sound .beach-pop.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--paper); }
+.sound .beach-pop.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.sound .beach-pop.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.sound .beach-pop.maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--paper); }
+.sound .beach-pop.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--paper); }
+.sound .beach-pop.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--paper); }
+.beach-flags li:target, .beach-county li:target { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
+/* Tide strip under the map: the last 12 hours and next 36, predicted. */
+.tide { padding: 10px 16px 8px; border-top: 1px solid var(--hair); }
+.tide-say { margin: 0 0 8px; font-size: 0.86rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.tide-say .eyebrow { margin: 0; }
+.tide-plot { position: relative; height: 44px; margin-top: 14px; }
+.tide-plot svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.tide-day { stroke: var(--rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.tide-fill { fill: color-mix(in oklab, var(--accent) 10%, transparent); stroke: none; }
+.tide-past, .tide-next { fill: none; stroke-width: 1.75; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.tide-past { stroke: var(--ink-soft); stroke-dasharray: 3 3; }
+.tide-next { stroke: var(--accent); }
+.tide-now { stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.55; }
+.tide-dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--accent); border: 2px solid var(--paper); box-sizing: content-box; transform: translate(-2px, -2px); }
+.tide-daylabel { position: absolute; top: -15px; margin-left: 4px; font: 500 0.66rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.tide-turns { position: relative; height: 30px; margin-top: 4px; }
+.tide-turns span { position: absolute; transform: translateX(-50%); display: grid; text-align: center; font: 500 0.7rem/1.25 var(--mono); color: var(--ink-soft); white-space: nowrap; }
+.tide-turns b { font-weight: 600; color: var(--ink); }
+.tide-turns span[data-past] b { color: var(--ink-soft); font-weight: 500; }
+.tide-src { margin: 4px 0 0; font-size: 0.75rem; color: var(--ink-soft); }
 .scale { display: flex; align-items: center; gap: 8px; font: 500 0.68rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
 .scale-bar { width: 120px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--fresh), var(--brackish) 48%, var(--gulf)); }
 .station-list {

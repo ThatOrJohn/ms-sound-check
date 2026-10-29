@@ -12,6 +12,7 @@ import Spillway from "./Spillway.astro";
 import VibrioNote from "./VibrioNote.astro";
 import OfficialSources from "./OfficialSources.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
+import TideStrip from "./TideStrip";
 import ReadingRow from "./ReadingRow";
 import Meter from "./Meter";
 import { bandWords, nowTileSub } from "../lib/format";
@@ -121,7 +122,8 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
     <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} ungauged={ungauged.flatMap((r) => r.osm_names)}
       basemapBase={href("basemap/")} beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
       personaId={persona.id} defaultLayers={persona.map_layers}
-      satellite={data.satellite} dataBase={href(`data/${data.region.id}/`)} replay={data.replay} />
+      satellite={data.satellite} dataBase={href(`data/${data.region.id}/`)} replay={data.replay} beachLinks={showsBeaches} />
+    {data.tide_strip && <TideStrip client:only="react" strip={data.tide_strip} />}
     <figcaption class="sound-foot" id="sound-cap">{"Stations are colored by salinity. River lines widen when the rivers run high; dashed lines are rivers without a flow gauge."}</figcaption>
     <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
   </figure>

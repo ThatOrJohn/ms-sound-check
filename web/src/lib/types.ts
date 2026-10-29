@@ -19,6 +19,7 @@ export interface BeachStation {
   id: string; name: string; location: string | null; county: string | null; from: string | null; to: string | null;
   lat: number | null; lon: number | null; status: "clear" | "advisory" | "closure"; event: string | null;
   text: string | null; since: string | null; last_sample: string | null; days_flagged: number | null;
+  reason: "high bacteria" | "algal bloom" | "debris" | null;
 }
 export interface BeachSection {
   source: string | null; link: string | null; fetched_at: string | null; total: number;
@@ -105,6 +106,8 @@ export interface OysterWatch {
 }
 
 export interface Tide { station: string; name: string; time: string; type: "high" | "low"; ft: number }
+/** Highs and lows at one station from yesterday on; times carry their UTC offset. */
+export interface TideStrip { station: string; name: string; events: { time: string; type: "high" | "low"; ft: number }[] }
 export interface FishingDay {
   date: string; label: string; wind: string | null; wind_mph_hi: number | null; sky: string | null;
   rain_pct: number | null; high_f: number | null; verdict: string | null; verdict_text: string | null; tides: Tide[];
@@ -163,6 +166,7 @@ export interface Latest {
   satellite?: Record<string, SatelliteLayer>;
   replay?: Replay;
   fishing_outlook?: FishingOutlook | null;
+  tide_strip?: TideStrip | null;
   shrimp_season?: ShrimpSeason | null;
   oyster_watch?: OysterWatch | null;
   beaches?: BeachSection | null;

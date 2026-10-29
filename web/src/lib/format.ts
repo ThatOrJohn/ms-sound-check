@@ -1,4 +1,4 @@
-import type { Band, Finding, Now, Persona, Reading } from "./types";
+import type { Band, BeachStation, Finding, Now, Persona, Reading } from "./types";
 
 /** Join a path onto the configured base (works under /<repo>/ on GitHub Pages). */
 export function href(p = ""): string {
@@ -11,6 +11,17 @@ export const personaPath = (id: string) => (id === "general" ? href() : href(`fo
 export function fmtDate(iso: string, opts: Intl.DateTimeFormatOptions = { month: "long", day: "numeric", year: "numeric" }) {
   const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso);
   return d.toLocaleDateString("en-US", opts);
+}
+
+type BeachDetail = Partial<Pick<BeachStation, "status" | "reason" | "since" | "days_flagged" | "last_sample">>;
+/** "Swimming advisory for high bacteria since Oct 24 (5 days so far)." Shared by the Beaches section and map popups. */
+export function beachDetail(s: BeachDetail): string {
+  const short = (iso: string) => fmtDate(iso, { month: "short", day: "numeric" });
+  if (s.status === "clear") return `Clear for swimming.${s.last_sample ? ` Last sampled ${short(s.last_sample)}.` : ""}`;
+  let t = `${s.status === "closure" ? "Closed" : "Swimming advisory"} for ${s.reason ?? "high bacteria"}`;
+  if (s.since) t += ` since ${short(s.since)}`;
+  if (s.days_flagged && s.days_flagged > 1) t += ` (${s.days_flagged} days so far)`;
+  return t + ".";
 }
 
 /** "11:05 AM" in the region's time zone. */

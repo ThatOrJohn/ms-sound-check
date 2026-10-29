@@ -21,6 +21,9 @@
 - [x] Dev fixtures keep real data: `apply` sets aside the real snapshots, beach history and the stage readings it displaces; `clear` puts them back
 - [x] Vibrio-favorable water: a calm seasonal note on Coast, Oysters and Fishing, not a Signal, since it holds on most April-October days ([0024](../decisions/0024-vibrio-as-seasonal-note.md))
 
+- [x] Tide strip under the map: predicted tide at Gulfport, 12 hours back and 36 ahead, "now" placed in the browser ([0025](../decisions/0025-tide-strip-predictions-in-the-browser.md)); tide fetch starts a day early
+- [x] Beach popups on the map: hover or tap a segment for status, reason and duration, linking to its row in Beaches
+
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN
   stopped on 2026-09-14 and have nothing for the structure, USGS has no gauge in the channel, and the Corps' site

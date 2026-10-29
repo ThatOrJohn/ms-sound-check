@@ -162,3 +162,27 @@ test("the Vibrio note shows on the Coast, Oysters and Fishing pages only, with c
     await expect(sec.getByRole("link", { name: "CDC" })).toHaveAttribute("href", /cdc\.gov\/vibrio/);
   }
 });
+
+test("the tide strip under the map says which way the tide is heading and when it next turns", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  test.skip(!latest.tide_strip, "no fresh tide predictions in this build");
+  const [, next, after] = latest.tide_strip.events;
+  await page.clock.setFixedTime(new Date(Date.parse(next.time) - 60 * 60_000));   // an hour before a turn
+  await page.goto("");
+  const strip = page.locator("section.tide");
+  await expect(strip).toContainText(`Tide, ${latest.tide_strip.name}`);
+  const ft = (v: number) => `${v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)} ft`;
+  await expect(strip.locator(".tide-say")).toContainText(`${next.type === "high" ? "Rising" : "Falling"}: ${next.type} ${ft(next.ft)} at`);
+  if (after) await expect(strip.locator(".tide-say")).toContainText(`then ${after.type} ${ft(after.ft)}`);
+  await expect(strip.getByRole("link", { name: /at NOAA$/ })).toHaveAttribute("href", new RegExp(`id=${latest.tide_strip.station}`));
+});
+
+test("a beach link from the map opens the full beach list to that beach", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const clear = latest.beaches?.stations.find((s: { status: string }) => s.status === "clear");
+  test.skip(!clear, "no clear beach in this build");
+  await page.goto(`#beach-${clear.id}`);
+  await expect(page.locator("details.beach-all")).toHaveAttribute("open", "");
+  await expect(page.locator(`#beach-${clear.id}`)).toBeVisible();
+  await expect(page.locator(`#beach-${clear.id}`)).toContainText(clear.name);
+});
