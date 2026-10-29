@@ -18,7 +18,7 @@ def unit_label(var: str, units: dict) -> str:
         return "°F" if units.get("temp") == "F" else "°C"
     if var.startswith("rain"):
         return "in" if units.get("rain") == "in" else "mm"
-    return {"salinity": "ppt", "flow": "cfs"}.get(var, "")
+    return {"salinity": "ppt", "flow": "cfs", "stage": "ft"}.get(var, "")
 
 
 def fmt(var: str, value: float | None, units: dict) -> str:

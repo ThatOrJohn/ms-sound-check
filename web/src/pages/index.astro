@@ -8,7 +8,7 @@ const data = loadLatest();
 const persona = data.personas.find((p) => p.id === "general") ?? data.personas[0];
 const forPaths = Object.fromEntries(data.personas.filter((p) => p.id !== persona.id).map((p) => [p.id, href(`for/${p.id}/`)]));
 ---
-<Base title={`Sound Check: ${data.region.name} conditions`} description={data.headlines[persona.id]} regionName={data.region.name} current="overview">
+<Base title={`Sound Check: ${data.region.name} conditions`} description={data.headlines[persona.id]} regionName={data.region.name} current="overview" ogImage="index">
   <script slot="head" is:inline define:vars={{ forPaths }}>
     // Someone who picked a view before goes straight to it.
     try { const p = localStorage.getItem("sc-persona"); if (p && forPaths[p]) location.replace(forPaths[p]); } catch (e) {}

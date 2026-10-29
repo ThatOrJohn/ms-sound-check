@@ -15,6 +15,8 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 - Station charts, beaches, oyster watch and fishing outlook restyled to match.
 
 ### Added
+- Share previews: links to any page posted on Bluesky, X or in a message now show a picture with that page's headline, the key readings (Sound salinity, water temp, river flows) or a station's readings, when it was updated, and that it's not for navigation or harvest decisions. The images are redrawn with every update ([0026](docs/decisions/0026-share-images-at-build-time.md)).
+- River stage readings now show their unit ("5.0 ft", not "5.0").
 - Oyster season notices: the Oysters section lists MDMR's latest oyster notices (season openings, closings, growing-area changes) with their opening lines and links, and a notice from the past week leads the Oysters headline in MDMR's own words.
 - River flow on phones: the river readings that float over the map on wider screens now show as a compact strip under the map on phones.
 - Dauphin Island salinity at the map's east edge: the Dauphin Island Sea Lab's daily reading, labeled as a reference about 50 km east of our easternmost station. It's for comparison only and never used to flag our stations.

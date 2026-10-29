@@ -51,7 +51,7 @@ const dates = Object.values(card.vars).map((v) => v.date).filter(Boolean).sort()
 const usgsUrl = card.id.startsWith("USGS-") ? `https://waterdata.usgs.gov/monitoring-location/${card.id}/` : null;
 const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.display).filter(Boolean).join(", ")}, compared to normal for ${data.season}.`;
 ---
-<Base title={`${card.name} | Sound Check`} description={desc} regionName={data.region.name}>
+<Base title={`${card.name} | Sound Check`} description={desc} regionName={data.region.name} ogImage={`station-${card.slug}`}>
   <nav class="crumbs" aria-label="Breadcrumb"><a href={href()}>Conditions</a> / {card.short}</nav>
   <header class="station-head">
     <h1>{card.name}</h1>

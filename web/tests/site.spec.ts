@@ -218,3 +218,16 @@ test("Dauphin Island shows at the map's east edge as a labeled reference, not a 
   await expect(chip).toContainText(`${ref.salinity.toFixed(1)} ppt`, { timeout: 20_000 });
   await expect(chip).toContainText(`Reference, ${ref.km} km east of ${ref.nearest}`);
 });
+
+test("every page has a share image that exists and is 1200x630", async ({ page, request }) => {
+  for (const path of PAGES) {
+    await page.goto(path);
+    const og = await page.locator('meta[property="og:image"]').getAttribute("content");
+    expect(og, path).toMatch(/\/og\/[\w-]+\.png\?v=\d{12}$/);
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+    const res = await request.get(new URL(og!).pathname.replace(/^\//, ""));
+    expect(res.status(), og!).toBe(200);
+    const png = await res.body();
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)], og!).toEqual([1200, 630]);   // IHDR width, height
+  }
+});

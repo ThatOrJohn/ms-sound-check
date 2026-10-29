@@ -2,15 +2,21 @@
 import "../styles/global.css";
 import ThemePicker from "../components/ThemePicker.astro";
 import { href } from "../lib/format";
+import { loadLatest } from "../lib/data";
+import { OG_H, OG_W } from "../lib/og";
 
 interface Props {
   title: string;
   description: string;
   regionName: string;
   current?: "overview" | "about";
+  /** Share image name under og/ (src/pages/og/[name].png.ts). */
+  ogImage?: string;
 }
-const { title, description, regionName, current } = Astro.props;
+const { title, description, regionName, current, ogImage } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+// The image changes every run under the same name, so the build time in the query keeps share caches honest.
+const ogUrl = ogImage && `${new URL(href(`og/${ogImage}.png`), Astro.site)}?v=${loadLatest().generated_at.replace(/\D/g, "").slice(0, 12)}`;
 ---
 <!doctype html>
 <html lang="en">
@@ -25,6 +31,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Sound Check" />
+    {ogUrl && (
+      <>
+        <meta property="og:image" content={ogUrl} />
+        <meta property="og:image:width" content={String(OG_W)} />
+        <meta property="og:image:height" content={String(OG_H)} />
+        <meta property="og:image:alt" content={`${title}. ${description}`} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </>
+    )}
     <meta name="theme-color" content="#f2f4f5" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0d171b" media="(prefers-color-scheme: dark)" />
     <script is:inline>

@@ -26,6 +26,7 @@
 - [x] MDMR oyster season notices in the Oysters section (an `oyster` topic in `regions/ms.yaml`, with an `exclude` filter for meetings, aquaculture and leases); a notice from the past week leads the Oysters headline
 - [x] `python -m msc check` fails when an MDMR spring "shrimp season opens" notice has no row in `data/shrimp_openings.csv`, or a different date
 - [x] River panel on phones: the same rows as a strip under the map below 640 px
+- [x] Share images: a 1200x630 PNG per page drawn at build time with satori + sharp, `og:image` with a build-time `?v=` ([0026](../decisions/0026-share-images-at-build-time.md)); river stage displays gained their "ft"
 - [x] Dauphin Island salinity as a labeled reference chip at the map's east edge (0019, update); not a station dot, never in the salinity fill
 
 ## Notes

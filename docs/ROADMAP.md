@@ -3,7 +3,7 @@
 Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Now
-**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones and Dauphin Island salinity at the map's east edge.
+**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge and share images for every page ([0026](decisions/0026-share-images-at-build-time.md)).
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -15,8 +15,7 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
   rain and how soon, for a "likely after rain like this" note between the weekly samples. Never says a beach is closed.
 - **Better event explanations**: wind and rivers explain under half of the events ([0017](decisions/0017-step-events-describe-wind-and-rivers.md)). The Mississippi River added nothing beyond chance ([0020](decisions/0020-mississippi-flow-not-added-to-event-text.md)). Left to test: Gulf water level at Dauphin Island (NOAA CO-OPS 8735180; pull slowly, the API refused a fast bulk request).
 - **Smaller rivers in the virtual sensors**: run an experiment with the Wolf and Biloxi gauges as inputs for West Sound and Biloxi Back Bay. They're shown but not used today ([0021](decisions/0021-smaller-rivers-shown-not-weighed.md)).
-- **Share previews**: generated Open Graph images per page (for Bluesky and X).
-- **Weekly digest**: Bluesky post + RSS from the same build.
+- **Weekly digest**: Bluesky post + RSS from the same build. The home page's share image (`og/index.png`) can be the post's picture.
 
 ## Later
 - **West-to-east salinity strip**: one gradient bar from the Pearl River mouth to East Sound, each station placed by

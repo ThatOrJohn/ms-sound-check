@@ -12,6 +12,6 @@ export const getStaticPaths = (() => {
 const data = loadLatest();
 const persona = data.personas.find((p) => p.id === Astro.props.personaId)!;
 ---
-<Base title={`Sound Check: ${persona.label} | ${data.region.name}`} description={data.headlines[persona.id]} regionName={data.region.name} current="overview">
+<Base title={`Sound Check: ${persona.label} | ${data.region.name}`} description={data.headlines[persona.id]} regionName={data.region.name} current="overview" ogImage={persona.id}>
   <Overview data={data} persona={persona} />
 </Base>
