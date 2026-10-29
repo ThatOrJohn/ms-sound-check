@@ -300,6 +300,15 @@ vibrio:
     - {label: Mississippi State Department of Health, url: "https://msdh.ms.gov/Page/23,31053,341.html"}
     - {label: CDC, url: "https://www.cdc.gov/vibrio/prevention/index.html"}
 
+# Fresh-and-hot days near the reefs (decision 0039): daily mean salinity under `salinity_below` and water temperature
+# above `temp_above_c` at the same station, measured readings only. A year is compared only if both readings cover
+# `min_coverage` of the days in `season_months` (May-October); otherwise it shows as "at least".
+oyster_stress:
+  salinity_below: 5
+  temp_above_c: 25
+  season_months: [5, 10]
+  min_coverage: 0.8
+
 # Salinity history picture (decision 0028): every day on record, one row per year, on each salinity station's page
 # and, for the `home` stations, in a section of its own. The takeaway line compares days under `fresh_below` and
 # over `salty_above` at `takeaway_site`. One home station keeps the home page short; the section links the rest.
@@ -342,7 +351,7 @@ personas:
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
-    card_order: [oyster_watch, strip, spillway, sound, vibrio, river, history, rain, estuary, weather, beaches]
+    card_order: [oyster_watch, oyster_stress, strip, spillway, sound, vibrio, river, history, rain, estuary, weather, beaches]
     map_layers: [depth, contours, rivers, salinity]
     share: strip          # share image: the Sound west to east in place of the readout tiles (0037)
   - id: shrimp

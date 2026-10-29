@@ -1,0 +1,86 @@
+---
+import type { OysterStress, OysterStressStation, StressYear } from "../lib/types";
+
+// Fresh-and-hot days near the reefs (decision 0039): one small bar chart per station, every year on the same axes,
+// with a sentence that compares this year with the same station's past complete years. The sentence is the chart's
+// text version. It describes the water, never harvest status: only MDMR decides that.
+interface Props { stress: OysterStress; asof: string }
+const { stress, asof } = Astro.props;
+const year = Number(asof.slice(0, 4));
+const ppt = stress.salinity_below;
+const degF = Math.round((stress.temp_above_c * 9) / 5 + 32);
+const first = Math.min(...stress.stations.map((s) => s.since));
+const nYears = year - first + 1;
+const top = Math.max(20, Math.ceil(Math.max(0, ...stress.stations.flatMap((s) => s.years.map((y) => y.days))) / 20) * 20);
+const W = 300, H = 80, GAP = 1.5;
+const bw = W / nYears;
+const bx = (y: number) => (y - first) * bw;
+const bh = (d: number) => (d / top) * H;
+const plural = (n: number, w = "day") => `${n} ${w}${n === 1 ? "" : "s"}`;
+const month = (m: number) => new Date(2000, m - 1, 1).toLocaleString("en-US", { month: "long" });
+const season = `${month(stress.season_months[0])} to ${month(stress.season_months[1])}`;
+
+const yearSay = (y: StressYear) =>
+  `${y.year}: ${y.complete ? "" : "at least "}${plural(y.days)}` + (y.run > 1 ? `, ${y.run} in a row at most` : "") +
+  (y.year === year ? " so far" : "") + (y.complete ? "" : " (readings missing)");
+
+function sentence(s: OysterStressStation): string {
+  const n = s.now;
+  if (s.stale || !n) return s.stale ? "No recent readings, so this year isn't counted." : "";
+  const lead = n.days === 0 ? "None so far this year." :
+    `${n.complete ? "" : "At least "}${plural(n.days)} so far this year` +
+    (n.days > 1 && n.run_now === n.days ? ", all in a row up to now." : n.run_now > 1 ? `, including the last ${n.run_now} in a row.`
+      : n.days > 1 && n.run === n.days ? ", all in one stretch." : n.run > 1 ? `, at most ${n.run} in a row.` : ".");
+  const past = `of the ${n.of} complete years since ${s.since}`;
+  const compare = n.days === 0
+    ? (n.more === 0 ? ` None ${past} had any by this date either.` : ` ${n.more} ${past} had some by this date.`)
+    : n.more === 0 ? ` The most by this date in any ${past}.`
+    : ` ${n.more} ${past} had more by this date` + (n.last_as_many ? `, most recently ${n.last_as_many}` : "") +
+      `. A typical year has ${n.median === 0 ? "none" : `about ${Math.round(n.median)}`} by now.`;
+  return lead + compare + (n.complete ? "" : " Some readings are missing, so the count may run low.") +
+    (s.suspect ? " Recent readings here may be a sensor problem." : "");
+}
+const most = (s: OysterStressStation) => [...s.years].filter((y) => y.days > 0).sort((a, b) => b.days - a.days).slice(0, 3);
+const chartLabel = (s: OysterStressStation) => `Fresh-and-hot days each year at ${s.short}, ${s.since} to ${year}. ` +
+  (most(s).length ? `Most: ${most(s).map(yearSay).join("; ")}.` : "No year had any.");
+const xTicks = [first, Math.round((first + year) / 2 / 5) * 5, year];
+---
+<section class="group oyster-stress" aria-labelledby="g-stress">
+  <h2 id="g-stress">Fresh, hot water near the reefs</h2>
+  <p>{`Fresh water is hardest on oysters in summer heat. Studies of Gulf oyster die-offs tie them to weeks of water ` +
+    `under ${ppt} ppt while it's warmer than ${degF} °F (${stress.temp_above_c} °C). This counts the days each ` +
+    `station's daily average was both, and compares this year with that station's own past years. It describes the ` +
+    `water near the reefs, not whether they're open: only MDMR decides that.`}</p>
+  <div class="stress-grid">
+    {stress.stations.map((s) => (
+      <figure class="stress-station">
+        <figcaption><strong>{s.short}</strong>{` ${s.name}`}</figcaption>
+        <div class="stress-chart" role="img" aria-label={chartLabel(s)}>
+          <div class="plot" aria-hidden="true">
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+              {s.years.filter((y) => y.year >= first).map((y) => (
+                <rect class="bar" data-now={y.year === year ? "" : undefined} data-gappy={y.complete ? undefined : ""}
+                  x={bx(y.year) + GAP / 2} y={H - Math.max(y.days ? 1.5 : 0, bh(y.days))}
+                  width={Math.max(0.5, bw - GAP)} height={Math.max(y.days ? 1.5 : 0, bh(y.days))}>
+                  <title>{yearSay(y)}</title>
+                </rect>
+              ))}
+            </svg>
+            <span class="tick y" style="top:0%">{`${top}`}</span>
+          </div>
+          <div class="x" aria-hidden="true">
+            {xTicks.map((t, i) => <span class="tick" style={`left:${(((bx(t) + bw / 2) / W) * 100).toFixed(1)}%`}
+              data-edge={i === 0 ? "l" : i === xTicks.length - 1 ? "r" : undefined}>{`${t}`}</span>)}
+          </div>
+        </div>
+        <p>{sentence(s)}</p>
+      </figure>
+    ))}
+  </div>
+  <p class="oyster-notes">{`Each bar is one year's count, on the same scale for every station, ending with this year in a contrasting color.` +
+    ` Years with both readings on fewer than ${Math.round(stress.min_coverage * 100)}% of days from ${season} are ` +
+    `drawn hollow and left out of the comparison, since their counts run low. A day with a reading missing isn't ` +
+    `counted and ends a run. Daily averages smooth over short fresh spells. The ${ppt} ppt and ${degF} °F pairing ` +
+    `comes from studies of oyster die-offs in Louisiana's Breton Sound (La Peyre and others, 2013 and 2016). Stations ` +
+    `that don't measure water temperature aren't shown.`}</p>
+</section>

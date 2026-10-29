@@ -607,8 +607,9 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                                 for d, v in zip(pd.to_datetime(g.date), g.value)],
                        "total": fmt("rain", g.value.sum(), region.units)}
     beach_section, beach_geo = _beaches(region, asof)
-    from .models import fishing, oyster, shrimp
+    from .models import fishing, oyster, oyster_stress, shrimp
     oyster_section = oyster.section(region, daily, asof)
+    stress_section = oyster_stress.section(region, daily, asof, suspect)
     fishing_section = fishing.section(region, daily, asof, cards, forecast)
     shrimp_section = shrimp.section(region, asof)
     from .models import satellite, spillway, vibrio
@@ -623,6 +624,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
         "beaches": beach_section,
         "oyster_watch": oyster_section,
+        "oyster_stress": stress_section,
         "fishing_outlook": fishing_section,
         "tide_strip": _tide_strip(region),
         "shrimp_season": shrimp_section,

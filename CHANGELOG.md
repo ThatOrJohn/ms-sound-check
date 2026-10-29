@@ -2,6 +2,10 @@
 
 User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## 2026-10-29
+### Added
+- Fresh, hot water near the reefs: the Oysters page now counts the days this year when the water at each station was both under 5 ppt and warmer than 77 °F (25 °C), the pairing tied to oyster die-offs in Gulf studies. A small chart per station shows every year since its readings began, and a sentence compares this year with that station's own past years up to the same date. Years with too many missing readings are drawn hollow and left out of the comparison. It describes the water near the reefs, not whether they're open ([0039](docs/decisions/0039-fresh-and-hot-days-near-the-reefs.md)).
+
 ## 2026-10-28
 ### Added
 - What happened last time: the Bonnet Carré section now has a small chart for each spillway opening since 2000 (2011, 2016, 2019 and 2020), each showing West Sound salinity from 4 weeks before to 28 weeks after on the same scale, with the open days shaded and the usual for the time of year dashed. A sentence under each chart gives the salinity before, the low and how long the water stayed under 2 ppt. These are past openings, not a forecast. They replace the three-line list of recent openings ([0038](docs/decisions/0038-past-spillway-openings-side-by-side.md)).

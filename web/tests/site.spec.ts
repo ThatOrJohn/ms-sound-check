@@ -218,6 +218,25 @@ test("the oyster section lists MDMR's own season notices, newest first, with lin
   await expect(first.getByRole("link", { name: w.notices[0].title })).toHaveAttribute("href", /dmr\.ms\.gov/);
 });
 
+test("the oyster page counts fresh-and-hot days per station and never talks about closures there (0039)", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const st = latest.oyster_stress;
+  test.skip(!st?.stations?.length, "no fresh-and-hot section in this build");
+  await page.goto("for/oyster/");
+  const sec = page.locator("section.oyster-stress");
+  await expect(sec.getByRole("heading", { name: "Fresh, hot water near the reefs" })).toBeVisible();
+  await expect(sec.locator("figure.stress-station")).toHaveCount(st.stations.length);
+  await expect(sec.getByRole("img", { name: new RegExp(`Fresh-and-hot days each year at ${st.stations[0].short}`) })).toBeVisible();
+  const text = (await sec.innerText()).toLowerCase();
+  expect(text).toContain("only mdmr decides");
+  expect(text).not.toMatch(/\b(is|are) closed\b/);
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+    const axe = await new AxeBuilder({ page }).include("section.oyster-stress").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+    expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
+  }
+});
+
 test("river flow shows on phones as a strip under the map", async ({ page, request }, info) => {
   const latest = await (await request.get("data/ms/latest.json")).json();
   const river = latest.cards.find((c: { kind: string; minor?: boolean }) => c.kind === "river" && !c.minor);

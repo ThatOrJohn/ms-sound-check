@@ -19,7 +19,7 @@ In this order. Usage numbers come first so they can steer the rest, including th
    feature service first, like the beach layer, and don't work around bot checks. If there isn't one, park it.
 3. **Grand Bay NERR water-quality sondes** as extra stations, from the public NERRS CDMO service: more coverage in the
    eastern Sound and a closer reference than Dauphin Island ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
-4. Then moonshot 1 below, which reuses data already in the store (moonshot 2 is built).
+4. Moonshots 1 and 2 below are built; 3 (low-oxygen watch) is next among them.
 
 ### Showing the Sound
 Built 2026-10-28 ([0032](decisions/0032-year-dots-from-the-record-indicator.md)-[0035](decisions/0035-home-map-first-and-one-instrument-table.md)):
@@ -39,10 +39,10 @@ Home height follow-up done: one history picture on home and a folded spillway se
 ## Moonshots
 Bigger bets, ranked by value against risk. Each one needs a decision record before it's built, and every rule in
 CLAUDE.md still applies: oyster wording, the disclaimer, plain language, `_try` and stale-data hiding.
-1. **Oyster stress days per reef**: count the days this season when the water was both fresh and hot (roughly under
-   5 ppt and above 25 °C, a pairing known to kill oysters), from station readings and the virtual sensors, against
-   every year since 1998. Describe conditions on the reefs, never closures. Thresholds checked 2026-10-28 and drafted
-   as [0039](decisions/0039-fresh-and-hot-days-near-the-reefs.md) (proposed): measured readings only, four stations.
+1. ~~**Oyster stress days per reef**~~ Built 2026-10-29
+   ([0039](decisions/0039-fresh-and-hot-days-near-the-reefs.md)): days under 5 ppt and above 25 °C at the four
+   stations that measure both, each against its own past years, on the Oysters page. Measured readings only; the
+   virtual sensors' error is as big as the 5 ppt line. Left: Gulfport Light, if it ever gets a temperature sensor.
 2. ~~**Spillway "what happened last time"**~~ Built 2026-10-28 for West Sound
    ([0038](decisions/0038-past-spillway-openings-side-by-side.md)): 2011, 2016, 2019 and 2020 side by side (2008 and
    2018 have too few readings). Left: the oyster stations as a second row.

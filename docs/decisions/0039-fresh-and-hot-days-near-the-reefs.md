@@ -1,7 +1,7 @@
 # 0039: Fresh-and-hot days near the reefs
 
-- **Status:** Proposed (Moonshot 1)
-- **Date:** 2026-10-28
+- **Status:** Accepted (Moonshot 1)
+- **Date:** 2026-10-28 (built 2026-10-29)
 
 ## Context
 Fresh water hurts oysters most in summer. The site already has `oyster_fresh_stress`: a run of days under 2 ppt, any
@@ -60,10 +60,17 @@ Merrill Shell Bank, 20 of 27 at Point Cadet and 9 of 18 at Round Island.
 ## Consequences
 - On today's data: Point Cadet's top years are 2021 (66), 2017 (38) and 2019 (35). Round Island has had at most 1 day in
   any complete year. 2026 so far is 44 at East Pearl, 7 at Merrill Shell Bank, 5 at Point Cadet and 0 at Round Island.
-- Pipeline: one function in `msc/models/oyster.py` (or a new `oyster_stress.py`), called through `_try`, written to
-  latest.json under the oyster section. It's hidden when the station's latest reading is past its max age, like other
-  station numbers.
-- Round Island's suspect high readings since 2026-10-15 can't make a fresh day, but its existing caveat still shows.
+- Built as `msc/models/oyster_stress.py` with its settings under `oyster_stress` in `regions/ms.yaml`, written to
+  `oyster_stress` in latest.json. It reads only the local store, so like the spillway and vibrio sections it isn't a
+  source call and doesn't go through `_try`. A station whose newest reading is more than 3 days old (the card rule)
+  keeps its bars but drops this year's sentence.
+- This year is compared with each past complete year's count up to the same day of the year, so a June reading isn't
+  set against whole summers. The bars show whole years, with this year's bar last.
+- On the Oysters page right after the closure watch (`card_order`), as one small bar chart per station on a shared
+  scale, with the sentence as the chart's text version. A shared scale makes East Pearl tower over the rest; that's
+  true, and each sentence compares a station only with itself.
+- Round Island's suspect high readings since 2026-10-15 can't make a fresh day. If QC flags a station's salinity or
+  temperature, its sentence adds that the readings may be a sensor problem.
 - Daily means smooth over short fresh pulses on a falling tide, so counts run a little low. The text says "daily
   average".
 - Revisit if a Gulf study puts a day count on mortality at these levels, if Grand Bay NERR stations arrive (they

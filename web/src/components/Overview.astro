@@ -6,6 +6,7 @@ import Freshness from "./Freshness.astro";
 import StationList from "./StationList";
 import BeachStatus from "./BeachStatus.astro";
 import OysterWatch from "./OysterWatch.astro";
+import OysterStress from "./OysterStress.astro";
 import FishingOutlook from "./FishingOutlook.astro";
 import ShrimpSeason from "./ShrimpSeason.astro";
 import Spillway from "./Spillway.astro";
@@ -60,6 +61,7 @@ const ungaugedNote = ungauged.length ? "Smaller rivers without a live flow gauge
 const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
   .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
+    : g.kind === "oyster_stress" ? !!data.oyster_stress?.stations.length
     : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.kind === "vibrio" ? !!data.vibrio : g.kind === "history" ? !!data.history : g.kind === "strip" ? true : g.cards.length);
 // Stations, rivers, rain and weather share one instrument table (decision 0035), placed where the first of them comes
 // in this persona's card_order and grouped in that order.
@@ -144,6 +146,7 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 <div class="sections">
 {groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} data={data} />
   : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} data={data} />
+  : g.kind === "oyster_stress" ? <OysterStress stress={data.oyster_stress!} asof={data.asof} />
   : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} data={data} />
   : g.kind === "shrimp_season" ? <ShrimpSeason season={data.shrimp_season!} data={data} />
   : g.kind === "spillway" ? <Spillway spillway={data.spillway!} data={data} />

@@ -452,6 +452,26 @@ select, .btn {
 .past-chart .tick[data-edge="r"] { transform: translateX(-100%); }
 .past-chart .tick.y { left: -26px; width: 22px; text-align: right; transform: translateY(-50%); white-space: normal; }
 .past-chart .x { position: relative; height: 16px; margin-top: 5px; }
+/* Fresh-and-hot days near the reefs (0039): same small-chart anatomy as the spillway's past openings. */
+.oyster-stress > p { max-width: var(--measure); color: var(--ink-soft); }
+.stress-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px 32px;
+  background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); padding: 16px 20px; max-width: var(--block); box-shadow: var(--shadow); }
+.stress-station { margin: 0; min-width: 0; }
+.stress-station figcaption { font-size: 0.85rem; margin-bottom: 6px; color: var(--ink-soft); }
+.stress-station figcaption strong { color: var(--ink); margin-right: 4px; }
+.stress-station > p { margin: 4px 0 0; font-size: 0.82rem; color: var(--ink-soft); }
+.stress-chart { padding-left: 26px; }
+.stress-chart .plot { position: relative; height: 80px; margin-top: 12px; border-bottom: 1px solid var(--rule); }
+.stress-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.stress-chart .bar { fill: var(--fresh); }
+.stress-chart .bar[data-gappy] { fill: transparent; stroke: var(--fresh); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.stress-chart .bar[data-now] { fill: var(--ink); stroke: var(--ink); }
+.stress-chart .bar[data-now][data-gappy] { fill: transparent; }
+.stress-chart .tick { position: absolute; font: 500 0.66rem/1 var(--mono); color: var(--ink-soft); white-space: nowrap; transform: translateX(-50%); }
+.stress-chart .tick[data-edge="l"] { transform: none; }
+.stress-chart .tick[data-edge="r"] { transform: translateX(-100%); }
+.stress-chart .tick.y { left: -26px; width: 22px; text-align: right; transform: translateY(-50%); }
+.stress-chart .x { position: relative; height: 16px; margin-top: 5px; }
 .spill-history > p:first-of-type { margin: 0 0 4px; color: var(--ink-soft); }
 .spill-timeline { position: relative; height: 54px; margin: 8px 8px 0; }
 .spill-timeline .axis { position: absolute; left: 0; right: 0; top: 20px; height: 1px; background: var(--rule); }

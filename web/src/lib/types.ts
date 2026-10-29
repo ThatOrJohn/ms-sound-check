@@ -5,7 +5,7 @@ export type Band = "low" | "below" | "normal" | "above" | "high";
 export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind" | "water_level";
 /** Inputs to the models and event text, not stations anyone browses to. */
 export const INPUT_KINDS: Kind[] = ["wind", "water_level"];
-export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway" | "vibrio" | "history" | "strip";
+export type Section = Kind | "beaches" | "oyster_watch" | "oyster_stress" |"fishing_outlook" | "shrimp_season" | "spillway" | "vibrio" | "history" | "strip";
 export type Kind2 = Kind | "gauge";
 
 export interface Persona {
@@ -120,6 +120,22 @@ export interface OysterWatch {
   plan_name: string; plan_url: string; status_url?: string; hotline?: string;
   /** MDMR's own oyster season notices (openings, closures, area changes), newest first. */
   notices?: MdmrNotice[]; notices_available?: boolean; notices_link?: string | null;
+}
+
+/** Fresh-and-hot days near the reefs (decision 0039). `to_date`: days up to today's day of the year. */
+export interface StressYear { year: number; days: number; run: number; run_now: number; to_date: number; complete: boolean }
+export interface StressNow {
+  days: number; run: number; run_now: number; complete: boolean;
+  /** Past complete years, and how many of them had more by this date. */
+  of: number; more: number; median: number; last_as_many: number | null;
+}
+export interface OysterStressStation {
+  id: string; short: string; name: string; since: number; years: StressYear[];
+  now: StressNow | null; stale: boolean; suspect: boolean;
+}
+export interface OysterStress {
+  salinity_below: number; temp_above_c: number; season_months: [number, number]; min_coverage: number;
+  stations: OysterStressStation[];
 }
 
 export interface Tide { station: string; name: string; time: string; type: "high" | "low"; ft: number }
@@ -240,6 +256,7 @@ export interface Latest {
   tide_strip?: TideStrip | null;
   shrimp_season?: ShrimpSeason | null;
   oyster_watch?: OysterWatch | null;
+  oyster_stress?: OysterStress | null;
   beaches?: BeachSection | null;
   region: { id: string; name: string; units: Record<string, string>; map: { center: [number, number]; zoom: number } };
   generated_at: string;
