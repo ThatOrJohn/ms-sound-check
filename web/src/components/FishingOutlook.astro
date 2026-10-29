@@ -1,5 +1,5 @@
 ---
-import type { FishingOutlook, Latest, Tide } from "../lib/types";
+import type { FishingOutlook, Latest, SkyTimes, Tide } from "../lib/types";
 import OfficialSources from "./OfficialSources.astro";
 
 interface Props { outlook: FishingOutlook; data: Latest }
@@ -10,6 +10,15 @@ const main = outlook.tide_stations[Math.floor(outlook.tide_stations.length / 2)]
 const time = (t: string) =>
   new Date(t.replace(" ", "T")).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 const tidesFor = (list: Tide[], station?: string) => list.filter((t) => !station || t.station === station);
+// "Sun up 7:08 am, down 6:11 pm." and "Moon: waning gibbous, 83% lit, sets 11:07 am, rises 9:12 pm." (decision 0040)
+const sunLine = (s: SkyTimes) => s.sunrise && s.sunset ? `Sun up ${time(s.sunrise)}, down ${time(s.sunset)}.` : null;
+const moonLine = (s: SkyTimes) => {
+  const phase = s.moon_phase === "new moon" ? "new" : s.moon_phase === "full moon" ? "full"
+    : `${s.moon_phase}, ${s.moon_lit_pct}% lit`;
+  const events = ([["rises", s.moonrise], ["sets", s.moonset]] as const).filter(([, t]) => t)
+    .sort((a, b) => a[1]!.localeCompare(b[1]!)).map(([verb, t]) => `${verb} ${time(t!)}`);
+  return `Moon: ${[phase, ...events].join(", ")}.`;
+};
 const w = outlook.water;
 const tempTrend = w.temp_change_7d == null ? "" : Math.abs(w.temp_change_7d) < 1.5 ? ", steady this week"
   : w.temp_change_7d > 0 ? `, up ${Math.round(w.temp_change_7d)}° this week` : `, down ${Math.round(Math.abs(w.temp_change_7d))}° this week`;
@@ -31,6 +40,7 @@ const satLine = clarity?.summary ? `${clarity.summary} (${satDays[0] === satDays
       <article class="fish-day" data-verdict={d.verdict ?? "unknown"}>
         <h3>{d.label}</h3>
         {d.wind ? <p class="fish-wind">{d.wind}</p> : <p class="fish-wind">No forecast yet</p>}
+        {d.waves && <p class="fish-waves">{`In the Sound: ${d.waves.charAt(0).toLowerCase()}${d.waves.slice(1)}`}</p>}
         {d.verdict_text && <p class="fish-verdict">{d.verdict_text}</p>}
         <p class="fish-sky">
           {[d.sky, d.high_f != null ? `high ${d.high_f}°` : null, d.rain_pct ? `${d.rain_pct}% chance of rain` : null].filter(Boolean).join(", ")}
@@ -40,6 +50,9 @@ const satLine = clarity?.summary ? `${clarity.summary} (${satDays[0] === satDays
             <span class="tide-label">Tides, {main.name}:</span>{" "}
             {tidesFor(d.tides, main.id).map((t) => `${t.type} ${time(t.time)} (${t.ft.toFixed(1)} ft)`).join(", ")}
           </p>
+        )}
+        {d.sky_times && (
+          <p class="fish-sun-moon">{[sunLine(d.sky_times), moonLine(d.sky_times)].filter(Boolean).join(" ")}</p>
         )}
       </article>
     ))}
@@ -74,7 +87,9 @@ const satLine = clarity?.summary ? `${clarity.summary} (${satDays[0] === satDays
       </table>
     </details>
   )}
-  <p class="fish-src">Wind and sky: National Weather Service forecast for the Gulfport waterfront. Tides: NOAA predictions (feet above
-    mean lower low water). Wind bands: light up to 10 mph, moderate to 15, breezy to 20. Muddy-water risk is our estimate
+  <p class="fish-src">Wind and sky: National Weather Service forecast for the Gulfport waterfront.
+    {outlook.marine_zone && ` Waves: the NWS coastal waters forecast for ${outlook.marine_zone.name} (${outlook.marine_zone.id}).`} Tides: NOAA predictions (feet above
+    mean lower low water). Sun and moon: computed for the middle of the coast; they match the US Naval Observatory's
+    tables. Wind bands: light up to 10 mph, moderate to 15, breezy to 20. Muddy-water risk is our estimate
     from recent rain and river flow.</p>
 </section>

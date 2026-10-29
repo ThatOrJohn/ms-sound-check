@@ -498,7 +498,7 @@ select, .btn {
 .fish-day h3, .fish-day h4 { font: 500 0.7rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 8px; }
 .fish-wind { font: 600 1.4rem/1.2 var(--sans); letter-spacing: -0.02em; margin: 0; }
 .fish-verdict { margin: 6px 0 10px; font-weight: 500; font-size: 0.9rem; }
-.fish-sky, .fish-tides { margin: 4px 0; font-size: 0.84rem; color: var(--ink-soft); }
+.fish-sky, .fish-tides, .fish-sun-moon, .fish-waves { margin: 4px 0; font-size: 0.84rem; color: var(--ink-soft); }
 .fish-water { background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); padding: 4px 18px; margin: 14px 0; max-width: var(--block); box-shadow: var(--shadow); }
 .fish-more { margin: 12px 0; overflow-x: auto; }
 .fish-more table { border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }

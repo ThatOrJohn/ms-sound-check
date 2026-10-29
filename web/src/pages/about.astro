@@ -53,6 +53,8 @@ const data = loadLatest();
         <tr><td>Mississippi River at New Orleans</td><td>National Weather Service stage and two-week forecast at the Carrollton gauge (NORL1). Past spillway openings come from the Corps' operation history.</td></tr>
         <tr><td>Satellite water clarity and surface temperature</td><td>NOAA CoastWatch: VIIRS water clarity (Kd490) at 750 m and multi-satellite surface temperature at about 2 km. Each map layer is the newest cloud-free view of each spot over the last few days, and the map says which days. Clouds leave gaps.</td></tr>
         <tr><td>Rain, observed and forecast</td><td>Open-Meteo. Basin totals average a few points across each watershed, so treat them as approximate.</td></tr>
+        <tr><td>Waves (fishing outlook)</td><td>National Weather Service coastal waters forecast for the Mississippi Sound (zone GMZ532), in the forecast's own words.</td></tr>
+        <tr><td>Sun and moon (fishing outlook)</td><td>Calculated on our side with the PyEphem astronomy library for the middle of the coast. Rise and set times agree with the US Naval Observatory's tables to the minute.</td></tr>
       </tbody>
     </table>
     <p>Salinity is calculated from the stations' conductivity readings with the standard seawater formula (PSS-78). That gives a longer and

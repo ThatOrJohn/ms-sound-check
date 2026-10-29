@@ -44,6 +44,7 @@
 - [x] The Sound west to east: one bar of today's salinity by station position over a fainter usual bar, a summary in the table's band words, labels that never cross, and the Oysters share image (`share: strip`) ([0037](../decisions/0037-the-sound-west-to-east.md))
 - [x] Moonshot 2, past spillway openings side by side: one West Sound chart per year since 2000 on shared axes, typical line, 2 ppt runs, `spillway.past` replaces `effects`; unit tests and e2e ([0038](../decisions/0038-past-spillway-openings-side-by-side.md))
 - [x] Moonshot 1, fresh-and-hot days near the reefs: thresholds checked against Gulf studies, under 5 ppt and above 25 °C at the four stations that measure both, this year against each station's own complete years to the same date, gappy years shown hollow; unit tests and e2e with axe in both themes ([0039](../decisions/0039-fresh-and-hot-days-near-the-reefs.md))
+- [x] Fishing outlook: NWS marine-zone wave wording (GMZ532) and sun and moon times computed with PyEphem, checked against USNO; no moon-phase tide claim, since the Sound's tides are diurnal; unit tests and e2e ([0040](../decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md))
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

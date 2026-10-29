@@ -82,6 +82,9 @@ def cmd_ingest(region, args):
     wx = _try("weather forecast", nws.forecast, region)
     if wx:
         nws.save_forecast(region, wx)
+    marine = _try("marine forecast", nws.marine_forecast, region)
+    if marine:
+        nws.save_marine(region, marine)
     from .adapters import gcoos
     ref = _try("reference salinity", gcoos.daily, region)
     if ref is not None and not ref.empty:

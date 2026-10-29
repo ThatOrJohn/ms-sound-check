@@ -4,6 +4,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 
 ## 2026-10-29
 ### Added
+- Waves, sun and moon in the fishing outlook: each day now gives the National Weather Service's wave forecast for the Sound ("In the Sound: waves 2 to 3 feet."), sunrise and sunset, and the moon's phase, how much of it is lit, and when it rises and sets ([0040](docs/decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md)).
 - Fresh, hot water near the reefs: the Oysters page now counts the days this year when the water at each station was both under 5 ppt and warmer than 77 °F (25 °C), the pairing tied to oyster die-offs in Gulf studies. A small chart per station shows every year since its readings began, and a sentence compares this year with that station's own past years up to the same date. Years with too many missing readings are drawn hollow and left out of the comparison. It describes the water near the reefs, not whether they're open ([0039](docs/decisions/0039-fresh-and-hot-days-near-the-reefs.md)).
 
 ## 2026-10-28

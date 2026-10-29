@@ -1,7 +1,8 @@
 """Fishing outlook: the next weekend (or the next three days, midweek) at a glance.
 
-Facts only, plus plain verdicts with stated thresholds: wind from the NWS forecast, tides from NOAA,
-muddy-water risk from recent rain and river flow, and water temperature/salinity from our stations.
+Facts only, plus plain verdicts with stated thresholds: wind and waves from the NWS forecasts, tides from NOAA, sun
+and moon computed locally, muddy-water risk from recent rain and river flow, and water temperature/salinity from our
+stations.
 """
 from __future__ import annotations
 
@@ -9,6 +10,7 @@ import pandas as pd
 
 from ..adapters import nws, tides as tide_src
 from ..config import Region
+from . import sky
 
 # Wind verdicts (sustained mph, the NWS forecast's upper bound; each band includes its top value).
 WIND = [(10, "light", "Light wind, a good day to be out."),
@@ -71,9 +73,11 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp, cards: list
             rain_forecast: pd.DataFrame | None) -> dict | None:
     periods = nws.load_forecast(region)
     tide_rows = tide_src.load(region)
+    marine = nws.load_marine(region)
     if not periods and not tide_rows:
         return None
     days = _days(asof)
+    lat, lon = region.map.get("center", [30.30, -88.95])
     out_days = []
     for d in days:
         key = d.strftime("%Y-%m-%d")
@@ -92,6 +96,8 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp, cards: list
             "high_f": day["temp_f"] if day else None,
             "verdict": vkey, "verdict_text": vtext,
             "tides": tl,
+            "waves": next((m["waves"] for m in marine if m["date"] == key and m["is_day"]), None),
+            "sky_times": sky.day(lat, lon, region.timezone, key),
         })
     # Water now: average across live open-Sound stations.
     def live(var):
@@ -128,6 +134,7 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp, cards: list
                   "freshest": min(sal, key=lambda x: x[1]) if sal else None},
         "muddy": muddy,
         "tide_stations": region.extras.get("tides", []),
+        "marine_zone": region.extras.get("marine_zone"),
         "wind_bands": [{"below_mph": top, "label": key} for top, key, _ in WIND],
     }
 

@@ -422,3 +422,12 @@ test("the Oysters share image is the strip, at 1200x630", async ({ request }) =>
   const png = await res.body();
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
 });
+
+test("each Fishing day lists sun and moon times in words, and the NWS wave wording when there is one", async ({ page }) => {
+  await page.goto("for/fish/");
+  for (const w of await page.locator(".fish-day .fish-waves").allTextContents())
+    expect(w).toMatch(/^In the Sound: (waves|seas|bay waters) .+\.$/);
+  const line = page.locator(".fish-day .fish-sun-moon").first();
+  await expect(line).toHaveText(/^Sun up \d{1,2}:\d{2} AM, down \d{1,2}:\d{2} PM\. Moon: (new|full|(waxing|waning) (crescent|gibbous), \d+% lit|first quarter|last quarter)(, (rises|sets) \d{1,2}:\d{2} [AP]M)*\.$/);
+  await expect(page.locator(".fishing .fish-src")).toContainText("US Naval Observatory");
+});

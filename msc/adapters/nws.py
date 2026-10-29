@@ -74,6 +74,64 @@ def parse_forecast(site: dict, js: dict) -> list[dict]:
 
 
 MAX_AGE = pd.Timedelta(days=2)
+WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def marine_forecast(region: Region) -> dict | None:
+    """The NWS coastal waters forecast for the region's marine zone (Mississippi Sound is GMZ532)."""
+    import requests
+    zone = region.extras.get("marine_zone")
+    if not zone:
+        return None
+    r = requests.get(f"https://api.weather.gov/zones/forecast/{zone['id']}/forecast", headers=UA, timeout=60)
+    r.raise_for_status()
+    return parse_marine(r.json(), region.timezone)
+
+
+def parse_marine(js: dict, tz: str) -> dict:
+    """Zone periods carry only names ("Today", "Friday Night"), so date them from the issue time: "Today",
+    "Tonight" and the like are the issue date, a weekday name is the next date with that name (the issue date itself
+    after midnight). Keeps the NWS's own wave wording ("Waves 2 to 3 feet, then 1 foot or less.") rather than
+    parsing it into numbers."""
+    import re
+    props = js.get("properties", {})
+    issued = pd.Timestamp(props["updated"]).tz_convert(tz)
+    rows, day_dates = [], set()
+    for p in props.get("periods", []):
+        name = p.get("name") or ""
+        first = name.split()[0] if name else ""
+        is_day = not re.search(r"Night|Tonight|Overnight", name)
+        date = issued
+        if first in WEEKDAYS:   # Today, This Afternoon, Rest of Today, Tonight, Overnight stay on the issue date
+            date = issued + pd.Timedelta(days=(WEEKDAYS.index(first) - issued.weekday()) % 7)
+            if is_day and date.strftime("%Y-%m-%d") in day_dates:   # "Thursday" after "Today" on a Thursday
+                date += pd.Timedelta(days=7)
+        key = date.strftime("%Y-%m-%d")
+        if is_day:
+            day_dates.add(key)
+        text = p.get("detailedForecast") or ""
+        waves = " ".join(m.group(0) for m in re.finditer(r"\b(?:Waves|Seas|Bay waters)\b[^.]*\.", text))
+        rows.append({"name": name, "date": key, "is_day": is_day, "waves": waves or None})
+    return {"issued": issued.isoformat(), "periods": rows}
+
+
+def save_marine(region: Region, fc: dict) -> None:
+    import json
+    region.data_dir.mkdir(parents=True, exist_ok=True)
+    (region.data_dir / "marine_forecast.json").write_text(json.dumps(
+        {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), **fc}))
+
+
+def load_marine(region: Region) -> list[dict]:
+    """Marine forecast periods, or [] if missing or older than two days, like the land forecast."""
+    import json
+    p = region.data_dir / "marine_forecast.json"
+    if not p.exists():
+        return []
+    js = json.loads(p.read_text())
+    if pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > MAX_AGE:
+        return []
+    return js["periods"]
 
 
 def save_forecast(region: Region, rows: list[dict]) -> None:

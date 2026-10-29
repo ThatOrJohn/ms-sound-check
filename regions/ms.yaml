@@ -232,6 +232,9 @@ mdmr_notices:
              exclude: "meeting|aquaculture|training|lease", link: "https://dmr.ms.gov/shellfish/"}
 
 # Tide predictions (NOAA CO-OPS), west to east.
+# NWS coastal waters forecast zone for wave heights in the fishing outlook (api.weather.gov/zones/forecast/<id>).
+marine_zone: {id: GMZ532, name: Mississippi Sound}
+
 tides:
   - {id: "8747437", name: Bay Waveland Yacht Club}
   - {id: "8745557", name: Gulfport Harbor}

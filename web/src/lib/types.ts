@@ -144,12 +144,22 @@ export interface TideStrip { station: string; name: string; events: { time: stri
 export interface FishingDay {
   date: string; label: string; wind: string | null; wind_mph_hi: number | null; sky: string | null;
   rain_pct: number | null; high_f: number | null; verdict: string | null; verdict_text: string | null; tides: Tide[];
+  /** The NWS marine forecast's own wave sentence for the daytime period, e.g. "Waves 2 to 3 feet." */
+  waves?: string | null;
+  /** Local 'YYYY-MM-DD HH:MM' times (null when it doesn't happen that day), computed in msc/models/sky.py (0040). */
+  sky_times?: SkyTimes;
+}
+export interface SkyTimes {
+  sunrise: string | null; sunset: string | null; moonrise: string | null; moonset: string | null;
+  moon_phase: "new moon" | "first quarter" | "full moon" | "last quarter" | "waxing crescent" | "waxing gibbous" | "waning gibbous" | "waning crescent";
+  moon_lit_pct: number;
 }
 export interface FishingOutlook {
   days: FishingDay[]; weekend: boolean;
   water: { temp_f: number | null; temp_change_7d: number | null; saltiest: [string, number] | null; freshest: [string, number] | null };
   muddy: { level: "clean" | "some runoff" | "muddy"; reasons: string[]; local_rain_3d_in: number | null; forecast_rain_in: number | null };
   tide_stations: { id: string; name: string }[];
+  marine_zone?: { id: string; name: string } | null;
 }
 
 export interface MdmrNotice { id: number; date: string; title: string; summary: string; link: string }

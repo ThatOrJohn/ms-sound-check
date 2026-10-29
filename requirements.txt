@@ -4,5 +4,6 @@ pyarrow
 pyyaml
 requests
 gsw
+ephem           # sun and moon times for the fishing outlook
 dataretrieval>=1.4
 lightgbm        # macOS: also `brew install libomp`
