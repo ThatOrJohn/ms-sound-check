@@ -110,19 +110,29 @@ def _years(ys: list[int]) -> str:
     return ys[0] if len(ys) == 1 else f"{', '.join(ys[:-1])} and {ys[-1]}"
 
 
+def record_means(cfg, daily, site_id, asof) -> tuple[dict[int, float], str] | None:
+    """Each year's `window`-day mean for a `record` indicator, and the newest reading's date; None when the station
+    is stale or too few years count. The year dots (build.py) use this too, so they always agree with the text."""
+    from . import history
+    s = history.series(daily, site_id, cfg["var"], asof)
+    if s.empty or (asof - s.index[-1]).days > STALE_DAYS:
+        return None
+    means = history.window_means(s, asof, cfg.get("window", 14), cfg.get("min_days", 10))
+    if asof.year not in means or len(means) < cfg.get("min_years", 10):
+        return None
+    return means, s.index[-1].strftime("%Y-%m-%d")
+
+
 def record(region, cfg, daily, normals, asof):
     """Today's mean over the last `window` days, ranked against the same calendar days in every year on record
     (decision 0028). Only a top or bottom `top` rank becomes a finding."""
-    from . import history
     out = []
-    window, top = cfg.get("window", 14), cfg.get("top", 3)
+    top = cfg.get("top", 3)
     for site in _sites_for(region, cfg):
-        s = history.series(daily, site["id"], cfg["var"], asof)
-        if s.empty or (asof - s.index[-1]).days > STALE_DAYS:
+        got = record_means(cfg, daily, site["id"], asof)
+        if got is None:
             continue
-        means = history.window_means(s, asof, window, cfg.get("min_days", 10))
-        if asof.year not in means or len(means) < cfg.get("min_years", 10):
-            continue
+        means, last = got
         ranked = sorted(means, key=means.get)
         for side, order in (("low", ranked), ("high", ranked[::-1])):
             rank = order.index(asof.year) + 1
@@ -136,7 +146,7 @@ def record(region, cfg, daily, normals, asof):
                 text += f" Only {_years(others)} {'was' if len(others) == 1 else 'were'} {cfg[f'{side}_cmp']}."
             out.append({"indicator": cfg["id"], "site": site["id"], "severity": "notice",
                         "topics": cfg.get("topics", []), "text": text, "side": side, "rank": rank,
-                        "years": len(means), "var": cfg["var"], "date": s.index[-1].strftime("%Y-%m-%d")})
+                        "years": len(means), "var": cfg["var"], "date": last})
     return out
 
 

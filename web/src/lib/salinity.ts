@@ -9,7 +9,13 @@ export function salinityFill(v: number): string {
 }
 
 /** The same ramp as hex tokens mixed in RGB, for canvas and the map (which can't use color-mix). */
-const rgb = (hex: string) => { const n = parseInt(hex.replace("#", ""), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+/** "#8c6a3f" or "#fff" -> [r, g, b]. The build's CSS minifier shortens tokens like #ffffff to #fff. */
+export function hexRGB(hex: string): number[] {
+  let h = hex.trim().replace("#", "");
+  if (h.length === 3) h = [...h].map((c) => c + c).join("");
+  const n = parseInt(h, 16); return [n >> 16, (n >> 8) & 255, n & 255];
+}
+const rgb = hexRGB;
 const mix = (x: number[], y: number[], k: number) => x.map((xi, i) => Math.round(xi + (y[i] - xi) * k));
 export function salinityRGB(v: number, t: { fresh: string; brackish: string; gulf: string }): number[] {
   const [a, b, c] = [rgb(t.fresh), rgb(t.brackish), rgb(t.gulf)];

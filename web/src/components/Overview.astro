@@ -14,8 +14,9 @@ import HistorySection from "./HistorySection.astro";
 import OfficialSources from "./OfficialSources.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import TideStrip from "./TideStrip";
-import ReadingRow from "./ReadingRow";
+import InstrumentTable from "./InstrumentTable.astro";
 import Meter from "./Meter";
+import YearDots from "./YearDots";
 import { readoutTiles } from "../lib/readouts";
 
 interface Props { data: Latest; persona: Persona }
@@ -41,6 +42,12 @@ const mapStations: MapStation[] = data.cards.filter((c) => (c.kind === "sound" |
   return { id: c.id, short: c.short, kind: c.kind, lon: c.lon, lat: c.lat, href: siteHref(c.slug),
     salinity, display, status, alert: alerting.has(c.id) };
 });
+// The long replay draws every salinity station on the days it reported, retired ones included (decision 0033).
+const replaySites: MapStation[] = (data.replay_index?.sites ?? []).map((s) => {
+  const c = data.cards.find((c) => c.id === s.id);
+  return { id: s.id, short: s.short, kind: c?.kind ?? "sound", lon: s.lon, lat: s.lat, href: siteHref(c?.slug ?? ""),
+    salinity: null, display: s.retired ? "offline" : "no reading", status: "quiet", alert: false };
+});
 const mapRivers: MapRiver[] = data.cards.filter((c) => c.kind === "river").map((c) => ({
   id: c.id, name: c.short, osmNames: c.osm_names ?? [c.short], display: c.vars.flow?.display ?? "no data",
   band: c.vars.flow?.band, percentile: c.vars.flow?.percentile,
@@ -53,13 +60,20 @@ const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
   .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
     : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.kind === "vibrio" ? !!data.vibrio : g.kind === "history" ? !!data.history : g.cards.length);
+// Stations, rivers, rain and weather share one instrument table (decision 0035), placed where the first of them comes
+// in this persona's card_order and grouped in that order.
+const TABLE_KINDS = ["sound", "estuary", "river", "rain", "weather"];
+const tableKinds = groups.filter((g) => TABLE_KINDS.includes(g.kind)).map((g) => g.kind);
 const similar = data.similar_years;
 const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
 
 const tiles = readoutTiles(data, siteHref);
+// Record lines in Signals carry their own year dots: the same ranks, as a picture (decision 0032).
+const recordDots = (f: (typeof findings)[number]) => data.cards.find((c) => c.id === f.site)?.vars[f.var ?? ""]?.years;
+const unitOf = (f: (typeof findings)[number]) => data.cards.find((c) => c.id === f.site)?.vars[f.var ?? ""]?.unit;
 const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 ---
-<script>import "../lib/live";</script>
+<script>import "../lib/live"; import "../lib/yeardots";</script>
 
 <div class="hero-bar">
   <PersonaPicker personas={data.personas} current={persona.id} paths={paths} />
@@ -74,39 +88,22 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
       <div class="readout" data-live={t.live}>
         <p class="readout-label">{t.href ? <a href={t.href}>{t.label}</a> : t.label}</p>
         <p class="readout-val"><span data-live-value>{t.value}</span><span class="unit">{t.unit}</span></p>
-        <p class="readout-sub"><Meter percentile={t.percentile} small /><span data-live-text>{t.sub}</span></p>
+        {t.years
+          ? <div class="readout-sub"><YearDots dots={t.years} varName={t.varName!} unit={t.unit} small /><span>{t.sub}</span></div>
+          : <p class="readout-sub"><Meter percentile={t.percentile} small /><span data-live-text>{t.sub}</span></p>}
       </div>
     ))}
   </section>
 )}
 
+<!-- DOM order is headline, map, Signals, so phones and screen readers reach the map right after the headline (0035).
+     Wide screens place the headline and Signals in the right column with grid areas, not CSS order. -->
 <div class="console">
-  <div class="side">
-    <section class="brief panel-flat" aria-labelledby="headline">
-      <p class="eyebrow">{data.region.name} · {persona.label}</p>
-      <h1 id="headline">{data.headlines[persona.id]}</h1>
-      <p class="persona-blurb">{persona.blurb}</p>
-    </section>
-
-    <aside class="rail" aria-labelledby="findings-h" tabindex="0">
-      <div class="rail-head">
-        <h2 id="findings-h" class="eyebrow">Signals</h2>
-        <span class="count" data-hot={alertCount > 0 ? "" : undefined}>{findings.length ? `${findings.length} active` : "All quiet"}</span>
-      </div>
-      {findings.length ? (
-        <ul class="signals">
-          {findings.map((f) => (
-            <li class="finding" data-sev={f.severity}>
-              <span class="sev">{SEV_LABEL[f.severity]}</span>
-              <span class="finding-text">{f.text}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="quiet-note">Nothing stands out for {persona.label.toLowerCase()} right now. Everything is within the normal range for {data.season}.</p>
-      )}
-    </aside>
-  </div>
+  <section class="brief panel-flat" aria-labelledby="headline">
+    <p class="eyebrow">{data.region.name} · {persona.label}</p>
+    <h1 id="headline">{data.headlines[persona.id]}</h1>
+    <p class="persona-blurb">{persona.blurb}</p>
+  </section>
 
   <figure class="sound panel-flat" aria-labelledby="sound-cap">
     <div class="panel-title">
@@ -116,12 +113,31 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
     <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} ungauged={ungauged.flatMap((r) => r.osm_names)}
       basemapBase={href("basemap/")} beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
       personaId={persona.id} defaultLayers={persona.map_layers}
-      satellite={data.satellite} dataBase={href(`data/${data.region.id}/`)} replay={data.replay} beachLinks={showsBeaches}
+      satellite={data.satellite} dataBase={href(`data/${data.region.id}/`)} replay={data.replay} replayIndex={data.replay_index} replaySites={replaySites} beachLinks={showsBeaches}
       reference={data.reference} />
     {data.tide_strip && <TideStrip client:only="react" strip={data.tide_strip} />}
     <figcaption class="sound-foot" id="sound-cap">{"Stations are colored by salinity. River lines widen when the rivers run high; dashed lines are rivers without a flow gauge."}</figcaption>
     <StationList cards={data.cards} findings={data.findings} siteHref={siteHref} />
   </figure>
+  <aside class="rail" aria-labelledby="findings-h" tabindex="0">
+    <div class="rail-head">
+      <h2 id="findings-h" class="eyebrow">Signals</h2>
+      <span class="count" data-hot={alertCount > 0 ? "" : undefined}>{findings.length ? `${findings.length} active` : "All quiet"}</span>
+    </div>
+    {findings.length ? (
+      <ul class="signals">
+        {findings.map((f) => (
+          <li class="finding" data-sev={f.severity}>
+            <span class="sev">{SEV_LABEL[f.severity]}</span>
+            <span class="finding-text">{f.text}</span>
+            {f.rank && recordDots(f) && <YearDots dots={recordDots(f)!} varName={f.var!} unit={unitOf(f)} small />}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="quiet-note">Nothing stands out for {persona.label.toLowerCase()} right now. Everything is within the normal range for {data.season}.</p>
+    )}
+  </aside>
 </div>
 
 <div class="sections">
@@ -131,27 +147,13 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
   : g.kind === "shrimp_season" ? <ShrimpSeason season={data.shrimp_season!} data={data} />
   : g.kind === "spillway" ? <Spillway spillway={data.spillway!} data={data} />
   : g.kind === "vibrio" ? <VibrioNote vibrio={data.vibrio!} />
-  : g.kind === "history" ? <HistorySection data={data} /> : (
-  <section class="group" aria-labelledby={`g-${g.kind}`}>
-    <div class="group-head">
-      <h2 id={`g-${g.kind}`}>{g.title}</h2>
-      {g.blurb && <p>{g.blurb}</p>}
-    </div>
-    <div class="cards">
-      {g.cards.map((c) => (
-        <article class="card">
-          <h3><a href={siteHref(c.slug)}>{c.short}</a></h3>
-          <p class="where">{c.name}</p>
-          {Object.entries(c.vars).map(([vn, r]) => (
-            <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[c.id]?.total : undefined} retired={c.retired} />
-          ))}
-        </article>
-      ))}
-    </div>
-    {g.kind === "river" && ungaugedNote && <p class="quiet-note">{ungaugedNote}</p>}
-    {g.kind === "river" && similar && (
+  : g.kind === "history" ? <HistorySection data={data} />
+  : g.kind !== tableKinds[0] ? null : (
+  <InstrumentTable data={data} kinds={tableKinds} siteHref={siteHref}>
+    {tableKinds.includes("river") && ungaugedNote && <p class="quiet-note">{ungaugedNote}</p>}
+    {tableKinds.includes("river") && similar && (
       <p class="quiet-note similar-years">{`${similar.label[0].toUpperCase()}${similar.label.slice(1)} over the last ${similar.days} days look most like `}{similar.years.map((y, i) => <>{i === 0 ? "" : i === similar.years.length - 1 ? (similar.years.length > 2 ? ", and " : " and ") : ", "}{similar.link_slug ? <a href={href(`station/${similar.link_slug}/#year-${y.year}`)} aria-label={`${y.year} on the ${similar.link_short} salinity history`}>{y.year}</a> : String(y.year)}{y.note ? ` (${y.note})` : ""}</>)}{`, out of ${similar.compared} years on record. That's background from past years, not a forecast.`}</p>
     )}
-  </section>
+  </InstrumentTable>
 ))}
 </div>

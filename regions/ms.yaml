@@ -337,7 +337,7 @@ personas:
     blurb: What the Sound is doing this week and whether any of it matters.
     focus: [general, oyster, shrimp, fish]
     card_order: [beaches, sound, vibrio, river, history, spillway, rain, weather, estuary]
-    map_layers: [depth, rivers, beaches]
+    map_layers: [depth, rivers, salinity, beaches]
   - id: oyster
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
@@ -355,7 +355,7 @@ personas:
     blurb: Salinity and water temperature shifts that move bait and fish around the Sound.
     focus: [fish, general]
     card_order: [fishing_outlook, sound, vibrio, weather, rain, river, spillway, estuary, beaches]
-    map_layers: [depth, contours, clarity]
+    map_layers: [depth, contours, clarity, wind]
 
 indicators:
   # Unusual vs. normal for this time of year, for every station/variable.

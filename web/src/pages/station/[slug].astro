@@ -71,7 +71,7 @@ const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.disp
   <section class="now" aria-label="Current readings">
     {Object.entries(card.vars).map(([vn, r]) => (
       <article class="card">
-        <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[card.id]?.total : undefined} retired={card.retired} />
+        <ReadingRow varName={vn} label={data.variables[vn]?.label ?? vn} r={r} forecast={vn === "rain" ? data.rain_forecast[card.id]?.total : undefined} retired={card.retired} years />
       </article>
     ))}
   </section>
@@ -81,7 +81,7 @@ const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.disp
   {hist && hist.years.length > 0 && (
     <section class="panel" aria-labelledby="every-year-h" id="history">
       <div class="panel-head"><h2 id="every-year-h">{`Every year since ${hist.years[0].year}`}</h2></div>
-      <HistoryPanel hist={hist} url={href(`data/${data.region.id}/history/${hist.slug}.json`)} pick />
+      <HistoryPanel hist={hist} url={href(`data/${data.region.id}/history/${hist.slug}.json`)} pick mapHref={href()} />
     </section>
   )}
 
@@ -96,5 +96,5 @@ const desc = `${card.name}: current ${Object.values(card.vars).map((v) => v.disp
     </>)}
     {usgsUrl && <p>Source data: <a href={usgsUrl}>USGS monitoring location {card.id.replace("USGS-", "")}</a>.</p>}
   </section>
-  <script>import "../../lib/live";</script>
+  <script>import "../../lib/live"; import "../../lib/yeardots";</script>
 </Base>

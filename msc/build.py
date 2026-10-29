@@ -14,7 +14,7 @@ import pandas as pd
 from . import normals as nm
 from . import store
 from .config import REFERENCE, SITE_OUT, VARIABLES, Region
-from .indicators import SEVERITY, evaluate, is_suspect
+from .indicators import SEVERITY, _sites_for, evaluate, is_suspect, record_means
 from .units import convert, fmt, season_phrase, unit_label
 
 SPARK_DAYS = 30
@@ -284,6 +284,45 @@ def _cell(dates: pd.DatetimeIndex) -> np.ndarray:
     return np.asarray(dates.dayofyear - 1 + ((~leap) & (dates.month > 2)))
 
 
+def _notable(region) -> dict[int, dict]:
+    """Hand-kept context per year (data/notable_years.csv): its note, a short `tag` for the history picture's margin
+    and a `day` the map replay can jump to. Spillway years are tagged "spillway" even without a row."""
+    cfg = region.extras.get("similar_years") or {}
+    p = REFERENCE / cfg.get("notes", "notable_years.csv")
+    out = {}
+    if p.exists():
+        for r in pd.read_csv(p, comment="#", dtype=str).fillna("").itertuples():
+            out[int(r.year)] = {"note": r.note or None, "tag": getattr(r, "tag", "") or None, "day": getattr(r, "day", "") or None}
+    from .models import spillway
+    for o in spillway.openings(region):
+        n = out.setdefault(o["year"], {"note": None, "tag": None, "day": None})
+        if "spillway" not in (n["tag"] or ""):
+            n["tag"] = f"spillway, {n['tag']}" if n["tag"] else "spillway"
+    return out
+
+
+def _year_dots(region, daily, asof) -> dict[tuple[str, str], dict]:
+    """For each station a `record` indicator ranks: every year's mean over the same window ending on today's date
+    (decision 0032). Built by the same function as the record text, so a dot's rank and the sentence always agree."""
+    out = {}
+    for cfg in region.indicators:
+        if cfg["type"] != "record":
+            continue
+        for site in _sites_for(region, cfg):
+            got = record_means(cfg, daily, site["id"], asof)
+            if got is None:
+                continue
+            means = got[0]
+            now = means[asof.year]
+            out[(site["id"], cfg["var"])] = {
+                "window": cfg.get("window", 14), "season": season_phrase(asof).replace(" ", "-"),
+                "points": [[y, _r(convert(cfg["var"], means[y], region.units), 2)] for y in sorted(means)],
+                "rank_high": 1 + sum(v > now for v in means.values()),
+                "rank_low": 1 + sum(v < now for v in means.values()),
+                "of": len(means), "record": cfg["id"]}
+    return out
+
+
 def _history(region, daily, asof, qcs, out) -> dict | None:
     """Every salinity station's whole record, one row per year (decision 0028), to history/<slug>.json, and a
     summary for latest.json: which stations the home section shows, and its one-line takeaway."""
@@ -293,6 +332,7 @@ def _history(region, daily, asof, qcs, out) -> dict | None:
     from . import history
     lo, hi = cfg["fresh_below"], cfg["salty_above"]
     (out / "history").mkdir(exist_ok=True)
+    notable = _notable(region)
     stations = {}
     for site in region.sites:
         if site["kind"] not in ("sound", "estuary") or "salinity" not in site["vars"]:
@@ -314,7 +354,9 @@ def _history(region, daily, asof, qcs, out) -> dict | None:
         slug = site.get("slug") or slugify(site["short"])
         (out / "history" / f"{slug}.json").write_text(json.dumps(
             {"id": site["id"], "slug": slug, "short": site["short"], "name": site["name"], "asof": asof.strftime("%Y-%m-%d"),
-             "fresh_below": lo, "salty_above": hi, "years": years}, separators=(",", ":")))
+             "fresh_below": lo, "salty_above": hi, "years": years,
+             "tags": {str(y): n["tag"] for y, n in notable.items() if n["tag"] and y in {r["year"] for r in years}}},
+            separators=(",", ":")))
         stations[site["id"]] = {"slug": slug, "short": site["short"], "first": years[0]["year"],
                                 "years": [y for y in years if y["counted"]]}
     home = [sid for sid in cfg.get("home", []) if sid in stations]
@@ -381,10 +423,7 @@ def _similar_years(region, daily, asof) -> dict | None:
     best = [y for y in sorted(rms, key=rms.get)[:cfg.get("top", 3)] if rms[y] <= cfg.get("max_rms", 0.5)]
     if not best:
         return None
-    notes = {}
-    p = REFERENCE / cfg.get("notes", "notable_years.csv")
-    if p.exists():
-        notes = {int(r.year): r.note for r in pd.read_csv(p, comment="#").itertuples()}
+    notes = {y: n["note"] for y, n in _notable(region).items() if n["note"]}
     link = region.site(cfg["link_site"]) if cfg.get("link_site") else None
     return {"days": days, "label": cfg["label"], "compared": len(rms),
             "link_slug": (link.get("slug") or slugify(link["short"])) if link else None,
@@ -395,24 +434,88 @@ def _similar_years(region, daily, asof) -> dict | None:
 REPLAY_DAYS = 30
 
 
-def _replay(region, daily, normals, asof) -> dict:
-    """Daily salinity at the map's stations and flow percentile for each river, for the map's replay slider."""
-    days = pd.date_range(asof - pd.Timedelta(days=REPLAY_DAYS - 1), asof)
-    recent = daily[(daily.date >= days[0]) & (daily.date <= asof)]
-    out = {"days": [d.strftime("%Y-%m-%d") for d in days], "salinity": {}, "flow_pct": {}}
+def _normal_table(normals, site_id, var) -> np.ndarray | None:
+    """Normals for one site as a (366, 5) array indexed by day of year, NaN where missing."""
+    if normals.empty:
+        return None
+    n = normals[(normals.site == site_id) & (normals["var"] == var)]
+    if n.empty:
+        return None
+    arr = np.full((366, len(nm.PCTS)), np.nan)
+    arr[n.doy.values] = n[[f"p{p}" for p in nm.PCTS]].values
+    return arr
+
+
+def _pct(v: float, row: np.ndarray) -> int | None:
+    """nm.percentile_of on a normals array row."""
+    if np.isnan(v) or np.isnan(row).any():
+        return None
+    if v <= row[0]:
+        return 5 if v < row[0] else 10
+    if v >= row[-1]:
+        return 95 if v > row[-1] else 90
+    return round(float(np.interp(v, row, nm.PCTS)))
+
+
+def _replay_days(region, daily, normals, days: pd.DatetimeIndex) -> dict:
+    """For each day: measured salinity at every Sound and river-mouth station (retired ones too, while they ran; never
+    an estimate), each river's flow percentile against its normals, and the day's mean wind over the Sound."""
+    span = daily[(daily.date >= days[0]) & (daily.date <= days[-1])]
+    out = {"salinity": {}, "flow_pct": {}, "wind": None}
     for site in region.sites:
-        if site.get("retired"):
-            continue
         if site["kind"] in ("sound", "estuary") and "salinity" in site["vars"]:
-            s = recent[(recent.site == site["id"]) & (recent["var"] == "salinity")].drop_duplicates("date").set_index("date").value
-            out["salinity"][site["id"]] = [None if d not in s.index or is_suspect("salinity", s[d]) else _r(s[d], 1) for d in days]
-        elif site["kind"] == "river" and not normals.empty:
-            s = recent[(recent.site == site["id"]) & (recent["var"] == "flow")].drop_duplicates("date").set_index("date").value
-            n = normals[(normals.site == site["id"]) & (normals["var"] == "flow")].set_index("doy")
-            out["flow_pct"][site["id"]] = [
-                round(nm.percentile_of(s[d], n.loc[min(d.dayofyear, 365)])) if d in s.index and min(d.dayofyear, 365) in n.index else None
-                for d in days]
+            s = span[(span.site == site["id"]) & (span["var"] == "salinity")].drop_duplicates("date").set_index("date").value
+            vals = [None if d not in s.index or is_suspect("salinity", s[d]) else _r(s[d], 1) for d in days]
+            if any(v is not None for v in vals):
+                out["salinity"][site["id"]] = vals
+        elif site["kind"] == "river" and not site.get("retired"):
+            arr = _normal_table(normals, site["id"], "flow")
+            if arr is None:
+                continue
+            s = span[(span.site == site["id"]) & (span["var"] == "flow")].drop_duplicates("date").set_index("date").value
+            vals = [_pct(s[d], arr[min(d.dayofyear, 365)]) if d in s.index else None for d in days]
+            if any(v is not None for v in vals):
+                out["flow_pct"][site["id"]] = vals
+    wind = next((x for x in region.sites if x["kind"] == "wind"), None)
+    if wind:
+        w = span[span.site == wind["id"]].pivot_table(index="date", columns="var", values="value")
+        if {"wind_u", "wind_v"} <= set(w.columns) and len(w):
+            col = lambda c: [_r(w[c].get(d), 1) if c in w and d in w.index and pd.notna(w[c].get(d)) else None for d in days]
+            out["wind"] = {"u": col("wind_u"), "v": col("wind_v"), "max": col("wind_max")}
     return out
+
+
+def _replay(region, daily, normals, asof) -> dict:
+    """The last 30 days, for the map's replay slider (in latest.json, so the default replay needs no extra fetch)."""
+    days = pd.date_range(asof - pd.Timedelta(days=REPLAY_DAYS - 1), asof)
+    return {"days": [d.strftime("%Y-%m-%d") for d in days], **_replay_days(region, daily, normals, days)}
+
+
+def _replay_years(region, daily, normals, asof, out) -> dict | None:
+    """replay/<year>.json for every year with salinity on record (decision 0033), fetched only when someone picks
+    that year, plus the index latest.json carries: the years, every station's position (retired ones too) and the
+    notable days the picker offers as shortcuts."""
+    ids = [s["id"] for s in region.sites if s["kind"] in ("sound", "estuary") and "salinity" in s["vars"]]
+    sal = daily[daily.site.isin(ids) & (daily["var"] == "salinity") & (daily.date <= asof)]
+    if sal.empty:
+        return None
+    (out / "replay").mkdir(exist_ok=True)
+    years = list(range(int(sal.date.dt.year.min()), asof.year + 1))
+    for y in years:
+        days = pd.date_range(f"{y}-01-01", min(pd.Timestamp(f"{y}-12-31"), asof))
+        body = {"year": y, "start": days[0].strftime("%Y-%m-%d"), "n": len(days), **_replay_days(region, daily, normals, days)}
+        (out / "replay" / f"{y}.json").write_text(json.dumps(body, separators=(",", ":")))
+    notable = _notable(region)
+    from .models import spillway
+    shortcuts = [{"date": n["day"], "label": n["tag"].split(", ")[-1] if n["tag"] else str(y)}
+                 for y, n in notable.items() if n["day"]]
+    shortcuts += [{"date": o["opened"], "label": "Spillway opens"} for o in spillway.openings(region)]
+    shortcuts = sorted((x for x in shortcuts if str(years[0]) <= x["date"][:4] and x["date"] <= asof.strftime("%Y-%m-%d")),
+                       key=lambda x: x["date"])
+    return {"years": years,
+            "sites": [{k: s.get(k) for k in ("id", "short", "lat", "lon")} | {"retired": bool(s.get("retired"))}
+                      for s in region.sites if s["id"] in ids and s.get("lat") is not None],
+            "shortcuts": shortcuts}
 
 
 def _headline(region, findings, persona, asof, cards, beaches=None, oyster_watch=None, fishing=None, shrimp=None):
@@ -477,6 +580,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     expected, qcs = _virtual(region, daily, asof)
     suspect = {(sid, "salinity") for sid, q in qcs.items() if q["suspect"]}
     findings = evaluate(region, daily, normals, asof, suspect=suspect)
+    dots = {k: v for k, v in _year_dots(region, daily, asof).items() if k not in suspect}
     generated_at = generated_at or pd.Timestamp.now(tz="UTC")
     recent = store.read_recent(region)
     cards = []
@@ -492,6 +596,8 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                          if f.get("site") == site["id"] or site["id"] in f.get("sites", [])],
         })
         for v, out in cards[-1]["vars"].items():
+            if (site["id"], v) in dots and not out.get("stale") and not out.get("suspect"):
+                out["years"] = dots[(site["id"], v)]
             if VARIABLES[v].get("now") and (n := _now(region, recent, site, v, generated_at)):
                 out["now"] = n
     fc = {}
@@ -525,6 +631,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "satellite": satellite_layers,
         "reference": _reference(region, daily, asof),
         "replay": _replay(region, daily, normals, asof),
+        "replay_index": _replay_years(region, daily, normals, asof, out),
         "history": _history(region, daily, asof, qcs, out),
         "similar_years": _similar_years(region, daily, asof),
         "generated_at": generated_at.isoformat(),

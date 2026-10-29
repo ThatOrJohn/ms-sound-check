@@ -42,5 +42,8 @@ years count, and how far a comparison may go.
 ## Consequences
 - Station pages get a long-term picture, and a #year-YYYY link picks that year on the salinity chart.
 - `data/notable_years.csv` is hand-kept, like the spillway list. Its notes say what happened, never what it means now.
+- Update 2026-10-28: years under 80% now sit in their own "partial years" group below the counted ones instead of
+  being faded in place, notable years carry a short tag in the right margin (from `notable_years.csv`'s `tag`
+  column, plus every spillway year), and a full-height line marks today's date ([0033](0033-salinity-sketch-and-the-long-replay.md)).
 - Revisit "years like this one" as a forecast only if a backtest shows what followed in matching years beats
   persistence. Revisit water temperature records once the trend question has an answer.

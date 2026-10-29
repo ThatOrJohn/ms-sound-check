@@ -1,0 +1,87 @@
+---
+// One instrument table in place of the old card grids for stations, rivers, rain and weather (decision 0035): a row per
+// reading with the place, the value, where it sits against normal (year dots where a record indicator ranks it, the
+// percentile meter otherwise), the last 30 days and a link. Grouped by kind in the persona's card_order.
+import type { Card, Latest, Reading, Section } from "../lib/types";
+import { GROUPS, bandWords, fmtDate, nowRowText, typical } from "../lib/format";
+import Meter from "./Meter";
+import Sparkline from "./Sparkline";
+import YearDots from "./YearDots";
+
+interface Props { data: Latest; kinds: Section[]; siteHref: (slug: string) => string }
+const { data, kinds, siteHref } = Astro.props;
+
+type Row = { card: Card; vn: string; r: Reading; first: boolean; span: number };
+const groups = kinds.map((kind) => {
+  // A retired sensor with no published estimate has nothing to show; its page stays linked from the list under the map.
+  const cards = data.cards.filter((c) => c.kind === kind && !(c.retired && !Object.values(c.vars).some((r) => r.estimate)));
+  const rows: Row[] = cards.flatMap((card) => {
+    const vars = Object.entries(card.vars);
+    return vars.map(([vn, r], i) => ({ card, vn, r, first: i === 0, span: vars.length }));
+  });
+  return { kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), rows };
+}).filter((g) => g.rows.length);
+
+/** The value shown, and the line under it: band words, an estimate, or why there's nothing. */
+function cell(vn: string, r: Reading, retired?: boolean): { value: string; note: string; tone?: "warn" | "quiet"; est?: boolean } {
+  const since = r?.date ? fmtDate(r.date, { month: "short", year: "numeric" }) : null;
+  if (r && (retired || r.stale) && r.estimate) {
+    return { value: `~${r.estimate.display}`, est: true, tone: "quiet",
+      note: `Estimated from nearby stations and river flow${since ? `; sensor offline since ${since}` : ""}.` };
+  }
+  if (retired) return { value: "—", tone: "quiet", note: `Sensor offline${since ? ` since ${since}` : ""}.` };
+  if (!r || r.status === "no_data" || !r.display) return { value: "—", tone: "quiet", note: "No readings yet." };
+  const value = r.display.replace(" past 7 days", "");
+  if (r.suspect) return { value, tone: "warn", note: r.suspect_reason === "neighbors"
+    ? "Doesn't match nearby stations. Possibly a sensor problem."
+    : "Higher than this water normally gets. Possibly a sensor problem." };
+  if (r.stale && r.date) return { value, tone: "quiet", note: `Quiet since ${fmtDate(r.date, { month: "short", day: "numeric", year: "numeric" })}.` };
+  const t = typical(vn, r);
+  const words = bandWords(vn, r.band);
+  return { value, note: words ? `${words}${t ? ` (typical ${t})` : ""}` : "" };
+}
+const what = (vn: string, r: Reading) => vn === "rain" ? "Rain, past 7 days" : r?.now ? `${data.variables[vn]?.label ?? vn}, daily avg` : data.variables[vn]?.label ?? vn;
+---
+<section class="group instruments" aria-labelledby="g-instruments">
+  <div class="group-head">
+    <h2 id="g-instruments">Readings</h2>
+    <p>{"Every station, river, rain area and weather station, against what's normal for this time of year. Where a reading is near the top or bottom of the record, each dot is one year."}</p>
+  </div>
+  <div class="instr-wrap">
+    <table class="instr">
+      <caption class="visually-hidden">Latest readings by place, compared with normal for the date</caption>
+      <thead>
+        <tr><th scope="col">Place</th><th scope="col">Reading</th><th scope="col">Against normal</th><th scope="col" class="instr-spark">Last 30 days</th></tr>
+      </thead>
+      {groups.map((g) => (
+        <tbody id={`g-${g.kind}`}>
+          <tr class="instr-group"><th scope="colgroup" colspan="4"><span>{g.title}</span>{g.blurb && <span class="instr-blurb">{` · ${g.blurb}`}</span>}</th></tr>
+          {g.rows.map(({ card, vn, r, first, span }) => {
+            const c = cell(vn, r, card.retired);
+            const live = !c.tone && !r?.stale && !r?.suspect;
+            const fc = vn === "rain" ? data.rain_forecast[card.id]?.total : undefined;
+            return (
+              <tr data-first={first ? "" : undefined}>
+                {first && <th scope="row" rowspan={span} class="instr-place"><a href={siteHref(card.slug)}>{card.short}</a></th>}
+                <td class="instr-val">
+                  <span class="instr-what">{what(vn, r)}</span>
+                  <span class="instr-num" data-est={c.est ? "" : undefined}>{c.value}</span>
+                </td>
+                <td class="instr-cmp" data-bare={live && (r.years || r.band) ? undefined : ""}>
+                  {live && r.years ? <YearDots dots={r.years} varName={vn} unit={r.unit} small />
+                    : live && r.band ? <Meter percentile={r.percentile} /> : null}
+                  <span class="instr-words">
+                    {c.note && <span class="instr-note" data-tone={c.tone} data-band={live ? r.band : undefined}>{c.note + (fc ? `. Next 7 days: ${fc} forecast` : "")}</span>}
+                    {live && r.now && <span class="instr-note" data-live={JSON.stringify({ kind: "row", unit: r.unit, ...r.now })} data-live-text>{nowRowText(r.now, r.unit ?? "")}</span>}
+                  </span>
+                </td>
+                <td class="instr-spark">{r?.spark && !card.retired && <Sparkline points={r.spark} label={`${card.short} ${what(vn, r).toLowerCase()}`} />}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      ))}
+    </table>
+  </div>
+  <slot />
+</section>

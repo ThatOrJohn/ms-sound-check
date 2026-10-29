@@ -2,6 +2,7 @@ import type { Reading } from "../lib/types";
 import { bandWords, fmtDate, nowRowText, typical } from "../lib/format";
 import Sparkline from "./Sparkline";
 import Meter from "./Meter";
+import YearDots from "./YearDots";
 
 interface Props {
   varName: string;
@@ -9,11 +10,13 @@ interface Props {
   r: Reading;
   forecast?: string;   // rain cards: next-7-day total
   retired?: boolean;   // sensor permanently offline
+  /** Station pages: today against every year, where a record indicator ranks this reading (decision 0032). */
+  years?: boolean;
 }
 
 const fmtRange = (lo: number, hi: number, unit = "ppt") => `${Math.round(lo)}–${Math.round(hi)} ${unit}`;
 
-export default function ReadingRow({ varName, label, r, forecast, retired }: Props) {
+export default function ReadingRow({ varName, label, r, forecast, retired, years }: Props) {
   const offlineSince = r?.date ? fmtDate(r.date, { month: "short", year: "numeric" }) : null;
   // No live reading: show a published estimate, or say plainly that there's nothing to show.
   if (r && (retired || r.stale) && r.estimate) {
@@ -71,6 +74,7 @@ export default function ReadingRow({ varName, label, r, forecast, retired }: Pro
           <span>{bandWords(varName, r.band)}{t && ` (typical ${t})`}</span>
         </span>
       ) : null}
+      {years && r.years && !r.suspect && !r.stale && <YearDots dots={r.years} varName={varName} unit={r.unit} />}
       {!r.suspect && !r.stale && r.vs_neighbors && r.expected && (
         <span className="extra">
           Reads {r.vs_neighbors === "high" ? "saltier" : "fresher"} than nearby stations suggest (about {r.expected.display}).

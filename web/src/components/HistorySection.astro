@@ -18,11 +18,12 @@ const stations = h.home.map((s) => ({ ...s, hist: loadHistory(s.slug) })).filter
       <h2 id="g-history">{`${+data.asof.slice(0, 4) - h.since} years of the Sound`}</h2>
       <p>{h.takeaway ?? `Daily salinity since ${h.since}, one row per year.`}</p>
     </div>
-    <div class="history-pair">
+    <div class="history-stack">
       {stations.map((s) => (
         <div class="history-card">
           <h3><a href={href(`station/${s.slug}/#history`)}>{s.short}</a></h3>
-          <HistoryPanel hist={s.hist!} url={href(`data/${data.region.id}/history/${s.slug}.json`)} compact legend={false} />
+          <HistoryPanel hist={s.hist!} url={href(`data/${data.region.id}/history/${s.slug}.json`)} legend={false}
+            stationHref={href(`station/${s.slug}/`)} mapHref="" />
         </div>
       ))}
     </div>

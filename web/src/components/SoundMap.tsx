@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Map as MLMap, MapLayerMouseEvent, Popup, StyleSpecification } from "maplibre-gl";
+import type { CanvasSource, Map as MLMap, MapLayerMouseEvent, Popup, StyleSpecification } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
-import type { ReferenceSite, Replay, SatelliteLayer } from "../lib/types";
+
+import type { ReferenceSite, Replay, ReplayIndex, ReplayWind, ReplayYear, SatelliteLayer } from "../lib/types";
 import { beachDetail } from "../lib/format";
-import { salinityRGB } from "../lib/salinity";
+import { hexRGB, salinityRGB } from "../lib/salinity";
+import { Sketch } from "../lib/sketch";
+import { Motion, windWords, type Wind } from "../lib/motion";
 
 export interface MapStation {
   id: string; short: string; kind: string; lon: number; lat: number; href: string;
@@ -23,22 +26,27 @@ interface Props {
   satellite?: Record<string, SatelliteLayer>; dataBase?: string;
   /** The last 30 days, for the replay slider. */
   replay?: Replay;
+  /** Years with a replay file (fetched from `${dataBase}replay/<year>.json` when picked) and days to jump to. */
+  replayIndex?: ReplayIndex | null;
+  /** Every salinity station the replay can draw, retired ones included (they're shown on days they had readings). */
+  replaySites?: MapStation[];
   /** Reference sites past the map's east edge (Dauphin Island): a chip at that edge, never a station dot. */
   reference?: ReferenceSite[];
 }
 const NO_RIVERS: string[] = [];
 
-type LayerKey = "depth" | "contours" | "salinity" | "rivers" | "beaches" | "clarity" | "sst";
+type LayerKey = "depth" | "contours" | "salinity" | "rivers" | "wind" | "beaches" | "clarity" | "sst";
 const LAYERS: { key: LayerKey; label: string; note?: string }[] = [
   { key: "beaches", label: "Beach status" },
   { key: "depth", label: "Depth shading" },
   { key: "contours", label: "Depth contours (ft)" },
   { key: "rivers", label: "River flow" },
+  { key: "wind", label: "Wind", note: "Wind over the middle of the Sound, shown across the map. Not a water current." },
   { key: "salinity", label: "Salinity sketch", note: "Estimated between a handful of stations. A sketch, not a measurement." },
   { key: "clarity", label: "Water clarity (satellite)" },
   { key: "sst", label: "Surface temp (satellite)" },
 ];
-const DEFAULTS: Record<LayerKey, boolean> = { depth: true, contours: true, rivers: true, salinity: false, beaches: false, clarity: false, sst: false };
+const DEFAULTS: Record<LayerKey, boolean> = { depth: true, contours: true, rivers: true, wind: false, salinity: false, beaches: false, clarity: false, sst: false };
 /** Layers that fill the water: only one at a time, since each hides the others. */
 const FILLS: LayerKey[] = ["salinity", "clarity", "sst"];
 const SAT_KEYS = ["clarity", "sst"] as const;
@@ -56,11 +64,11 @@ function tokens() {
   return {
     dark, land: v("--land"), water: v("--water"), sky: v("--sky"), paper: v("--paper"), ink: v("--ink"),
     soft: v("--ink-soft"), rule: v("--rule"), fresh: v("--fresh"), brackish: v("--brackish"), gulf: v("--gulf"),
-    red: v("--marker-red"), cool: v("--sst-cool"), mild: v("--sst-mild"), warm: v("--sst-warm"),
+    red: v("--marker-red"), cool: v("--sst-cool"), mild: v("--sst-mild"), warm: v("--sst-warm"), wind: v("--wind"),
   };
 }
 type Tokens = ReturnType<typeof tokens>;
-const rgb = (hex: string) => { const n = parseInt(hex.replace("#", ""), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+const rgb = hexRGB;
 const css = (c: number[]) => `rgb(${c.join(",")})`;
 const mix = (x: number[], y: number[], k: number) => x.map((xi, i) => Math.round(xi + (y[i] - xi) * k));
 /** Gray level 1-255 from a satellite PNG -> color. Clarity runs clear (Gulf water) to murky (river water). */
@@ -71,7 +79,25 @@ function satRGB(key: "clarity" | "sst", k: number, t: Tokens): number[] {
 const BAND = (pct: number | null | undefined) =>
   pct == null ? undefined : pct <= 10 ? "low" : pct >= 90 ? "high" : pct < 25 ? "below" : pct > 75 ? "above" : "normal";
 const riverWidth = (pct: number | null | undefined) => 1.5 + ((pct ?? 50) / 100) * 5;
-const fmtDay = (d: string) => new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const fmtDay = (d: string, year = false) => new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", ...(year ? { year: "numeric" } : {}) });
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAY_HASH = /^#(\d{4})-(\d{2})-(\d{2})$/;
+
+/** What the replay is showing: the last 30 days (from latest.json), or one calendar year (fetched on demand). */
+interface ReplaySet { year: number | null; days: string[]; salinity: Replay["salinity"]; flow_pct: Replay["flow_pct"]; wind: ReplayWind | null }
+function yearSet(f: ReplayYear): ReplaySet {
+  const t0 = Date.parse(f.start + "T00:00:00Z");
+  const days = Array.from({ length: f.n }, (_, i) => new Date(t0 + i * 86400_000).toISOString().slice(0, 10));
+  return { year: f.year, days, salinity: f.salinity, flow_pct: f.flow_pct, wind: f.wind };
+}
+const windAt = (w: ReplayWind | null | undefined, i: number): Wind | null =>
+  w && w.u[i] != null && w.v[i] != null ? { u: w.u[i]!, v: w.v[i]! } : null;
+/** The day's wind; for today, the newest of the last few days (the wind feed runs about a day behind). */
+function windOf(set: ReplaySet | null, i: number, today: boolean): { w: Wind; day: string } | null {
+  if (!set) return null;
+  for (let k = i; k >= (today ? Math.max(0, i - 2) : i); k--) { const w = windAt(set.wind, k); if (w) return { w, day: set.days[k] }; }
+  return null;
+}
 
 // ---------- style: OpenFreeMap vector tiles, drawn in our palette
 function baseStyle(t: Tokens): StyleSpecification {
@@ -100,50 +126,6 @@ function baseStyle(t: Tokens): StyleSpecification {
         paint: { "text-color": t.soft, "text-halo-color": t.water, "text-halo-width": 1 } },
     ],
   };
-}
-
-// ---------- salinity sketch: inverse-distance weighting, clipped to water, fading away from stations
-async function salinityImage(meta: Meta, maskUrl: string, stations: MapStation[], t: Tokens): Promise<string | null> {
-  const pts = stations.filter((s) => s.status === "live" && s.salinity !== null);
-  if (pts.length < 2) return null;
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.src = maskUrl;
-  await img.decode();
-  const [w, h] = [img.width, img.height];
-  const cv = document.createElement("canvas");
-  cv.width = w; cv.height = h;
-  const ctx = cv.getContext("2d")!;
-  ctx.drawImage(img, 0, 0);
-  const mask = ctx.getImageData(0, 0, w, h);
-  const out = ctx.createImageData(w, h);
-  const [W, S, E, N] = meta.bounds;
-  const kmLon = 111.32 * Math.cos((30.4 * Math.PI) / 180), kmLat = 110.57;
-  const px = pts.map((p) => (p.lon - W) * kmLon), py = pts.map((p) => (N - p.lat) * kmLat), pv = pts.map((p) => p.salinity as number);
-  const cellX = ((E - W) * kmLon) / w, cellY = ((N - S) * kmLat) / h;
-  const colors = new Map<number, number[]>();
-  for (let y = 0; y < h; y++) {
-    const yk = (y + 0.5) * cellY;
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      if (mask.data[i] < 128) continue;              // land
-      const xk = (x + 0.5) * cellX;
-      let num = 0, den = 0, dmin = Infinity;
-      for (let k = 0; k < px.length; k++) {
-        const d = Math.hypot(xk - px[k], yk - py[k]) + 0.5;
-        const wt = 1 / (d * d);
-        num += wt * pv[k]; den += wt; if (d < dmin) dmin = d;
-      }
-      const key = Math.round((num / den) * 10);      // cache colors at 0.1 ppt steps
-      let c = colors.get(key);
-      if (!c) { c = salinityRGB(key / 10, t); colors.set(key, c); }
-      const fade = Math.max(0, 1 - dmin / 30);       // fades out ~30 km from the nearest station
-      out.data[i] = c[0]; out.data[i + 1] = c[1]; out.data[i + 2] = c[2];
-      out.data[i + 3] = Math.round(200 * fade);
-    }
-  }
-  ctx.putImageData(out, 0, 0);
-  return cv.toDataURL("image/png");
 }
 
 // ---------- satellite layer: data PNG -> theme colors, resampled onto the water mask so the coast stays crisp
@@ -217,16 +199,23 @@ function readLayers(personaId: string | undefined, defaultLayers?: string[]): Re
 }
 
 export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basemapBase, beachesUrl, personaId, defaultLayers,
-  beachLinks = false, satellite, dataBase, replay, reference }: Props) {
+  beachLinks = false, satellite, dataBase, replay, replayIndex, replaySites, reference }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<Popup | null>(null);
   const tRef = useRef<Tokens | null>(null);
   const layersRef = useRef<Record<LayerKey, boolean>>(personaDefaults(defaultLayers));
   const replayingRef = useRef(false);
-  const last = replay ? replay.days.length - 1 : 0;
-  const [frame, setFrame] = useState(last);       // index into replay.days; the last day is "now"
+  const sketchRef = useRef<Sketch | null>(null);
+  const motionRef = useRef<Motion | null>(null);
+  const recent: ReplaySet | null = replay ? { year: null, ...replay } : null;
+  const [set, setSet] = useState<ReplaySet | null>(recent);
+  const last = set ? set.days.length - 1 : 0;
+  const [frame, setFrame] = useState(last);       // index into set.days; the last day of the recent set is "now"
   const [playing, setPlaying] = useState(false);
+  const [loadingYear, setLoadingYear] = useState(false);
+  const [sketched, setSketched] = useState(true);   // false: too few stations that day to draw the fill
+  const [said, setSaid] = useState("");             // screen reader line for the day shown
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>(() => personaDefaults(defaultLayers));
   const [meta, setMeta] = useState<Meta | null | undefined>(undefined);   // undefined = loading, null = no basemap
   const [ready, setReady] = useState(false);
@@ -280,9 +269,13 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             layout: { "symbol-placement": "line", "text-field": ["concat", ["to-string", ["get", "depth_ft"]], " ft"],
               "text-font": ["Noto Sans Regular"], "text-size": 10, "symbol-spacing": 320 },
             paint: { "text-color": t.soft, "text-halo-color": t.water, "text-halo-width": 1 } });
-          const sal = await salinityImage(m, `${basemapBase}watermask.png`, stations, t);
-          if (sal) {
-            map.addSource("salinity", { type: "image", url: sal, coordinates: corners });
+          // Every station the sketch may ever use, so each cell's distances are worked out once (decision 0033).
+          if (!sketchRef.current) {
+            const pts = [...stations, ...(replaySites ?? [])].filter((p, i, a) => a.findIndex((q) => q.id === p.id) === i);
+            sketchRef.current = await Sketch.create(`${basemapBase}watermask.png`, m.bounds, pts).catch(() => null);
+          }
+          if (sketchRef.current) {
+            map.addSource("salinity", { type: "canvas", canvas: sketchRef.current.canvas, coordinates: corners, animate: false });
             map.addLayer({ id: "salinity", type: "raster", source: "salinity", paint: { "raster-opacity": 0.85, "raster-fade-duration": 0 } }, "waterway");
           }
           for (const key of SAT_KEYS) {
@@ -307,6 +300,11 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
           filter: ["all", ["!", ["has", "label"]], ["in", ["get", "name"], ["literal", rivers.flatMap((r) => r.osmNames)]]],
           layout: { "line-cap": "round", "line-join": "round" },
           paint: { "line-color": t.fresh, "line-opacity": 0.9, "line-width": match as any } }, "places");
+        // Flow as motion (decision 0034): a light dash on each gauged river that marches at its flow percentile's pace.
+        rivers.forEach((r, i) => map.addLayer({ id: `river-flow-${i}`, type: "line", source: "river-lines",
+          filter: ["all", ["!", ["has", "label"]], ["in", ["get", "name"], ["literal", r.osmNames]]],
+          layout: { "line-cap": "butt", "line-join": "round" },
+          paint: { "line-color": t.paper, "line-opacity": t.dark ? 0.4 : 0.6, "line-width": 1.3, "line-dasharray": [0, 4, 3] } }, "places"));
         // Name every river we track, gauged or not, at its `label` point near the coast.
         map.addLayer({ id: "river-names", type: "symbol", source: "river-lines",
           // One name per river (not each West/East branch).
@@ -351,8 +349,14 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
           map.addLayer({ id: "beach-hit", type: "line", source: "beaches", layout: { "line-cap": "round" },
             paint: { "line-color": t.ink, "line-opacity": 0, "line-width": 22 } }, "station-ring");
         }
+        if (m && sketchRef.current) {
+          motionRef.current?.destroy();
+          motionRef.current = new Motion(map, el.current!, sketchRef.current.isWater, m.bounds);
+          motionRef.current.color = t.wind;
+        }
         applyLayers(map, layersRef.current);
         setReady(true);
+        setRedraw((n) => n + 1);   // repaint the day shown in the new style
       };
 
       map.on("load", addOverlays);
@@ -392,19 +396,26 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
       const mq = matchMedia("(prefers-color-scheme: dark)");
       mq.addEventListener("change", restyle);
       window.addEventListener("sc-theme-change", restyle);
-      cleanup = () => { mq.removeEventListener("change", restyle); window.removeEventListener("sc-theme-change", restyle); map.remove(); };
+      cleanup = () => {
+        mq.removeEventListener("change", restyle); window.removeEventListener("sc-theme-change", restyle);
+        motionRef.current?.destroy(); motionRef.current = null; map.remove();
+      };
     })().catch(() => setFailed(true));
     return () => { cancelled = true; cleanup(); };
-  }, [stations, rivers, ungauged, basemapBase, beachesUrl, beachLinks, personaId, defaultLayers, satellite, dataBase]);
+  }, [stations, rivers, ungauged, basemapBase, beachesUrl, beachLinks, personaId, defaultLayers, satellite, dataBase, replaySites]);
+  const [redraw, setRedraw] = useState(0);
 
-  /** While replaying a past day, today's-only layers (fills, alert rings) are hidden so nothing mixes two dates. */
+  /** While replaying a past day, today's-only layers (satellite fills, beaches, alert rings) are hidden so nothing mixes
+   *  two dates. The salinity sketch and the wind are redrawn for the day shown, so they stay. */
   function applyLayers(map: MLMap, l: Record<LayerKey, boolean>) {
     const past = replayingRef.current;
     const vis = (on: boolean) => (on ? "visible" : "none");
     const set = (id: string, on: boolean) => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis(on)); };
     set("depth", l.depth); set("contours", l.contours); set("contour-labels", l.contours);
-    set("salinity", l.salinity && !past); set("clarity", l.clarity && !past); set("sst", l.sst && !past);
-    set("rivers", l.rivers); set("rivers-ungauged", l.rivers); set("beaches", l.beaches && !past);
+    set("salinity", l.salinity); set("clarity", l.clarity && !past); set("sst", l.sst && !past);
+    set("rivers", l.rivers); set("rivers-ungauged", l.rivers);
+    rivers.forEach((_, i) => set(`river-flow-${i}`, l.rivers));
+    motionRef.current?.setShown({ wind: l.wind, rivers: l.rivers }); set("beaches", l.beaches && !past);
     set("beach-labels", l.beaches && !past); set("beach-hit", l.beaches && !past); set("station-ring", !past);
     if (!l.beaches || past) popupRef.current?.remove();
   }
@@ -417,35 +428,67 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     if (mapRef.current) applyLayers(mapRef.current, next);
   }
 
-  // ---------- replay: redraw stations and rivers for one day of the last 30
+  // ---------- replay: redraw stations, the salinity sketch, rivers and wind for the day shown
+  const today = !set || (set.year === null && frame === last);
   useEffect(() => {
     const map = mapRef.current, t = tRef.current;
-    if (!map || !t || !ready || !replay || !map.getSource("stations")) return;
-    const past = frame < last;
+    if (!map || !t || !ready || !map.getSource("stations")) return;
+    const past = !today && !!set;
     replayingRef.current = past;
     const src = map.getSource("stations") as any;
+    let values: Record<string, number | null>;
+    let pct: (r: MapRiver) => number | null | undefined;
     if (!past) {
       src.setData(stationData(stations, t));
-      map.setPaintProperty("rivers", "line-width", riverWidths(rivers, (r) => r.percentile) as any);
+      values = Object.fromEntries(stations.filter((s) => s.status === "live").map((s) => [s.id, s.salinity]));
+      pct = (r) => r.percentile;
     } else {
-      const day = stations.map((s) => {
-        const v = replay.salinity[s.id]?.[frame] ?? null;
-        return { ...s, salinity: v, status: v === null ? "quiet" : "live", display: v === null ? "no reading" : `${v.toFixed(1)} ppt`, alert: false } as MapStation;
+      // Measured values only, including stations retired since (shown on the days they reported).
+      const sites = replaySites?.length ? replaySites : stations;
+      const day = sites.flatMap((s) => {
+        const v = set!.salinity[s.id]?.[frame] ?? null;
+        if (v === null && s.status === "quiet" && s.display === "offline") return [];
+        return [{ ...s, salinity: v, status: v === null ? "quiet" : "live", display: v === null ? "no reading" : `${v.toFixed(1)} ppt`, alert: false } as MapStation];
       });
       src.setData(stationData(day, t));
-      map.setPaintProperty("rivers", "line-width", riverWidths(rivers, (r) => replay.flow_pct[r.id]?.[frame]) as any);
+      values = Object.fromEntries(Object.entries(set!.salinity).map(([id, vs]) => [id, vs[frame]]));
+      pct = (r) => set!.flow_pct[r.id]?.[frame];
     }
+    map.setPaintProperty("rivers", "line-width", riverWidths(rivers, pct) as any);
+    const sk = sketchRef.current, cs = map.getSource("salinity") as CanvasSource | undefined;
+    if (sk && cs) {
+      setSketched(sk.draw(values, t));
+      cs.play();                                   // re-read the canvas for one frame, then stop
+      map.once("render", () => cs.pause());
+      map.triggerRepaint();
+    }
+    const w = windOf(set, past ? frame : last, !past)?.w ?? null;
+    motionRef.current?.setWind(w);
+    motionRef.current?.setRivers(rivers.map((r, i) => ({ layer: `river-flow-${i}`, pct: pct(r) ?? null })));
     applyLayers(map, layersRef.current);
-  }, [frame, ready]);
+    if (!playing) setSaid(daySentence(values, pct, w));
+  }, [frame, ready, set, redraw]);
+
+  /** "May 10, 2019: West Sound 0.6 ppt, ...; Pearl River very high, ...; wind from the south at about 9 mph." */
+  function daySentence(values: Record<string, number | null>, pct: (r: MapRiver) => number | null | undefined, w: Wind | null): string {
+    if (!set) return "";
+    const when = today ? "Today" : fmtDay(set.days[frame], true);
+    const names = new Map([...(replaySites ?? []), ...stations].map((s) => [s.id, s.short]));
+    const sal = Object.entries(values).filter(([, v]) => v !== null && v !== undefined)
+      .map(([id, v]) => `${names.get(id) ?? id} ${v!.toFixed(1)} ppt`);
+    const flows = rivers.map((r) => { const b = BAND(pct(r)); return b ? `${r.name} ${FLOW_WORDS[b]}` : null; }).filter(Boolean);
+    return `${when}: ${sal.length ? sal.join(", ") : "no salinity readings"}${flows.length ? `; ${flows.join(", ")}` : ""}` +
+      `${w ? `; wind ${windWords(w)}` : ""}.`;
+  }
 
   useEffect(() => {
     if (!playing) return;
     const id = window.setInterval(() => setFrame((f) => {
       if (f >= last) { setPlaying(false); return last; }
       return f + 1;
-    }), 380);
+    }), set?.year === null ? 380 : 110);
     return () => window.clearInterval(id);
-  }, [playing, last]);
+  }, [playing, last, set]);
 
   function play() {
     if (playing) { setPlaying(false); return; }
@@ -453,14 +496,52 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     setPlaying(true);
   }
 
+  // ---------- the long replay (decision 0033): any day since the record starts, by year, month, notable day or #YYYY-MM-DD
+  async function goTo(year: number | null, day?: string) {
+    setPlaying(false);
+    if (year === null || !replayIndex || !dataBase) {
+      if (recent) { setSet(recent); setFrame(recent.days.length - 1); }
+      if (DAY_HASH.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
+      return;
+    }
+    let next = set?.year === year ? set : null;
+    if (!next) {
+      setLoadingYear(true);
+      const f: ReplayYear | null = await fetch(`${dataBase}replay/${year}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      setLoadingYear(false);
+      if (!f) return;
+      next = yearSet(f);
+    }
+    const i = day ? next.days.indexOf(day) : 0;
+    setSet(next);
+    setFrame(i < 0 ? (day && day > next.days.at(-1)! ? next.days.length - 1 : 0) : i);
+  }
+  useEffect(() => {
+    const fromHash = (scroll: boolean) => {
+      const m = location.hash.match(DAY_HASH);
+      if (!m || !replayIndex?.years.includes(+m[1])) return;
+      goTo(+m[1], `${m[1]}-${m[2]}-${m[3]}`);
+      if (scroll) el.current?.scrollIntoView({ block: "center" });
+    };
+    if (ready) fromHash(true);
+    const onHash = () => fromHash(true);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [ready, replayIndex]);
+  // Keep the address on the day shown, so it can be shared; not while playing.
+  useEffect(() => {
+    if (!set || set.year === null || playing) return;
+    history.replaceState(null, "", `${location.pathname}${location.search}#${set.days[frame]}`);
+  }, [set, frame, playing]);
+
   const noBasemap = meta === null;
-  const past = !!replay && frame < last;
+  const past = !today;
   const fill = SAT_KEYS.find((k) => layers[k] && satellite?.[k]);
   const sat = fill ? satellite![fill] : null;
   const span = sat ? (sat.from === sat.to ? fmtDay(sat.to) : `${fmtDay(sat.from)}–${fmtDay(sat.to)}`) : "";
   const refs = past ? [] : (reference ?? []).filter((r) => r.salinity !== null && r.east);
   const riverRows = rivers.map((r) => {
-    const pct = past ? replay!.flow_pct[r.id]?.[frame] : r.percentile;
+    const pct = past ? set!.flow_pct[r.id]?.[frame] : r.percentile;
     const band = past ? BAND(pct) : r.band;
     return (
       <div key={r.name}><span className="bar" style={{ height: 6 + ((pct ?? 50) / 100) * 10 }} />
@@ -505,8 +586,13 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             <p className="map-note">{`Satellite, ${span}: the newest clear view of each spot. Gaps are clouds.`}</p>
           </div>
         )}
-        {past && (layers.salinity || fill || layers.beaches) && <p className="map-note">Fills and beach status show today only, so they're hidden while replaying.</p>}
-        {layers.salinity && !noBasemap && <p className="map-note">Estimated between a handful of stations. A sketch, not a measurement.</p>}
+        {past && (fill || layers.beaches) && <p className="map-note">Satellite fills and beach status show today only, so they're hidden while replaying.</p>}
+        {layers.salinity && !noBasemap && <p className="map-note">{sketched
+          ? `Estimated between a handful of stations${past ? ", from their measured readings that day" : ""}. A sketch, not a measurement.`
+          : "Fewer than two stations reported on this day, so there's no sketch."}</p>}
+        {layers.wind && !noBasemap && (() => { const w = windOf(set, frame, today);
+          return <p className="map-note">{`Wind over the middle of the Sound, shown across the map. Not a water current. ${
+            w ? `${fmtDay(w.day, set!.year !== null)}: ${windWords(w.w)}, daily average.` : "No wind reading for this day."}`}</p>; })()}
         {noBasemap && <p className="map-note">Depth layers need the one-time basemap prep.</p>}
       </details>
       {refs.map((r) => (
@@ -528,17 +614,49 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
         </p>
       ))}
     </div>
-    {replay && replay.days.length > 1 && (
+    {set && set.days.length > 1 && (
       <div className="replay">
-        <button type="button" className="replay-play" onClick={play} disabled={!ready} aria-pressed={playing}
-          aria-label={playing ? "Pause the replay" : "Play the last 30 days"}>
-          <span aria-hidden="true" data-icon={playing ? "pause" : "play"} />
-        </button>
-        <input type="range" min={0} max={last} step={1} value={frame} disabled={!ready}
-          aria-label="Day shown on the map" aria-valuetext={frame === last ? `Today, ${fmtDay(replay.days[frame])}` : fmtDay(replay.days[frame])}
-          onChange={(e) => { setPlaying(false); setFrame(Number(e.target.value)); }} />
-        <span className="replay-day" data-past={past ? "" : undefined}>{frame === last ? "Today" : fmtDay(replay.days[frame])}</span>
-        <span className="replay-note">{past ? "Station salinity and river flow that day." : "Replay the last 30 days of station salinity and river flow."}</span>
+        <div className="replay-row">
+          <button type="button" className="replay-play" onClick={play} disabled={!ready || loadingYear} aria-pressed={playing}
+            aria-label={playing ? "Pause the replay" : set.year === null ? "Play the last 30 days" : `Play ${set.year}`}>
+            <span aria-hidden="true" data-icon={playing ? "pause" : "play"} />
+          </button>
+          <input type="range" min={0} max={last} step={1} value={frame} disabled={!ready || loadingYear}
+            aria-label="Day shown on the map" aria-valuetext={today ? `Today, ${fmtDay(set.days[frame])}` : fmtDay(set.days[frame], set.year !== null)}
+            onChange={(e) => { setPlaying(false); setFrame(Number(e.target.value)); }} />
+          <span className="replay-day" data-past={past ? "" : undefined}>{today ? "Today" : fmtDay(set.days[frame], set.year !== null)}</span>
+        </div>
+        {replayIndex && replayIndex.years.length > 0 && (
+          <div className="replay-pick">
+            <label>{"Year "}
+              <select value={set.year ?? ""} disabled={!ready || loadingYear} onChange={(e) => goTo(e.target.value ? +e.target.value : null)}>
+                <option value="">Last 30 days</option>
+                {replayIndex.years.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </label>
+            {set.year !== null && (
+              <label>{"Month "}
+                <select value={+set.days[frame].slice(5, 7) - 1} disabled={!ready}
+                  onChange={(e) => { setPlaying(false); const i = set.days.findIndex((d) => +d.slice(5, 7) - 1 === +e.target.value); if (i >= 0) setFrame(i); }}>
+                  {MONTHS.map((m, i) => <option key={m} value={i} disabled={!set.days.some((d) => +d.slice(5, 7) - 1 === i)}>{m}</option>)}
+                </select>
+              </label>
+            )}
+            {replayIndex.shortcuts.length > 0 && (
+              <label>{"Jump to "}
+                <select value="" disabled={!ready || loadingYear}
+                  onChange={(e) => { const d = e.target.value; if (d) goTo(+d.slice(0, 4), d); }}>
+                  <option value="">A notable day…</option>
+                  {replayIndex.shortcuts.slice().reverse().map((x) => <option key={x.date + x.label} value={x.date}>{`${x.label}, ${fmtDay(x.date, true)}`}</option>)}
+                </select>
+              </label>
+            )}
+          </div>
+        )}
+        <span className="replay-note">{loadingYear ? "Loading that year…" : set.year !== null
+          ? `Measured station salinity, river flow and wind each day of ${set.year}. Link to a day with its address.`
+          : past ? "Station salinity, river flow and wind that day." : "Replay the last 30 days, or pick any year since the record starts."}</span>
+        <p className="visually-hidden" aria-live="polite">{playing ? "" : said}</p>
       </div>
     )}
     </>

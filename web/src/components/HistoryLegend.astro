@@ -5,6 +5,7 @@ const { pick } = Astro.props;
 <p class="chart-note stripes-key">
   <span class="scale" aria-hidden="true"><span>River 0</span><span class="scale-bar"></span><span>25+ Gulf</span></span>
   {"Each row is a year and each thin column a day, colored like the map: brown is fresh river water, green brackish, " +
-    "blue-green Gulf water. Gray means no reading, and the ring marks today. Faded rows have readings on fewer than 80% of " +
-    "their days and are left out of the counts." + (pick ? " Tap a row or pick a year to draw it on the salinity chart above." : "")}
+    "blue-green Gulf water. Light gray means no reading. The dark line marks today's date, and the ring today itself. Years " +
+    "with readings on fewer than 80% of their days sit below as partial years and are left out of the counts." +
+    (pick ? " Tap a row or pick a year to draw it on the salinity chart above." : " Tap a day for links to that year and that day on the map.")}
 </p>

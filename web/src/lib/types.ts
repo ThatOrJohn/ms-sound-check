@@ -37,6 +37,9 @@ export interface Finding {
   topics: string[];
   text: string;
   var?: string;
+  /** `record` findings: where today ranks ("third-lowest"), and on which side. */
+  rank?: number;
+  side?: "low" | "high";
 }
 
 export interface Normal { p10: number; p25: number; p50: number; p75: number; p90: number }
@@ -65,6 +68,14 @@ export interface Reading {
   estimate?: Estimate;
   /** Newest observation (only for variables whose daily value hides "right now", e.g. air temp). */
   now?: Now;
+  /** Every year's value for today's date, where a `record` indicator ranks this reading (decision 0032). */
+  years?: YearDots;
+}
+
+/** Each year's mean over the `window` days ending on today's date; the same numbers the record text ranks.
+ *  rank_high 1 = highest of `of` years. */
+export interface YearDots {
+  window: number; season: string; points: [number, number][]; rank_high: number; rank_low: number; of: number; record: string;
 }
 
 /** lo/hi: today's range so far (absent once the day has turned); url: where the page refreshes it on load. */
@@ -166,8 +177,20 @@ export interface SatelliteLayer {
   summary: string | null; zones: [string, number][];
 }
 
-/** Last 30 days for the map's replay: salinity per station, flow percentile per river (null = no reading). */
-export interface Replay { days: string[]; salinity: Record<string, (number | null)[]>; flow_pct: Record<string, (number | null)[]> }
+/** Daily mean wind over the middle of the Sound, m/s toward east (u) and north (v), and the day's peak. */
+export interface ReplayWind { u: (number | null)[]; v: (number | null)[]; max: (number | null)[] }
+/** Last 30 days for the map's replay: measured salinity per station (retired ones too while they ran; never an
+ *  estimate), flow percentile per river, wind (null = no reading). */
+export interface Replay {
+  days: string[]; salinity: Record<string, (number | null)[]>; flow_pct: Record<string, (number | null)[]>; wind: ReplayWind | null;
+}
+/** web/public/data/<region>/replay/<year>.json: the same, for one calendar year, `n` days from `start` (decision 0033). */
+export interface ReplayYear { year: number; start: string; n: number; salinity: Replay["salinity"]; flow_pct: Replay["flow_pct"]; wind: ReplayWind | null }
+/** In latest.json: which years have a replay file, every salinity station's position, and days worth jumping to. */
+export interface ReplayIndex {
+  years: number[]; sites: { id: string; short: string; lat: number; lon: number; retired: boolean }[];
+  shortcuts: { date: string; label: string }[];
+}
 
 /** One year of a station's daily salinity (decision 0028). `values` has 366 cells, Jan 1 to Dec 31 of a leap year, so
  *  Feb 29 is null in common years. `counted`: enough days (80%) to count in per-year numbers; the current year always is. */
@@ -178,6 +201,8 @@ export interface HistoryYear {
 export interface HistoryFile {
   id: string; slug: string; short: string; name: string; asof: string; fresh_below: number; salty_above: number;
   years: HistoryYear[];
+  /** A word or two per notable year ("spillway", "Ida"), for the picture's right margin. */
+  tags?: Record<string, string>;
 }
 /** In latest.json: which stations have a history file, the two the home section shows, and its takeaway line. */
 export interface HistorySummary {
@@ -201,6 +226,7 @@ export interface Latest {
   vibrio?: Vibrio | null;
   satellite?: Record<string, SatelliteLayer>;
   replay?: Replay;
+  replay_index?: ReplayIndex | null;
   /** Reference salinity sites (not our stations); salinity is null when the newest daily mean is stale. */
   reference?: ReferenceSite[];
   fishing_outlook?: FishingOutlook | null;

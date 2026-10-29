@@ -1,9 +1,11 @@
 // The readout strip: a handful of numbers that sum up the Sound right now. Shared by the home and persona pages
 // and their share images, so the picture and the page never disagree.
-import type { Latest } from "./types";
+import type { Latest, YearDots } from "./types";
 import { bandWords, nowTileSub } from "./format";
 
-export type Tile = { label: string; value: string; unit: string; sub: string; percentile?: number; href?: string; live?: string };
+export type Tile = { label: string; value: string; unit: string; sub: string; percentile?: number; href?: string; live?: string;
+  /** River flow: every year for today's date, shown instead of the meter (decision 0032). */
+  years?: YearDots; varName?: string };
 
 /** "1,491 cfs" -> ["1,491", "cfs"], so the number and its unit can be styled apart. */
 export const split = (d: string) => { const m = d.replace(" past 7 days", "").match(/^(~?[\d.,–-]+)\s*(.*)$/); return m ? [m[1], m[2]] : [d, ""]; };
@@ -25,7 +27,8 @@ export function readoutTiles(data: Latest, siteHref: (slug: string) => string): 
   for (const c of data.cards.filter((c) => c.kind === "river" && !c.minor)) {
     const r = live(c, "flow"); if (!r) continue;
     const [v, u] = split(r.display!);
-    tiles.push({ label: `${c.short} flow`, value: v, unit: u, sub: bandWords("flow", r.band), percentile: r.percentile, href: siteHref(c.slug) });
+    tiles.push({ label: `${c.short} flow`, value: v, unit: u, sub: bandWords("flow", r.band), percentile: r.percentile, href: siteHref(c.slug),
+      years: r.years, varName: "flow" });
   }
   const rainCard = data.cards.find((c) => c.kind === "rain" && /biloxi|local/i.test(c.id)) ?? data.cards.find((c) => c.kind === "rain");
   const rr = rainCard && rainCard.vars.rain;

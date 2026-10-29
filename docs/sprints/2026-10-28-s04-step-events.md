@@ -34,6 +34,13 @@
 - [x] Beach rain heads-up tested and parked ([0029](../decisions/0029-no-beach-rain-heads-up.md)): the rain effect in MDEQ's samples faded after 2021 (17% vs. 12%)
 - [ ] Smaller rivers in the virtual sensors: `scripts/experiment_minor_rivers.py` is in the `experiment` task; run it and decide (0021)
 - [x] 28 years of the Sound ([0028](../decisions/0028-every-year-on-record.md)): shared rules in `msc/history.py`; salinity history picture (`history/<slug>.json`, `HistoryStripes.tsx`) on station pages and in a home section, with a table alternative, a picked year drawn on the station chart, and the home share image; `record` indicator for river flow, Pearl stage and Sound salinity (unit tests in `tests/`, now run in CI); "years like this one" in the river section with `data/notable_years.csv`
+- [x] Showing the Sound: cleaner salinity stripes (partial years apart, notable-year tags, today line, month lines, row summaries, a tapped day links to its station year and map day; the home panels were drawing once scrolled to, now covered by an e2e test)
+- [x] Showing the Sound: today against every year, year dots built from the record indicator's own means ([0032](../decisions/0032-year-dots-from-the-record-indicator.md)), unit test and e2e
+- [x] Showing the Sound: salinity sketch on for Coast, drawn for any day; `replay/<year>.json` back to 1998; year, month, notable-day pickers and `#YYYY-MM-DD` ([0033](../decisions/0033-salinity-sketch-and-the-long-replay.md))
+- [x] Showing the Sound: wind particles and marching river dashes, still arrows under reduced motion ([0034](../decisions/0034-wind-and-river-flow-as-motion.md))
+- [x] Showing the Sound: home DOM order headline, map, Signals; one instrument table in place of five card grids ([0035](../decisions/0035-home-map-first-and-one-instrument-table.md))
+- [ ] Showing the Sound: check replay frame time on a real mid-range phone (headless software WebGL: about 50 ms a frame while playing, 60 fps idle)
+- [ ] Showing the Sound: home height is 6,327 px, not half of 6,000; decide whether to shorten the history or spillway sections (0035)
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

@@ -272,3 +272,85 @@ test("the weekly digest feed is valid RSS and every page links to it", async ({ 
   expect(xml).toContain("<rss version=\"2.0\">");
   expect(xml).toContain("Not for navigation or harvest decisions");
 });
+
+// ---------- Showing the Sound (decisions 0032-0035)
+
+test("the home history pictures draw once scrolled to, keep partial years apart, and a tapped day links onward", async ({ page }) => {
+  await page.goto("");
+  const canvases = page.locator("section:has(#g-history) canvas.stripes-canvas");
+  await expect(canvases).toHaveCount(2);
+  for (const c of await canvases.all()) {
+    await c.scrollIntoViewIfNeeded();
+    await expect(c).toHaveAttribute("data-drawn", "", { timeout: 10_000 });   // client:visible fired and it drew
+  }
+  const first = canvases.first();
+  const box = (await first.boundingBox())!;
+  await first.click({ position: { x: box.width * 0.4, y: 8 } });           // a day in the first counted year
+  const links = page.locator("section:has(#g-history) .stripes-links").first();
+  await expect(links.getByRole("link", { name: /^\d{4} at / })).toHaveAttribute("href", /station\/[\w-]+\/#year-\d{4}$/);
+  await expect(links.getByRole("link", { name: /on the map$/ })).toHaveAttribute("href", /#\d{4}-\d{2}-\d{2}$/);
+});
+
+test("year dots on a station page agree with its record line", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const card = latest.cards.find((c: any) => Object.values(c.vars).some((r: any) => r.years) && !c.retired);
+  test.skip(!card, "no ranked reading in this build");
+  const [vn, r] = Object.entries(card.vars).find(([, r]: any) => r.years) as [string, any];
+  await page.goto(`station/${card.slug}/`);
+  const dots = page.locator(".now .yeardots");
+  await expect(dots.locator("circle")).toHaveCount(r.years.of);
+  const high = r.years.rank_high <= r.years.rank_low, rank = high ? r.years.rank_high : r.years.rank_low;
+  await expect(dots.locator(".yd-say")).toContainText(`${high ? "highest" : "lowest"} of ${r.years.of} years`);
+  const f = latest.findings.find((f: any) => f.site === card.id && f.var === vn && f.rank);
+  if (f) expect(f.rank).toBe(rank);                       // the picture and the sentence say the same thing
+  await dots.locator("circle").first().hover();
+  await expect(dots.locator(".yd-read")).toHaveText(/^\d{4}: /);
+});
+
+test("the long replay opens a #YYYY-MM-DD day, jumps to notable days and returns to the last 30 days", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  test.skip(!latest.replay_index?.years.includes(2019), "no 2019 replay in this build");
+  await page.goto("#2019-05-10");
+  const day = page.locator(".replay-day");
+  await expect(day).toHaveText("May 10, 2019", { timeout: 20_000 });
+  await expect(page.locator(".replay").getByRole("combobox", { name: "Year" })).toHaveValue("2019");
+  await expect(page.locator(".replay [aria-live]")).toContainText("May 10, 2019:");
+  await page.locator(".replay").getByRole("combobox", { name: "Month" }).selectOption({ label: "Aug" });
+  await expect(day).toHaveText("Aug 1, 2019");
+  await expect(page).toHaveURL(/#2019-08-01$/);
+  const katrina = latest.replay_index.shortcuts.find((s: any) => s.label === "Katrina");
+  if (katrina) {
+    await page.locator(".replay").getByRole("combobox", { name: "Jump to" }).selectOption(katrina.date);
+    await expect(day).toHaveText("Aug 29, 2005");
+  }
+  await page.locator(".replay").getByRole("combobox", { name: "Year" }).selectOption({ label: "Last 30 days" });
+  await expect(day).toHaveText("Today");
+  await expect(page).not.toHaveURL(/#\d{4}-/);
+});
+
+test("the Fishing map shows wind, labeled as wind and not a current, and reduced motion still works", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("for/fish/");
+  const panel = page.locator(".map-layers");
+  if (!(await panel.evaluate((d: HTMLDetailsElement) => d.open))) await panel.locator("summary").click();
+  const wind = panel.getByRole("checkbox", { name: "Wind" });
+  await expect(wind).toBeEnabled({ timeout: 20_000 });
+  await expect(wind).toBeChecked();
+  await expect(panel).toContainText("Not a water current.");
+  await expect(page.locator("canvas.map-wind")).toBeAttached();
+});
+
+test("home: headline, then map, then Signals in the DOM, and one instrument table for the readings", async ({ page }) => {
+  await page.goto("");
+  const order = await page.locator(".console > *").evaluateAll((els) => els.map((e) => e.className.split(" ")[0]));
+  expect(order).toEqual(["brief", "sound", "rail"]);
+  const table = page.locator("table.instr");
+  await expect(table).toHaveCount(1);
+  await expect(table.getByRole("columnheader", { name: "Out in the Sound" })).toBeVisible();
+  await expect(page.locator(".cards")).toHaveCount(0);
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    const axe = await new AxeBuilder({ page }).include(".instruments").include(".replay").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+    expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
+  }
+});

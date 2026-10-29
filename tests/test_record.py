@@ -63,3 +63,15 @@ def test_replaces_vs_normal():
     assert [f["indicator"] for f in evaluate(r, daily(1150), normals, ASOF)] == ["river_vs_normal"]
     r = region(VS_NORMAL, CFG)
     assert [f["indicator"] for f in evaluate(r, daily(1150), normals, ASOF)] == ["river_record"]
+
+
+def test_year_dots_agree_with_record():
+    # The year dots (decision 0032) come from the same means as the record line, so their rank is the sentence's.
+    from msc.build import _year_dots
+    for today, side in ((1150, "low"), (99_999, "high")):
+        f = record(region(CFG), CFG, daily(today), pd.DataFrame(), ASOF)[0]
+        d = _year_dots(region(CFG), daily(today), ASOF)[("R", "flow")]
+        assert d[f"rank_{side}"] == f["rank"] and d["of"] == f["years"] == len(d["points"])
+        assert d["points"][0] == [2000, 1000.0] and d["season"] == "late-October"
+    d = _year_dots(region(CFG), daily(2050), ASOF)[("R", "flow")]   # mid-pack: no record line, still dots
+    assert record(region(CFG), CFG, daily(2050), pd.DataFrame(), ASOF) == [] and d["rank_high"] + d["rank_low"] == d["of"] + 1
