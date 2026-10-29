@@ -41,8 +41,8 @@ Bigger bets, ranked by value against risk. Each one needs a decision record befo
 CLAUDE.md still applies: oyster wording, the disclaimer, plain language, `_try` and stale-data hiding.
 1. **Oyster stress days per reef**: count the days this season when the water was both fresh and hot (roughly under
    5 ppt and above 25 °C, a pairing known to kill oysters), from station readings and the virtual sensors, against
-   every year since 1998. Describe conditions on the reefs, never closures. Check the thresholds against published
-   oyster mortality studies first.
+   every year since 1998. Describe conditions on the reefs, never closures. Thresholds checked 2026-10-28 and drafted
+   as [0039](decisions/0039-fresh-and-hot-days-near-the-reefs.md) (proposed): measured readings only, four stations.
 2. ~~**Spillway "what happened last time"**~~ Built 2026-10-28 for West Sound
    ([0038](decisions/0038-past-spillway-openings-side-by-side.md)): 2011, 2016, 2019 and 2020 side by side (2008 and
    2018 have too few readings). Left: the oyster stations as a second row.
