@@ -6,10 +6,11 @@ const PAGES = ["", "for/oyster/", "for/shrimp/", "for/fish/", "about/", "station
 // The page refreshes air temp from api.weather.gov on load; answer with a fixed, newer reading so tests don't depend
 // on the network. 26.1 °C is 79 °F.
 const LIVE_TEMP_C = 26.1;
+const LIVE_TIME = new Date(Date.now() - 5 * 60_000).toISOString();
 test.beforeEach(async ({ page }) => {
   await page.route("https://api.weather.gov/**", (route) => route.fulfill({
     contentType: "application/geo+json",
-    body: JSON.stringify({ properties: { timestamp: new Date(Date.now() - 5 * 60_000).toISOString(),
+    body: JSON.stringify({ properties: { timestamp: LIVE_TIME,
       temperature: { unitCode: "wmoUnit:degC", value: LIVE_TEMP_C } } }),
   }));
 });
@@ -82,7 +83,17 @@ test("air temp refreshes from the latest observation on load", async ({ page }) 
   test.skip(await tile.count() === 0, "no fresh air temp in this build's data");
   await expect(tile).toHaveAttribute("data-live-updated", "");
   await expect(tile.locator("[data-live-value]")).toHaveText("79");
-  await expect(tile.locator("[data-live-text]")).toContainText("79°F");
+  // The sentence gives the time and today's range, not the reading, so check the new time and that the range takes
+  // in 79. Format the time in the browser so it matches the page's ICU spacing before AM/PM.
+  const text = tile.locator("[data-live-text]");
+  const time = await page.evaluate((iso) => new Date(iso).toLocaleTimeString("en-US",
+    { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }), LIVE_TIME);
+  await expect(text).toContainText(`at ${time}`);
+  const range = (await text.textContent())!.match(/today (-?\d+)°F to (-?\d+)°F/);
+  if (range) {
+    expect(Number(range[1])).toBeLessThanOrEqual(79);
+    expect(Number(range[2])).toBeGreaterThanOrEqual(79);
+  }
 });
 
 test("air temp keeps the built reading when the live request fails", async ({ page }) => {
