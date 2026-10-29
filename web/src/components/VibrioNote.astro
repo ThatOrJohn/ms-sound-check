@@ -1,0 +1,24 @@
+---
+import type { Vibrio } from "../lib/types";
+
+// Calm, seasonal wording approved for decision 0024: no alarm colors, no "flesh-eating", no case counts.
+interface Props { vibrio: Vibrio }
+const { vibrio } = Astro.props;
+---
+<section class="group vibrio" aria-labelledby="g-vibrio">
+  <h2 id="g-vibrio">Warm-water bacteria (Vibrio)</h2>
+  <p>{`Water at ${vibrio.places} is warm (above ${vibrio.temp_min}) and moderately salty, the conditions where Vibrio bacteria grow fastest. ` +
+    `Vibrio lives naturally in the Sound, and water like this is normal here${vibrio.season ? ` from about ${vibrio.season}` : ""}.`}</p>
+  <p>{"Most people who swim, wade or fish never get sick. Infections usually come from an open cut in the water or from eating raw or " +
+    "undercooked oysters, and are most serious for people with liver disease or a weakened immune system. Cover cuts with a " +
+    "waterproof bandage or stay out of the water, and cook shellfish before eating it."}</p>
+  <ul class="vibrio-stations" aria-label="Stations in Vibrio's preferred range">
+    {vibrio.stations.map((s) => <li>{`${s.short}: ${s.water_temp}, ${s.salinity}`}</li>)}
+  </ul>
+  <p class="fish-src">
+    {"Official guidance: "}
+    {vibrio.links.map((l, i) => <>{i ? " · " : ""}<a href={l.url}>{l.label}</a>{i === vibrio.links.length - 1 ? "." : ""}</>)}
+    {` We compare the last ${vibrio.days} days of water temperature and salinity with the range where Vibrio grows best ` +
+      `(${vibrio.temp_min} and up, ${vibrio.salinity_range}). We don't measure bacteria, and Vibrio can be present outside that range.`}
+  </p>
+</section>

@@ -141,3 +141,24 @@ test("satellite layers are offered, and turning one on turns the other fills off
   await expect(clarity).not.toBeChecked();
   await expect(panel.locator(".sat-key")).toContainText("Satellite,");
 });
+
+test("the Vibrio note shows on the Coast, Oysters and Fishing pages only, with calm wording and official links", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const heading = (p: typeof page) => p.getByRole("heading", { name: "Warm-water bacteria (Vibrio)" });
+  await page.goto("for/shrimp/");
+  await expect(heading(page)).toHaveCount(0);
+  if (!latest.vibrio) {           // cooler months: no station in range, so nothing is said anywhere
+    await page.goto("");
+    await expect(heading(page)).toHaveCount(0);
+    return;
+  }
+  for (const path of ["", "for/oyster/", "for/fish/"]) {
+    await page.goto(path);
+    const sec = page.locator("section.vibrio");
+    await expect(heading(page)).toBeVisible();
+    await expect(sec).toContainText(`Water at ${latest.vibrio.places} is warm`);
+    await expect(sec).not.toContainText(/flesh|closed|danger/i);
+    await expect(sec.getByRole("link", { name: "Mississippi State Department of Health" })).toHaveAttribute("href", /msdh\.ms\.gov/);
+    await expect(sec.getByRole("link", { name: "CDC" })).toHaveAttribute("href", /cdc\.gov\/vibrio/);
+  }
+});

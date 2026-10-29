@@ -18,6 +18,8 @@
 - [x] Satellite water clarity and surface temperature as map layers, with a plain summary by part of the Sound ([0023](../decisions/0023-satellite-layers-newest-clear-view.md)); clarity on by default for Fishing and repeated in its outlook
 - [x] Map replay: a 30-day slider and Play button that redraw station salinity and river flow day by day
 - [x] Colorblind fixes: beach segments use line patterns, labels and a key; collapsible panels show a chevron
+- [x] Dev fixtures keep real data: `apply` sets aside the real snapshots, beach history and the stage readings it displaces; `clear` puts them back
+- [x] Vibrio-favorable water: a calm seasonal note on Coast, Oysters and Fishing, not a Signal, since it holds on most April-October days ([0024](../decisions/0024-vibrio-as-seasonal-note.md))
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

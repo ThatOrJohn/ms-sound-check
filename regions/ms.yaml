@@ -51,6 +51,7 @@ sites:
     lon: -89.5341
     vars: [salinity, water_temp]
     salinity_from: conductance
+    in_text: the Pearl River mouth   # how a sentence names it ("Water at the Pearl River mouth")
     note: Lower East Pearl near the Sound. Usually fresh; salt here means the river is low.
     drains_from: [USGS-02489500]
 
@@ -267,19 +268,32 @@ satellite:
       range: scene                      # stretched to this scene's spread, so fronts show
       source: NOAA ACSPO multi-satellite, 2 km
 
+# Water where Vibrio bacteria grow best (decision 0024): warm and moderately salty, averaged over the last `days` days
+# so the note doesn't flicker around the cutoff. It's normal here most of April-October, so it's a calm seasonal note
+# in its own section, never a Signal or a headline. We don't measure bacteria.
+vibrio:
+  temp_min_c: 20
+  salinity: [5, 25]
+  days: 3
+  kinds: [sound, estuary]
+  season: April through October
+  links:
+    - {label: Mississippi State Department of Health, url: "https://msdh.ms.gov/Page/23,31053,341.html"}
+    - {label: CDC, url: "https://www.cdc.gov/vibrio/prevention/index.html"}
+
 # Personas re-rank indicators and reorder cards. Add one by adding an entry here.
 personas:
   - id: general
     label: Coast (general)
     blurb: What the Sound is doing this week and whether any of it matters.
     focus: [general, oyster, shrimp, fish]
-    card_order: [beaches, sound, river, spillway, rain, weather, estuary]
+    card_order: [beaches, sound, vibrio, river, spillway, rain, weather, estuary]
     map_layers: [depth, rivers, beaches]
   - id: oyster
     label: Oysters
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
-    card_order: [oyster_watch, spillway, sound, river, rain, estuary, weather, beaches]
+    card_order: [oyster_watch, spillway, sound, vibrio, river, rain, estuary, weather, beaches]
     map_layers: [depth, contours, rivers, salinity]
   - id: shrimp
     label: Shrimp
@@ -291,7 +305,7 @@ personas:
     label: Fishing
     blurb: Salinity and water temperature shifts that move bait and fish around the Sound.
     focus: [fish, general]
-    card_order: [fishing_outlook, sound, weather, rain, river, spillway, estuary, beaches]
+    card_order: [fishing_outlook, sound, vibrio, weather, rain, river, spillway, estuary, beaches]
     map_layers: [depth, contours, clarity]
 
 indicators:

@@ -3,7 +3,7 @@
 export type Severity = "notice" | "watch" | "warning" | "alert";
 export type Band = "low" | "below" | "normal" | "above" | "high";
 export type Kind = "sound" | "estuary" | "river" | "rain" | "weather" | "gauge" | "wind";
-export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway";
+export type Section = Kind | "beaches" | "oyster_watch" | "fishing_outlook" | "shrimp_season" | "spillway" | "vibrio";
 export type Kind2 = Kind | "gauge";
 
 export interface Persona {
@@ -140,6 +140,13 @@ export interface Spillway {
   };
 }
 
+/** Stations where the water is warm and moderately salty, as Vibrio favors (decision 0024). Null when none are. */
+export interface Vibrio {
+  stations: { id: string; short: string; in_text: string; salinity: string; water_temp: string }[];
+  places: string; temp_min: string; salinity_range: string; days: number; season: string | null;
+  links: { label: string; url: string }[];
+}
+
 /** A satellite map layer: a data PNG (gray = value scaled to range, log if `log`; alpha 0 = no clear view). */
 export interface SatelliteLayer {
   label: string; png: string; source: string | null; bounds: [number, number, number, number];
@@ -152,6 +159,7 @@ export interface Replay { days: string[]; salinity: Record<string, (number | nul
 
 export interface Latest {
   spillway?: Spillway | null;
+  vibrio?: Vibrio | null;
   satellite?: Record<string, SatelliteLayer>;
   replay?: Replay;
   fishing_outlook?: FishingOutlook | null;

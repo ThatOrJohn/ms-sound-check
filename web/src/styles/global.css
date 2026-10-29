@@ -325,6 +325,11 @@ select, .btn {
 [data-status="advisory"] .beach-dot { background: var(--amber); }
 [data-status="closure"] .beach-dot { background: var(--marker-red); }
 .beach-sub { color: var(--ink-soft); font-size: 0.82rem; text-align: right; }
+/* Vibrio note: deliberately neutral (no amber or red); it's normal most of the warm season. */
+.vibrio > p { max-width: var(--measure); }
+.vibrio-stations { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.vibrio-stations li { background: var(--paper); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 12px;
+  font-size: 0.85rem; font-variant-numeric: tabular-nums; }
 .beach-src, .fish-src, .oyster-notes { margin-top: 14px; font-size: 0.82rem; color: var(--ink-soft); max-width: var(--measure); }
 
 /* ---------- oyster closure watch ---------- */

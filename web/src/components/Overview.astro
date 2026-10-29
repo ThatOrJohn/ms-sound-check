@@ -9,6 +9,7 @@ import OysterWatch from "./OysterWatch.astro";
 import FishingOutlook from "./FishingOutlook.astro";
 import ShrimpSeason from "./ShrimpSeason.astro";
 import Spillway from "./Spillway.astro";
+import VibrioNote from "./VibrioNote.astro";
 import OfficialSources from "./OfficialSources.astro";
 import SoundMap, { type MapRiver, type MapStation } from "./SoundMap";
 import ReadingRow from "./ReadingRow";
@@ -49,7 +50,7 @@ const ungaugedNote = ungauged.length ? "Smaller rivers without a live flow gauge
 const groups = persona.card_order
   .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
   .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
-    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.cards.length);
+    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.kind === "vibrio" ? !!data.vibrio : g.cards.length);
 const gaugeSlug = data.cards.find((c) => c.kind === "gauge")?.slug;
 
 // ---------- the readout strip: a handful of numbers that sum up the Sound right now
@@ -150,7 +151,8 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
   : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} data={data} />
   : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} data={data} />
   : g.kind === "shrimp_season" ? <ShrimpSeason season={data.shrimp_season!} data={data} />
-  : g.kind === "spillway" ? <Spillway spillway={data.spillway!} data={data} /> : (
+  : g.kind === "spillway" ? <Spillway spillway={data.spillway!} data={data} />
+  : g.kind === "vibrio" ? <VibrioNote vibrio={data.vibrio!} /> : (
   <section class="group" aria-labelledby={`g-${g.kind}`}>
     <div class="group-head">
       <h2 id={`g-${g.kind}`}>{g.title}</h2>

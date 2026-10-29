@@ -329,8 +329,9 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     oyster_section = oyster.section(region, daily, asof)
     fishing_section = fishing.section(region, daily, asof, cards, forecast)
     shrimp_section = shrimp.section(region, asof)
-    from .models import satellite, spillway
+    from .models import satellite, spillway, vibrio
     spillway_section = spillway.section(region, daily, asof)
+    vibrio_section = vibrio.section(region, daily, asof, suspect)
     out = SITE_OUT / region.id
     (out / "sites").mkdir(parents=True, exist_ok=True)
     for old in out.glob("sat-*.png"):     # a layer that went stale must disappear, not linger
@@ -343,6 +344,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "fishing_outlook": fishing_section,
         "shrimp_season": shrimp_section,
         "spillway": spillway_section,
+        "vibrio": vibrio_section,
         "satellite": satellite_layers,
         "replay": _replay(region, daily, normals, asof),
         "generated_at": generated_at.isoformat(),
