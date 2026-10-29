@@ -4,6 +4,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 
 ## 2026-10-28
 ### Changed
+- The map's Layers panel keeps one width as you turn layers on and off. It no longer slides under the Dauphin Island reading or, on phones, the zoom buttons: when the map is too short to fit everything, the panel scrolls.
 - The map comes up sooner on the home page: the headline now sits in a panel beside the map, above Signals, instead of across the top. On phones and tablets it comes right after the key readings. The map's header now says what the dot colors mean ("Dot color: salinity (ppt)", river 0 to 25+ Gulf) in place of "The Sound, live" ([0027](docs/decisions/0027-headline-beside-the-map.md)).
 - Stations whose sensors have stopped are left off the map unless we publish an estimate for them, so the map no longer shows a station that only says "offline" (today that's East Ship Island). They're still in the station list.
 - Beach segments on the map no longer rely on color alone: clear beaches are solid, advisories dashed and closures dotted, flagged beaches are labeled "Advisory" or "Closed", and the Layers panel shows a key when the beach layer is on. The map's Layers panel, the "All beaches" list and the extra fishing details now show a chevron so it's clear they open and close.

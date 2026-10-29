@@ -476,6 +476,8 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     <div className="map-wrap">
       <div ref={el} className="map" />
       {failed && <p className="map-msg">The map couldn't load. The station list below has the same readings.</p>}
+      {/* One column down the right edge, so a tall Layers panel stacks above the reference chip instead of under it. */}
+      <div className="map-side">
       <details className="map-layers" open={panelOpen} onToggle={(e) => setPanelOpen((e.target as HTMLDetailsElement).open)}>
         <summary>Layers</summary>
         {LAYERS.map((l) => {
@@ -511,7 +513,6 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
         {layers.salinity && !noBasemap && <p className="map-note">Estimated between a handful of stations. A sketch, not a measurement.</p>}
         {noBasemap && <p className="map-note">Depth layers need the one-time basemap prep.</p>}
       </details>
-      <div className="map-rivers" aria-hidden="true">{riverRows}</div>
       {refs.map((r) => (
         <p key={r.id} className="map-ref" title={`${r.name}. Not one of our stations: shown for comparison only.`}>
           <span className="map-ref-place">{`${r.place ?? r.name} `}<span aria-hidden="true">→</span></span>
@@ -519,6 +520,8 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
           <span className="map-ref-note">{`Reference, ${r.km} km east of ${r.nearest}`}</span>
         </p>
       ))}
+      </div>
+      <div className="map-rivers" aria-hidden="true">{riverRows}</div>
     </div>
     {/* Phones: the same rows as a strip under the map, which is too small to float them over. */}
     <div className="map-rivers-row">

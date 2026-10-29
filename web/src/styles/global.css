@@ -181,7 +181,13 @@ select, .btn {
   backdrop-filter: saturate(1.5) blur(14px); -webkit-backdrop-filter: saturate(1.5) blur(14px);
   box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.35);
 }
-.map-layers { position: absolute; top: 12px; right: 12px; margin: 0; padding: 9px 12px 10px; max-width: 230px; font-size: 0.82rem; display: grid; gap: 2px; }
+/* Right-edge column: Layers at the top, the reference chip at the bottom; the panel scrolls before they'd overlap.
+   Clicks pass through the gap between them to the map. */
+.map-side { position: absolute; top: 12px; right: 12px; bottom: 34px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
+.map-side > * { pointer-events: auto; }
+.map-layers { margin: 0; padding: 9px 12px 10px; max-width: 230px; min-height: 0; overflow-y: auto; font-size: 0.82rem; display: grid; align-content: start; gap: 2px; }
+/* A fixed width when open, so notes that come and go with each layer don't make the panel jump sideways. */
+.map-layers[open] { width: 230px; }
 .map-layers summary { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; min-height: 24px; display: flex; align-items: center; }
 /* display: flex drops the native disclosure triangle, so these summaries draw their own chevron. */
 .map-layers summary, .beach-all summary, .fish-more summary { list-style: none; gap: 8px; }
@@ -217,7 +223,7 @@ select, .btn {
 .map-rivers b, .map-rivers-row b { font-weight: 600; }
 .map-rivers-row { display: none; }
 /* A reference site just past the east edge (Dauphin Island): text only, no dot, so it can't pass for a station. */
-.map-ref { position: absolute; right: 52px; bottom: 34px; margin: 0; display: grid; gap: 1px; justify-items: end;
+.map-ref { margin: auto 40px 0 0; flex: none; display: grid; gap: 1px; justify-items: end;
   padding: 7px 11px; font-size: 0.76rem; text-align: right; }
 .map-ref b { font: 600 0.86rem var(--mono); }
 .map-ref-note { color: var(--ink-soft); font-size: 0.7rem; }
@@ -539,7 +545,10 @@ select, .btn {
   .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .readout { padding: 14px; }
   .map-wrap { height: 420px; }
-  .map-layers { top: 8px; right: 8px; max-width: 190px; font-size: 0.8rem; }
+  /* The reference chip moves to the strip below, so the column only has to clear the zoom buttons. */
+  .map-side { top: 8px; right: 8px; bottom: 104px; }
+  .map-layers { max-width: 190px; font-size: 0.8rem; }
+  .map-layers[open] { width: 190px; }
   .map-rivers { display: none; }
   .map-ref { display: none; }
   .map-rivers-row { display: grid; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--hair); font-size: 0.76rem; }
