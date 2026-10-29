@@ -3,7 +3,7 @@
 Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 
 ## Now
-**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035), then a shorter home page (0036) and the Sound west to east as one bar ([0037](decisions/0037-the-sound-west-to-east.md)).
+**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035), then a shorter home page (0036) and the Sound west to east as one bar ([0037](decisions/0037-the-sound-west-to-east.md)), then past spillway openings side by side ([0038](decisions/0038-past-spillway-openings-side-by-side.md)).
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -19,7 +19,7 @@ In this order. Usage numbers come first so they can steer the rest, including th
    feature service first, like the beach layer, and don't work around bot checks. If there isn't one, park it.
 3. **Grand Bay NERR water-quality sondes** as extra stations, from the public NERRS CDMO service: more coverage in the
    eastern Sound and a closer reference than Dauphin Island ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
-4. Then moonshots 1 and 2 below, which reuse data already in the store.
+4. Then moonshot 1 below, which reuses data already in the store (moonshot 2 is built).
 
 ### Showing the Sound
 Built 2026-10-28 ([0032](decisions/0032-year-dots-from-the-record-indicator.md)-[0035](decisions/0035-home-map-first-and-one-instrument-table.md)):
@@ -43,9 +43,9 @@ CLAUDE.md still applies: oyster wording, the disclaimer, plain language, `_try` 
    5 ppt and above 25 °C, a pairing known to kill oysters), from station readings and the virtual sensors, against
    every year since 1998. Describe conditions on the reefs, never closures. Check the thresholds against published
    oyster mortality studies first.
-2. **Spillway "what happened last time"**: when the Mississippi nears 17 ft, show what West Sound and the oyster
-   stations did during the 2008, 2011, 2016, 2019 and 2020 openings, week by week. These are past openings side by
-   side, not a forecast ([0008](decisions/0008-no-salinity-forecast.md) still holds), so say so in the text.
+2. ~~**Spillway "what happened last time"**~~ Built 2026-10-28 for West Sound
+   ([0038](decisions/0038-past-spillway-openings-side-by-side.md)): 2011, 2016, 2019 and 2020 side by side (2008 and
+   2018 have too few readings). Left: the oyster stations as a second row.
 3. **Low-oxygen watch**: dissolved oxygen from the USGS and NERR stations that measure it, plus the summer Gulf
    dead-zone extent when it's published. It covers fish kills and "jubilee"-type nights for the Fishing and Shrimp
    views.

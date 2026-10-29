@@ -1,5 +1,5 @@
 ---
-import type { Latest, Spillway } from "../lib/types";
+import type { Latest, Spillway, SpillwayPast } from "../lib/types";
 import { fmtDate } from "../lib/format";
 import OfficialSources from "./OfficialSources.astro";
 
@@ -52,10 +52,23 @@ const historyLine = sp.count
   : "";
 const timelineLabel = `Spillway openings by year: ${sp.openings.map((o) => `${o.year}${o.days ? ` (${o.days} days)` : ""}`).join(", ")}.`;
 
-// ---------- what our station did during past openings
-const effectLine = (e: Spillway["effects"][number]) =>
-  `${e.year}, opened ${day(e.opened)}${e.days ? ` for ${e.days} days` : ""}: about ${e.before.toFixed(0)} ppt the month before, ` +
-  `down to ${e.low.toFixed(1)} ppt by ${day(e.low_date)}.`;
+// ---------- what our station did after each past opening, one small chart per year on the same axes (0038)
+const PW = 300, PH = 100, D0 = -28, D1 = 196;
+const pTop = Math.max(20, Math.ceil(Math.max(0, ...sp.past.flatMap((p) => p.series.map((s) => s[1]))) / 5) * 5);
+const px = (d: number) => ((d - D0) / (D1 - D0)) * PW;
+const py = (v: number) => (1 - Math.max(0, v) / pTop) * PH;
+const line = (pts: [number, number][]) => pts.map((p, i) =>
+  `${i && p[0] - pts[i - 1][0] <= 3 ? "L" : "M"}${px(p[0]).toFixed(1)},${py(p[1]).toFixed(1)}`).join("");
+const span = (d: number) => d < 14 ? `${d} day${d === 1 ? "" : "s"}` : `${Math.round(d / 7)} weeks`;
+const pastHead = (p: SpillwayPast) =>
+  `${p.year}: opened ${p.opened.map(day).join(" and ")}` + (p.days_open ? `, ${p.days_open} days in all` : "");
+const pastLine = (p: SpillwayPast) =>
+  `About ${p.before.toFixed(0)} ppt in the 4 weeks before. Lowest ${p.low.toFixed(1)} ppt, ${span(p.low_day)} after it ` +
+  `${p.opened.length > 1 ? "first " : ""}opened. ` +
+  (p.fresh_run >= 3 ? `Under ${sp.fresh_ppt} ppt for ${p.fresh_run} days in a row.`
+    : p.low < sp.fresh_ppt ? `Under ${sp.fresh_ppt} ppt for only a day or two at a time.` : `Never under ${sp.fresh_ppt} ppt.`);
+const xTicks: [number, string][] = [[0, "opened"], [84, "+12 wks"], [D1, "+28 wks"]];
+const missed = [...new Set(sp.openings.filter((o) => o.year >= 2000).map((o) => o.year))].filter((y) => !sp.past.some((p) => p.year === y));
 
 // ---------- calm: the river is well below the opening level and nothing is open, so the section is one line and the
 // rest folds into a details element (decision 0036). Any watch, forecast or opening shows everything.
@@ -68,7 +81,7 @@ const Body = calm ? "details" : "div";
   <OfficialSources data={data} only="spillway" />
   {calm && <p class="spill-calm">{calmLine}</p>}
   <Body class={calm ? "spill-more" : "spill-body"}>
-  {calm && <summary>What the spillway is, the river chart, and every opening</summary>}
+  {calm && <summary>{`What the spillway is, the river chart, and what ${sp.sound_site} did after past openings`}</summary>}
   <p>When the Mississippi runs high, the Army Corps of Engineers opens this spillway above New Orleans to take pressure
     off the city's levees. The river water flows through Lake Pontchartrain and Lake Borgne into the western Sound. In
     2019, two long openings kept the western Sound fresh for months, and most of the oysters on its reefs died. Only the Corps
@@ -115,6 +128,46 @@ const Body = calm ? "details" : "div";
     </div>
   )}
 
+  {sp.past.length > 0 && (
+    <div class="spill-past">
+      <h3>{`What ${sp.sound_site} did after past openings`}</h3>
+      <p>{`Each picture runs from 4 weeks before the spillway opened to 28 weeks after, on the same scale. These are past ` +
+        `openings side by side, not a forecast of the next one.`}</p>
+      <p class="past-key" aria-hidden="true">
+        <span><i class="k-obs"></i>{`${sp.sound_site} salinity (ppt)`}</span>
+        <span><i class="k-typ"></i>typical for the time of year</span>
+        <span><i class="k-open"></i>spillway open</span>
+      </p>
+      <div class="past-grid">
+        {sp.past.map((p) => (
+          <figure class="past-year">
+            <figcaption>{pastHead(p)}</figcaption>
+            <div class="past-chart" role="img" aria-label={`${sp.sound_site} salinity around the ${p.year} opening. ${pastLine(p)}`}>
+              <div class="plot" aria-hidden="true">
+                <svg viewBox={`0 0 ${PW} ${PH}`} preserveAspectRatio="none">
+                  {p.bands.map(([a, b]) => <rect class="open-band" x={px(a)} y="0" width={Math.max(1, px(Math.min(b, D1)) - px(a))} height={PH} />)}
+                  <line class="fresh-line" x1="0" x2={PW} y1={py(sp.fresh_ppt)} y2={py(sp.fresh_ppt)} vector-effect="non-scaling-stroke" />
+                  {p.typical.length > 1 && <path class="typ" d={line(p.typical)} vector-effect="non-scaling-stroke" />}
+                  <path class="obs" d={line(p.series)} vector-effect="non-scaling-stroke" />
+                </svg>
+                <span class="tick y" style="top:0%">{`${pTop}`}</span>
+                <span class="tick y fresh" style={`top:${((py(sp.fresh_ppt) / PH) * 100).toFixed(1)}%`}>{`${sp.fresh_ppt}`}</span>
+              </div>
+              <div class="x" aria-hidden="true">
+                {xTicks.map(([d, t]) => <span class="tick" style={`left:${((px(d) / PW) * 100).toFixed(1)}%`} data-edge={d === D0 ? "l" : d === D1 ? "r" : undefined}>{t}</span>)}
+              </div>
+            </div>
+            <p>{pastLine(p)}</p>
+          </figure>
+        ))}
+      </div>
+      <p class="oyster-notes">{`From our station's daily readings. The rivers along the coast were often high in the same ` +
+        `springs, so not all of each drop is the spillway's. Oyster reefs start dying when the water stays under ` +
+        `${sp.fresh_ppt} ppt for more than two weeks.` +
+        (missed.length ? ` ${missed.join(" and ")} ${missed.length > 1 ? "aren't" : "isn't"} shown: the station has too few readings around ${missed.length > 1 ? "those openings" : "that opening"}.` : "")}</p>
+    </div>
+  )}
+
   {sp.count > 0 && (
     <div class="spill-history">
       <h3>Every opening since {sp.since}</h3>
@@ -131,16 +184,6 @@ const Body = calm ? "details" : "div";
     </div>
   )}
 
-  {sp.effects.length > 0 && (
-    <div class="spill-effects">
-      <h3>{`What ${sp.sound_site} did during recent openings`}</h3>
-      <ul>
-        {sp.effects.map((e) => <li>{effectLine(e)}</li>)}
-      </ul>
-      <p class="oyster-notes">From our station's daily readings. The rivers along the coast were often high in the same
-        springs, so not all of each drop is the spillway's.</p>
-    </div>
-  )}
   </Body>
   <p class="oyster-notes">
     River stage and forecast from the National Weather Service. Opening dates from the Corps' operation history, kept

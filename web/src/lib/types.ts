@@ -151,12 +151,17 @@ export interface ReferenceSite {
 }
 
 export interface SpillwayOpening { opened: string; year: number; days: number | null; closed: string | null; max_bays: number | null; peak_cfs: number | null }
-/** What our Sound station did during a past opening: median the month before, lowest during (or two weeks after). */
-export interface SpillwayEffect { opened: string; year: number; days: number | null; before: number; low: number; low_date: string }
+/** One year of past openings at our Sound station (0038). Days count from the year's first opening; `bands` are the
+ *  open spells. `before` is the median of the 4 weeks before; `fresh_run` the longest run of days under `fresh_ppt`. */
+export interface SpillwayPast {
+  year: number; opened: string[]; bands: [number, number][]; days_open: number;
+  series: [number, number][]; typical: [number, number][];
+  before: number; low: number; low_day: number; fresh_run: number; fresh_run_day: number | null;
+}
 export interface Spillway {
   gauge_name: string; open_ft: number; watch_ft: number; link: string | null;
   openings: SpillwayOpening[]; open_now: SpillwayOpening | null; count: number; since: number | null; since_2000: number;
-  effects: SpillwayEffect[]; sound_site: string;
+  past: SpillwayPast[]; fresh_ppt: number; sound_site: string;
   /** Null when the river readings are missing or stale. */
   river: null | {
     stage: number; time: string; change_24h: number | null; status: "open_level" | "forecast_open" | "watch" | "low";

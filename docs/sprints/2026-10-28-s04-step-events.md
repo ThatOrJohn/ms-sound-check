@@ -42,6 +42,7 @@
 - [ ] Showing the Sound: check replay frame time on a real mid-range phone. Parked: no device; self-paced steps tried at 6x CPU slowdown, no clear gain, reverted (ROADMAP Parked)
 - [x] Showing the Sound: home height: one history picture on home (the rest linked) and the spillway folded to one line while the river is low; home 6,035 → 4,972 px ([0036](../decisions/0036-one-history-picture-and-a-folded-spillway.md))
 - [x] The Sound west to east: one bar of today's salinity by station position over a fainter usual bar, a summary in the table's band words, labels that never cross, and the Oysters share image (`share: strip`) ([0037](../decisions/0037-the-sound-west-to-east.md))
+- [x] Moonshot 2, past spillway openings side by side: one West Sound chart per year since 2000 on shared axes, typical line, 2 ppt runs, `spillway.past` replaces `effects`; unit tests and e2e ([0038](../decisions/0038-past-spillway-openings-side-by-side.md))
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

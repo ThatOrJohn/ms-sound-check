@@ -120,6 +120,17 @@ test("oyster page shows the spillway watch with the Corps link and every past op
     await more.locator("summary").click();
   }
   await expect(sec.getByRole("img", { name: /Spillway openings by year: 1937/ })).toBeVisible();
+  // Past openings side by side (0038): one chart per year, each with its sentence as the text version.
+  const past = sec.locator(".spill-past");
+  if (await past.count()) {
+    await expect(past).toContainText("not a forecast");
+    await expect(past.getByRole("img", { name: /salinity around the \d{4} opening\. About \d+ ppt/ }).first()).toBeVisible();
+    for (const scheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });   // no mid-transition colors for axe
+      const axe = await new AxeBuilder({ page }).include(".spill-past").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+      expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
+    }
+  }
 });
 
 test("map replay steps back through the last 30 days and returns to today", async ({ page }) => {

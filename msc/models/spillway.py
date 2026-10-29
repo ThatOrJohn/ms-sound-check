@@ -12,10 +12,11 @@ import pandas as pd
 from ..config import REFERENCE, Region
 
 STALE = pd.Timedelta(days=2)       # river readings older than this are hidden, not shown
-BEFORE_DAYS = 30                    # "before" = median salinity in the month before an opening
-AFTER_DAYS = 14                     # the low is looked for until two weeks after it closed
-MIN_DAYS = 10                       # need this many daily values on each side to say anything
-EFFECTS = 3                         # most recent openings to describe
+LEAD_DAYS = 28                      # each past-opening chart starts 4 weeks before the first opening of its year
+SPAN_DAYS = 196                     # ...and runs 28 weeks after it, the same for every year so they compare (0038)
+MIN_BEFORE, MIN_AFTER = 10, 60      # daily values needed before / after the opening to draw a year
+FRESH_PPT = 2.0                     # the oyster_fresh_stress threshold; longest run under it is in the sentence
+SINCE_YEAR = 2000
 
 
 def openings(region: Region) -> list[dict]:
@@ -34,25 +35,61 @@ def openings(region: Region) -> list[dict]:
     return out
 
 
-def effects(daily: pd.DataFrame, site: str, opens: list[dict], asof: pd.Timestamp) -> list[dict]:
-    """Salinity at `site` before each opening and its low during (and just after) it, newest first."""
+def _longest_run(s: pd.Series, below: float) -> tuple[int, pd.Timestamp | None]:
+    """Longest run of consecutive calendar days under `below`, and the day it started. A missing day ends a run."""
+    best, start, run, first, prev = 0, None, 0, None, None
+    for d, v in s.items():
+        if v < below and prev is not None and run and d - prev == pd.Timedelta(days=1):
+            run += 1
+        elif v < below:
+            run, first = 1, d
+        else:
+            run = 0
+        if run > best:
+            best, start = run, first
+        prev = d
+    return best, start
+
+
+def past(daily: pd.DataFrame, normals: pd.DataFrame | None, site: str, opens: list[dict], asof: pd.Timestamp) -> list[dict]:
+    """What `site` did around each year's openings since 2000, on the same day axis (days since the year's first
+    opening), with that time of year's typical salinity beside it. Past openings side by side, not a forecast (0008)."""
     s = daily[(daily.site == site) & (daily["var"] == "salinity")].drop_duplicates("date").set_index("date").value.sort_index()
+    s.index = pd.to_datetime(s.index)
+    typ = None
+    if normals is not None and not normals.empty:
+        n = normals[(normals.site == site) & (normals["var"] == "salinity")]
+        typ = dict(zip(n.doy, n.p50)) if len(n) else None
+    years: dict[int, list[dict]] = {}
+    for o in opens:
+        if o["year"] >= SINCE_YEAR:
+            years.setdefault(o["year"], []).append(o)
     out = []
-    for o in reversed(opens):
-        start = pd.Timestamp(o["opened"])
-        end = min(start + pd.Timedelta(days=(o["days"] or (asof - start).days) + AFTER_DAYS), asof)
-        before = s[start - pd.Timedelta(days=BEFORE_DAYS):start - pd.Timedelta(days=1)]
-        during = s[start:end]
-        if len(before) < MIN_DAYS or len(during) < MIN_DAYS:
+    for year, os in sorted(years.items()):
+        t0 = pd.Timestamp(os[0]["opened"])
+        win = s[t0 - pd.Timedelta(days=LEAD_DAYS):min(t0 + pd.Timedelta(days=SPAN_DAYS), asof)]
+        before, after = win[:t0 - pd.Timedelta(days=1)], win[t0:]
+        if len(before) < MIN_BEFORE or len(after) < MIN_AFTER:
             continue
-        out.append({"opened": o["opened"], "year": o["year"], "days": o["days"], "before": round(float(before.median()), 1),
-                    "low": round(float(during.min()), 1), "low_date": during.idxmin().strftime("%Y-%m-%d")})
-        if len(out) == EFFECTS:
-            break
+        off = lambda d: int((d - t0).days)
+        run, run_start = _longest_run(after, FRESH_PPT)
+        days = range(-LEAD_DAYS, SPAN_DAYS + 1, 3)
+        out.append({
+            "year": year,
+            "opened": [o["opened"] for o in os],
+            "bands": [[off(pd.Timestamp(o["opened"])), off(pd.Timestamp(o["opened"])) + (o["days"] or off(asof))] for o in os],
+            "days_open": sum(o["days"] or 0 for o in os),
+            "series": [[off(d), round(float(v), 1)] for d, v in win.items()],
+            "typical": [[d, round(float(typ[k]), 1)] for d in days
+                        if typ and (k := min((t0 + pd.Timedelta(days=d)).dayofyear, 365)) in typ],
+            "before": round(float(before.median()), 1),
+            "low": round(float(after.min()), 1), "low_day": off(after.idxmin()),
+            "fresh_run": run, "fresh_run_day": off(run_start) if run_start is not None else None,
+        })
     return out
 
 
-def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | None:
+def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp, normals: pd.DataFrame | None = None) -> dict | None:
     cfg = region.extras.get("spillway")
     if not cfg:
         return None
@@ -64,7 +101,7 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | N
         "openings": opens, "open_now": open_now,
         "count": len(opens), "since": opens[0]["year"] if opens else None,
         "since_2000": sum(o["year"] >= 2000 for o in opens),
-        "effects": effects(daily, cfg["sound_site"], opens, asof),
+        "past": past(daily, normals, cfg["sound_site"], opens, asof), "fresh_ppt": FRESH_PPT,
         "sound_site": next((s["short"] for s in region.sites if s["id"] == cfg["sound_site"]), cfg["sound_site"]),
         "river": None,
     }

@@ -612,7 +612,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     fishing_section = fishing.section(region, daily, asof, cards, forecast)
     shrimp_section = shrimp.section(region, asof)
     from .models import satellite, spillway, vibrio
-    spillway_section = spillway.section(region, daily, asof)
+    spillway_section = spillway.section(region, daily, asof, normals)
     vibrio_section = vibrio.section(region, daily, asof, suspect)
     out = SITE_OUT / region.id
     (out / "sites").mkdir(parents=True, exist_ok=True)
