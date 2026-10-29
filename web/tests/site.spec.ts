@@ -232,7 +232,8 @@ test("every page has a share image that exists and is 1200x630", async ({ page, 
     const og = await page.locator('meta[property="og:image"]').getAttribute("content");
     expect(og, path).toMatch(/\/og\/[\w-]+\.png\?v=\d{12}$/);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
-    const res = await request.get(new URL(og!).pathname.replace(/^\//, ""));
+    // The image's path already includes the base path (/ms-sound-check/ in CI), so resolve it from the server root.
+    const res = await request.get(new URL(new URL(og!).pathname, page.url()).href);
     expect(res.status(), og!).toBe(200);
     const png = await res.body();
     expect([png.readUInt32BE(16), png.readUInt32BE(20)], og!).toEqual([1200, 630]);   // IHDR width, height

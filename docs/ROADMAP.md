@@ -11,17 +11,13 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
-- **Smaller rivers in the virtual sensors**: `scripts/experiment_minor_rivers.py` compares the models with and without the
-  Wolf and Biloxi gauges (last two years and 2019-2020, overall and on fresh days). Run the `experiment` workflow task
-  (LightGBM won't load on the dev Mac) and add them only on a clear, consistent gain ([0021](decisions/0021-smaller-rivers-shown-not-weighed.md)).
+Nothing queued: pick from Later.
 
 ### Showing the Sound
 Built 2026-10-28 ([0032](decisions/0032-year-dots-from-the-record-indicator.md)-[0035](decisions/0035-home-map-first-and-one-instrument-table.md)):
 cleaner stripes, year dots, the salinity sketch for any day back to 1998, wind and river motion, and the home layout.
 Home height follow-up done: one history picture on home and a folded spillway section (home 6,035 → 4,972 px,
-[0036](decisions/0036-one-history-picture-and-a-folded-spillway.md)). One follow-up left:
-- **Replay speed on a real phone**: headless software WebGL gives about 50 ms a frame while playing a year (map repaint,
-  not the sketch). Check a mid-range phone; if it stutters, lengthen the play interval before trying WebGL (0033).
+[0036](decisions/0036-one-history-picture-and-a-folded-spillway.md)). Replay speed on a real phone is parked (below).
 
 ## Later
 - **Per-beach RSS**: one feed per beach, alongside the weekly digest.
@@ -35,6 +31,13 @@ Home height follow-up done: one history picture on home and a folded spillway se
 - Harmful algal bloom notices beyond beaches.
 
 ## Parked
+- **Smaller rivers in the virtual sensors**: no station improved in both test periods, and fresh days got worse in 5 of
+  8 cases ([0021](decisions/0021-smaller-rivers-shown-not-weighed.md), update 2026-10-29). Rerun if a station nearer a
+  river mouth is added.
+- **Replay speed on a real phone**: no mid-range phone to test on. Headless software WebGL at 6x CPU slowdown gives
+  about 67 ms frames while playing a year; that's the map repaint, and self-pacing the steps didn't clearly help (tried
+  2026-10-29, reverted). Recheck if someone reports stutter, or via a real-device service; then lengthen the play
+  interval first (0033).
 - **Beach advisory heads-up after rain**: the effect in MDEQ's 2015-2025 samples faded after 2021 and shows no
   dose-response ([0029](decisions/0029-no-beach-rain-heads-up.md)). Retest in a year or two.
 - **Salinity forecast**: no edge over persistence during the events that matter ([0008](decisions/0008-no-salinity-forecast.md)).

@@ -42,3 +42,22 @@ with one sentence under the river cards.
 - New gauged rivers need the `backfill` workflow task for their history and normals; until then the cards show flow
   without a "typical" comparison.
 - Revisit if an experiment shows the Wolf or Biloxi improving the Back Bay or West Sound virtual sensors.
+
+## Update 2026-10-29: the experiment says keep them out
+`scripts/experiment_minor_rivers.py` in CI (`experiment` task, run 40816456411). MAE in ppt with the minor rivers
+added minus without; negative means they helped. "Fresh" is days under 8 ppt.
+
+| Station | Test | Overall | Fresh days (n) |
+|---|---|---|---|
+| West Sound | last two years | -0.12 | -0.41 (45) |
+| West Sound | 2019-2020 | +0.29 | +0.61 (125) |
+| Biloxi Back Bay | last two years | +0.31 | +0.18 (56) |
+| Biloxi Back Bay | 2019-2020 | -0.23 | +0.19 (123) |
+| East Sound | last two years | -0.16 | -0.21 (6) |
+| East Sound | 2019-2020 | +0.15 | +0.18 (63) |
+| Pearl River mouth | last two years | +0.03 | +0.05 (424) |
+| Pearl River mouth | 2019-2020 | +0.06 | +0.11 (606) |
+
+No station gains in both periods, and on fresh days, where a small river should matter most, they made things worse in
+5 of 8 cases. The one helpful line (West Sound, recent fresh days) reverses in the spillway years. The rivers stay
+out of the virtual sensors. Rerun only if a station closer to a river mouth (Grand Bay, a Bay St. Louis gauge) is added.

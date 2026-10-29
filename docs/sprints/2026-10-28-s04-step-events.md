@@ -32,14 +32,14 @@
 - [x] Gulf water level at Dauphin Island in step-event text ([0030](../decisions/0030-gulf-water-level-in-event-text.md)): new `coops` source; drops followed a level rise 59% of the time vs. 18% of days; 2026-10-15 now has a fact
 - [x] Weekly digest ([0031](../decisions/0031-weekly-digest-rss-and-bluesky.md)): `digest.json` in the store, `digest.xml` RSS, `python -m msc post` to Bluesky once the secrets are set
 - [x] Beach rain heads-up tested and parked ([0029](../decisions/0029-no-beach-rain-heads-up.md)): the rain effect in MDEQ's samples faded after 2021 (17% vs. 12%)
-- [ ] Smaller rivers in the virtual sensors: `scripts/experiment_minor_rivers.py` is in the `experiment` task; run it and decide (0021)
+- [x] Smaller rivers in the virtual sensors: experiment run in CI; no consistent gain, so they stay out (0021, update 2026-10-29)
 - [x] 28 years of the Sound ([0028](../decisions/0028-every-year-on-record.md)): shared rules in `msc/history.py`; salinity history picture (`history/<slug>.json`, `HistoryStripes.tsx`) on station pages and in a home section, with a table alternative, a picked year drawn on the station chart, and the home share image; `record` indicator for river flow, Pearl stage and Sound salinity (unit tests in `tests/`, now run in CI); "years like this one" in the river section with `data/notable_years.csv`
 - [x] Showing the Sound: cleaner salinity stripes (partial years apart, notable-year tags, today line, month lines, row summaries, a tapped day links to its station year and map day; the home panels were drawing once scrolled to, now covered by an e2e test)
 - [x] Showing the Sound: today against every year, year dots built from the record indicator's own means ([0032](../decisions/0032-year-dots-from-the-record-indicator.md)), unit test and e2e
 - [x] Showing the Sound: salinity sketch on for Coast, drawn for any day; `replay/<year>.json` back to 1998; year, month, notable-day pickers and `#YYYY-MM-DD` ([0033](../decisions/0033-salinity-sketch-and-the-long-replay.md))
 - [x] Showing the Sound: wind particles and marching river dashes, still arrows under reduced motion ([0034](../decisions/0034-wind-and-river-flow-as-motion.md))
 - [x] Showing the Sound: home DOM order headline, map, Signals; one instrument table in place of five card grids ([0035](../decisions/0035-home-map-first-and-one-instrument-table.md))
-- [ ] Showing the Sound: check replay frame time on a real mid-range phone (headless software WebGL: about 50 ms a frame while playing, 60 fps idle)
+- [ ] Showing the Sound: check replay frame time on a real mid-range phone. Parked: no device; self-paced steps tried at 6x CPU slowdown, no clear gain, reverted (ROADMAP Parked)
 - [x] Showing the Sound: home height: one history picture on home (the rest linked) and the spillway folded to one line while the river is low; home 6,035 → 4,972 px ([0036](../decisions/0036-one-history-picture-and-a-folded-spillway.md))
 - [x] The Sound west to east: one bar of today's salinity by station position over a fainter usual bar, a summary in the table's band words, labels that never cross, and the Oysters share image (`share: strip`) ([0037](../decisions/0037-the-sound-west-to-east.md))
 
