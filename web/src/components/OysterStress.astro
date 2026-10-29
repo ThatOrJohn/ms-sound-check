@@ -47,8 +47,8 @@ const xTicks = [first, Math.round((first + year) / 2 / 5) * 5, year];
 ---
 <section class="group oyster-stress" aria-labelledby="g-stress">
   <h2 id="g-stress">Fresh, hot water near the reefs</h2>
-  <p>{`Fresh water is hardest on oysters in summer heat. Studies of Gulf oyster die-offs tie them to weeks of water ` +
-    `under ${ppt} ppt while it's warmer than ${degF} °F (${stress.temp_above_c} °C). This counts the days each ` +
+  <p>{`Fresh water is hardest on oysters in summer heat. Studies of Gulf oyster die-offs tie them to long spells ` +
+    `of water under ${ppt} ppt while it's warmer than ${degF} °F (${stress.temp_above_c} °C). This counts the days each ` +
     `station's daily average was both, and compares this year with that station's own past years. It describes the ` +
     `water near the reefs, not whether they're open: only MDMR decides that.`}</p>
   <div class="stress-grid">
@@ -81,6 +81,7 @@ const xTicks = [first, Math.round((first + year) / 2 / 5) * 5, year];
     ` Years with both readings on fewer than ${Math.round(stress.min_coverage * 100)}% of days from ${season} are ` +
     `drawn hollow and left out of the comparison, since their counts run low. A day with a reading missing isn't ` +
     `counted and ends a run. Daily averages smooth over short fresh spells. The ${ppt} ppt and ${degF} °F pairing ` +
-    `comes from studies of oyster die-offs in Louisiana's Breton Sound (La Peyre and others, 2013 and 2016). Stations ` +
+    `comes from studies of oysters from Louisiana's Breton Sound (La Peyre and others, 2013; Rybovich and others, 2016). ` +
+    `They don't say how many days it takes, so this counts days and doesn't judge them. Stations ` +
     `that don't measure water temperature aren't shown.`}</p>
 </section>
