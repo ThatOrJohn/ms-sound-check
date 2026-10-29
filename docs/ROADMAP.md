@@ -11,7 +11,15 @@ Updated 2026-10-28. Process notes are in [docs/README.md](README.md).
 - **[Sprint 1: Foundation](sprints/2026-10-28-s01-foundation.md)**: pipeline, live sources, Astro site, personas, CI and deploy.
 
 ## Next
-Nothing queued: pick from Later.
+In this order. Usage numbers come first so they can steer the rest, including the moonshots.
+1. **Custom domain and Cloudflare Web Analytics** (about $12/yr; the owner picks and pays for the domain). No usage
+   data exists yet for any of the 37 decisions' worth of features.
+2. **MDMR shellfish areas on the oyster map**: the molluscan shellfish and oyster growing waters classification areas
+   as a map layer (I-B, II-A and so on), so the closure table's area names point at places. Look for a public MDMR
+   feature service first, like the beach layer, and don't work around bot checks. If there isn't one, park it.
+3. **Grand Bay NERR water-quality sondes** as extra stations, from the public NERRS CDMO service: more coverage in the
+   eastern Sound and a closer reference than Dauphin Island ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
+4. Then moonshots 1 and 2 below, which reuse data already in the store.
 
 ### Showing the Sound
 Built 2026-10-28 ([0032](decisions/0032-year-dots-from-the-record-indicator.md)-[0035](decisions/0035-home-map-first-and-one-instrument-table.md)):
@@ -20,17 +28,48 @@ Home height follow-up done: one history picture on home and a folded spillway se
 [0036](decisions/0036-one-history-picture-and-a-folded-spillway.md)). Replay speed on a real phone is parked (below).
 
 ## Later
-- **Per-beach RSS**: one feed per beach, alongside the weekly digest.
+- **Per-beach RSS**: one feed per beach, alongside the weekly digest. Worth it if analytics show the digest is used.
+- **Chlorophyll map layer**: CoastWatch chlorophyll as a satellite layer, the same newest-clear-view approach as
+  [0023](decisions/0023-satellite-layers-newest-clear-view.md). This is the realistic form of "harmful algal bloom
+  notices beyond beaches", since Mississippi has little bloom reporting of its own. Describe it as greener water, not
+  as a bloom.
 - **Spillway status feed**: if the Corps publishes structure flow or bays open, use it instead of the hand-kept list
-  ([0022](decisions/0022-spillway-watch-from-the-river.md)).
-- **MDMR shellfish areas on the oyster map**: the molluscan shellfish and oyster growing waters classification areas as a map layer (I-B, II-A and so on), so the closure table's area names point at places. Look for a public MDMR feature service first, like the beach layer, and don't work around bot checks.
-- Custom domain (about $12/yr) and Cloudflare Web Analytics.
-- Grand Bay NERR water-quality sondes as extra stations (and a closer reference than Dauphin Island, [0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
-- A second region (Alabama via ARCOS, or a Texas bay): new YAML, maybe one adapter.
-- Publish virtual-sensor models to Hugging Face with a model card once they're stable.
-- Harmful algal bloom notices beyond beaches.
+  ([0022](decisions/0022-spillway-watch-from-the-river.md)). Blocked until they do.
+
+## Moonshots
+Bigger bets, ranked by value against risk. Each one needs a decision record before it's built, and every rule in
+CLAUDE.md still applies: oyster wording, the disclaimer, plain language, `_try` and stale-data hiding.
+1. **Oyster stress days per reef**: count the days this season when the water was both fresh and hot (roughly under
+   5 ppt and above 25 °C, a pairing known to kill oysters), from station readings and the virtual sensors, against
+   every year since 1998. Describe conditions on the reefs, never closures. Check the thresholds against published
+   oyster mortality studies first.
+2. **Spillway "what happened last time"**: when the Mississippi nears 17 ft, show what West Sound and the oyster
+   stations did during the 2008, 2011, 2016, 2019 and 2020 openings, week by week. These are past openings side by
+   side, not a forecast ([0008](decisions/0008-no-salinity-forecast.md) still holds), so say so in the text.
+3. **Low-oxygen watch**: dissolved oxygen from the USGS and NERR stations that measure it, plus the summer Gulf
+   dead-zone extent when it's published. It covers fish kills and "jubilee"-type nights for the Fishing and Shrimp
+   views.
+4. **Storm mode**: when a National Hurricane Center forecast cone touches the coast, home leads with observed water
+   level against predicted tide (CO-OPS, already ingested), river rises and official links (NHC, NWS, county
+   emergency management). Observations only: no surge predictions of our own. The disclaimer matters most here.
+5. **A citable dataset**: the cleaned 1998-onward salinity, river flow and step-event record on Zenodo with a DOI,
+   refreshed yearly, with a short data paper or README. Cheap, and it puts the work in front of researchers, MDMR and
+   the Gulf Coast Research Lab.
+6. **The whole northern Gulf**: a second region and then more (Mobile Bay via ARCOS, Lake Pontchartrain and
+   Barataria, Texas bays), as new YAML and maybe one adapter each
+   ([0010](decisions/0010-personas-as-config.md)). The real cost is each region's official sources for closures and
+   beaches.
+7. **Community pier sensors**: low-cost conductivity and temperature loggers at piers, run with schools or USM, fed
+   into the pipeline with their own quality checks. Needs hardware, partners and upkeep. It would fill gaps like
+   East Ship Island, which can't be estimated.
+
+Considered and left off: an LLM "ask the Sound" chat. It needs a backend, which breaks the static-site model
+([0001](decisions/0001-static-site-scheduled-pipeline.md)), and its answers can't be held to the oyster wording rule
+or the plain, non-alarmist language.
 
 ## Parked
+- **Virtual-sensor models on Hugging Face**: little benefit for a plain-language site. Revisit if a researcher asks,
+  or alongside the citable dataset (Moonshot 5).
 - **Smaller rivers in the virtual sensors**: no station improved in both test periods, and fresh days got worse in 5 of
   8 cases ([0021](decisions/0021-smaller-rivers-shown-not-weighed.md), update 2026-10-29). Rerun if a station nearer a
   river mouth is added.
