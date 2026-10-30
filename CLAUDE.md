@@ -1,12 +1,13 @@
 # ms-sound-check
 
-Free, plain-language Mississippi Sound conditions site. A Python pipeline (`msc/`) pulls public data every 3 hours in
+Free, plain-language Mississippi Sound conditions site. A Python pipeline (`msc/`) pulls public data every 4 hours in
 GitHub Actions, writes JSON, and an Astro + React site (`web/`) renders it to GitHub Pages.
 
 Read first: `QUICKSTART.md` (how it all fits), `docs/ROADMAP.md` (what's next), the current sprint in
 `docs/sprints/`, and `docs/decisions/` before changing anything a decision record covers.
 
 ## Commands
+
 ```bash
 source .venv/bin/activate                     # Python 3.11+, deps in requirements.txt (+ requirements-dev.txt)
 python -m msc run                             # ingest + build JSON into web/public/data/ms/
@@ -17,9 +18,11 @@ cd web && npm run build                       # astro check + build (must pass w
 cd web && npm run test:e2e                    # Playwright + axe; gates deploys
 python scripts/dev_fixtures.py apply|clear    # sample beach advisories / rising river / forecasts for UI work
 ```
+
 Node: version in `web/.nvmrc` (>= 22.23.4).
 
 ## Layout
+
 - `regions/ms.yaml`: stations, personas (`card_order`, `map_layers`), indicators. Prefer config over code.
 - `msc/adapters/`: one module per source; `msc/models/`: virtual sensors, oyster, fishing, beaches, shrimp;
   `msc/indicators.py`: findings; `msc/build.py`: JSON output and headlines.
@@ -28,6 +31,7 @@ Node: version in `web/.nvmrc` (>= 22.23.4).
 - `.github/workflows/update.yml`: update / deploy / health / experiment jobs. The data store lives on the `data` branch.
 
 ## Rules
+
 - Oyster wording must never say an area "is closed". Only MDMR decides closures; we compare readings to their plan.
 - Not for navigation or harvest decisions; keep that disclaimer and plain, non-alarmist language.
 - Don't bypass bot checks (e.g. Cloudflare on beaches.mdeq.ms.gov); use public APIs/feature services only.

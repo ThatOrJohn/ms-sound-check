@@ -2,7 +2,7 @@
 
 The rule that shapes everything: **generalize the plumbing, not the
 interpretation.** Fetching, storing, and comparing data to normal works the
-same in any bay. What a reading *means* (oyster thresholds, how a state sets
+same in any bay. What a reading _means_ (oyster thresholds, how a state sets
 shrimp seasons) is local, so it lives in a region's config file, not in the code.
 
 ```
@@ -34,23 +34,23 @@ build a region picker until a second region exists.
 **Adapters** (`msc/adapters/`) turn each source into one shape:
 `site, var, date|time, value, source`.
 
-| Source | What | How | Cost |
-|---|---|---|---|
-| USGS (new OGC API, via `dataretrieval`) | conductance → salinity, water temp, river flow; 15-minute values | `usgs.recent` | free; set `API_USGS_PAT` for higher limits |
-| USGS `waterdata.get_daily` | daily history back to 1998 | `usgs.backfill_daily`, one time | free; `API_USGS_PAT` raises the rate limit |
-| National Weather Service | air temperature at Gulfport-Biloxi airport | `nws.recent` | free, no key |
-| NWS National Water Prediction Service | observed and forecast river stage at PERL1 (Pearl River near Pearl River, LA) for the oyster watch | `nwps.recent_and_forecast`, every run; history from USGS 02492600 at backfill | free, no key |
-| NWS forecast (api.weather.gov) | 7-day forecast for the Gulfport waterfront: wind, sky, rain chance, temperature | `nws.forecast`, every run | free, no key |
-| NOAA CO-OPS | tide predictions (highs and lows) at Bay Waveland, Gulfport Harbor, Pascagoula | `tides.fetch`, every run | free, no key |
-| Open-Meteo (wind) | daily wind over mid-Sound: east/north components and peak; ERA5 history at backfill | `openmeteo.wind_*` | free, non-commercial |
-| MDEQ Beach Monitoring (public ArcGIS feature service) | beach advisories and closures (bacteria, debris, algal blooms) and beach segments | `beaches.fetch`, every run | free, no key |
-| MDMR WordPress REST API | shrimp season notices (press releases, filtered by title) for the Shrimp page | `mdmr.fetch`, every run | free, no key |
-| NWS National Water Prediction Service | observed and forecast stage at NORL1 (Mississippi River at New Orleans) for the spillway watch | `spillway.fetch`, every run; saved as `spillway.json` | free, no key |
-| NOAA CoastWatch ERDDAP | satellite water clarity (VIIRS Kd490, 750 m) and surface temperature (ACSPO, 2 km) for map layers | `coastwatch.fetch`, every run; newest clear view per pixel over a few days | free, no key |
-| NOAA CO-OPS (water level) | daily mean water level at Dauphin Island (8735180) for step-event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) | `coops.recent` every run (6-minute preliminary); `coops.backfill` one year per request, paused | free, no key; refuses fast bulk pulls |
-| `data/spillway_openings.csv` | Bonnet Carré Spillway openings since 1937, kept by hand | read by `models/spillway.py` | — |
-| `data/notable_years.csv` | one line of context per year for "years like this one", kept by hand | read by `build.py` ([0028](decisions/0028-every-year-on-record.md)) | — |
-| Open-Meteo | observed and forecast daily rain, local and basin-averaged | `openmeteo.*` | free, no key, **non-commercial terms**; revisit if sponsorship happens |
+| Source                                                | What                                                                                                                              | How                                                                                            | Cost                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| USGS (new OGC API, via `dataretrieval`)               | conductance → salinity, water temp, river flow; 15-minute values                                                                  | `usgs.recent`                                                                                  | free; set `API_USGS_PAT` for higher limits                             |
+| USGS `waterdata.get_daily`                            | daily history back to 1998                                                                                                        | `usgs.backfill_daily`, one time                                                                | free; `API_USGS_PAT` raises the rate limit                             |
+| National Weather Service                              | air temperature at Gulfport-Biloxi airport                                                                                        | `nws.recent`                                                                                   | free, no key                                                           |
+| NWS National Water Prediction Service                 | observed and forecast river stage at PERL1 (Pearl River near Pearl River, LA) for the oyster watch                                | `nwps.recent_and_forecast`, every run; history from USGS 02492600 at backfill                  | free, no key                                                           |
+| NWS forecast (api.weather.gov)                        | 7-day forecast for the Gulfport waterfront: wind, sky, rain chance, temperature                                                   | `nws.forecast`, every run                                                                      | free, no key                                                           |
+| NOAA CO-OPS                                           | tide predictions (highs and lows) at Bay Waveland, Gulfport Harbor, Pascagoula                                                    | `tides.fetch`, every run                                                                       | free, no key                                                           |
+| Open-Meteo (wind)                                     | daily wind over mid-Sound: east/north components and peak; ERA5 history at backfill                                               | `openmeteo.wind_*`                                                                             | free, non-commercial                                                   |
+| MDEQ Beach Monitoring (public ArcGIS feature service) | beach advisories and closures (bacteria, debris, algal blooms) and beach segments                                                 | `beaches.fetch`, every run                                                                     | free, no key                                                           |
+| MDMR WordPress REST API                               | shrimp season notices (press releases, filtered by title) for the Shrimp page                                                     | `mdmr.fetch`, every run                                                                        | free, no key                                                           |
+| NWS National Water Prediction Service                 | observed and forecast stage at NORL1 (Mississippi River at New Orleans) for the spillway watch                                    | `spillway.fetch`, every run; saved as `spillway.json`                                          | free, no key                                                           |
+| NOAA CoastWatch ERDDAP                                | satellite water clarity (VIIRS Kd490, 750 m) and surface temperature (ACSPO, 2 km) for map layers                                 | `coastwatch.fetch`, every run; newest clear view per pixel over a few days                     | free, no key                                                           |
+| NOAA CO-OPS (water level)                             | daily mean water level at Dauphin Island (8735180) for step-event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) | `coops.recent` every run (6-minute preliminary); `coops.backfill` one year per request, paused | free, no key; refuses fast bulk pulls                                  |
+| `data/spillway_openings.csv`                          | Bonnet Carré Spillway openings since 1937, kept by hand                                                                           | read by `models/spillway.py`                                                                   | —                                                                      |
+| `data/notable_years.csv`                              | one line of context per year for "years like this one", kept by hand                                                              | read by `build.py` ([0028](decisions/0028-every-year-on-record.md))                            | —                                                                      |
+| Open-Meteo                                            | observed and forecast daily rain, local and basin-averaged                                                                        | `openmeteo.*`                                                                                  | free, no key, **non-commercial terms**; revisit if sponsorship happens |
 
 Salinity is computed from specific conductance (PSS-78 via `gsw`), not taken
 from USGS's own salinity series, which starts in 2011 and has gaps. Values
@@ -70,13 +70,13 @@ provisional data.
 
 **Indicators** (`msc/indicators.py`) are configured in the region YAML:
 
-| Type | Fires when | Example |
-|---|---|---|
-| `vs_normal` | the latest reading is outside the 10th–90th percentile band for this time of year | "Pearl River is running high (30,100 cfs vs. a typical 2,970)" |
-| `run_below` | a value has stayed under a threshold for N straight days, with watch, warning and alert levels | oyster freshwater stress: under 2 ppt for 5 / 10 / 14 days |
-| `record` | the last 14 days rank top or bottom 3 among the same dates in every year on record ([0028](decisions/0028-every-year-on-record.md)) | "The Pearl River near Bogalusa is at its third-lowest late-October flow since 1998. Only 2000 and 2010 were lower." |
-| `custom` | a Python function (`module:function`) returns findings | `msc.models.shrimp:season_lean` |
-| `custom` (`steps:step_events`) | two or more stations step the same way within three days ([0016](decisions/0016-step-events-need-matching-stations.md)) | "Salinity jumped at Merrill Shell Bank and Point Cadet around October 15, by as much as 18 ppt" |
+| Type                           | Fires when                                                                                                                          | Example                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `vs_normal`                    | the latest reading is outside the 10th–90th percentile band for this time of year                                                   | "Pearl River is running high (30,100 cfs vs. a typical 2,970)"                                                      |
+| `run_below`                    | a value has stayed under a threshold for N straight days, with watch, warning and alert levels                                      | oyster freshwater stress: under 2 ppt for 5 / 10 / 14 days                                                          |
+| `record`                       | the last 14 days rank top or bottom 3 among the same dates in every year on record ([0028](decisions/0028-every-year-on-record.md)) | "The Pearl River near Bogalusa is at its third-lowest late-October flow since 1998. Only 2000 and 2010 were lower." |
+| `custom`                       | a Python function (`module:function`) returns findings                                                                              | `msc.models.shrimp:season_lean`                                                                                     |
+| `custom` (`steps:step_events`) | two or more stations step the same way within three days ([0016](decisions/0016-step-events-need-matching-stations.md))             | "Salinity jumped at Merrill Shell Bank and Point Cadet around October 15, by as much as 18 ppt"                     |
 
 Each finding has a severity (notice < watch < warning < alert), topic tags, and
 a plain-language sentence. Stale data (more than 3 days old) never fires an
@@ -84,19 +84,19 @@ indicator. A plain notice is dropped when a stronger finding already covers the
 same site and variable. One broken indicator can't take down the build.
 
 **Virtual sensors** (`msc/models/virtual.py`) are LightGBM quantile models, one set per salinity
-station. Each predicts what that station *should* read from same-day salinity at the other live
+station. Each predicts what that station _should_ read from same-day salinity at the other live
 stations, river flow (today and 7/30-day means), basin rain and season. They're trained by
 `python -m msc train` at backfill and monthly; models live in the data store (`models/`). Each
 training run scores the model on the station's most recent two years before refitting on everything,
 then calibrates the ranges on that held-out period (conformalized quantile regression) so a "90% range"
 really covers about 90%. The build uses them three ways:
 
-| Use | Rule |
-|---|---|
-| Estimate for a retired or quiet station | Only where held-out error is ≤ 3.5 ppt (today: Gulfport Light, Pearl River mouth). Shown with its likely range, labeled as an estimate. |
-| "Reads saltier/fresher than nearby stations suggest" | Live reading outside the calibrated 90% range. A note only. |
-| Suspect: alerts paused | Outside the calibrated 98% range (+0.5 ppt) on 2 of the last 3 days. On the last 400 days this fired on 0 readings that passed the 36 ppt ceiling, so it catches gross failures, not slow drift. |
-| Charts | Dotted "expected from neighbors" line with its 90% band. |
+| Use                                                  | Rule                                                                                                                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Estimate for a retired or quiet station              | Only where held-out error is ≤ 3.5 ppt (today: Gulfport Light, Pearl River mouth). Shown with its likely range, labeled as an estimate.                                                          |
+| "Reads saltier/fresher than nearby stations suggest" | Live reading outside the calibrated 90% range. A note only.                                                                                                                                      |
+| Suspect: alerts paused                               | Outside the calibrated 98% range (+0.5 ppt) on 2 of the last 3 days. On the last 400 days this fired on 0 readings that passed the 36 ppt ceiling, so it catches gross failures, not slow drift. |
+| Charts                                               | Dotted "expected from neighbors" line with its 90% band.                                                                                                                                         |
 
 First run (2026-10-28), held-out MAE in ppt (vs. averaging the neighbors): Gulfport Light 2.3 (9.0),
 Pearl River mouth 2.7 (11.8), Back Bay 3.7 (4.4), Round Island 4.0 (10.4), Merrill Shell 5.0 (6.2),
@@ -115,12 +115,12 @@ step (°F, inches).
 `web/` is an **Astro** site with **TypeScript**, pre-rendered on every scheduled run, so each page is plain
 HTML with the current numbers already in it.
 
-| Route | What |
-|---|---|
-| `/` | Overview for the general coast audience |
-| `/for/<persona>/` | The same overview led by that persona's topics (oyster, shrimp, fish) |
+| Route              | What                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `/`                | Overview for the general coast audience                                                                |
+| `/for/<persona>/`  | The same overview led by that persona's topics (oyster, shrimp, fish)                                  |
 | `/station/<slug>/` | One station: current readings, findings, linked history charts, what feeds it and where its water goes |
-| `/about/` | Sources, how "typical" is computed, what alerts mean, caveats |
+| `/about/`          | Sources, how "typical" is computed, what alerts mean, caveats                                          |
 
 - **JavaScript budget.** Overview, persona and about pages ship no framework code. The theme picker, persona
   picker and "updated X ago" line are small inline scripts. Station pages load **React + ECharts** only when
@@ -150,7 +150,7 @@ sentence about the rivers and what that means for the Sound, plus a persona-spec
 
 `.github/workflows/update.yml`:
 
-- runs every 3 hours, plus a monthly normals refresh and a manual `backfill`
+- runs every 4 hours, plus a monthly normals refresh and a manual `backfill`
 - keeps the data store on a `data` branch, force-pushed as a **single commit**,
   so git history doesn't grow by hundreds of MB a year (the Parquet files
   carry their own history)

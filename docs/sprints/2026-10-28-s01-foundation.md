@@ -5,6 +5,7 @@
 - **Goal:** Prove there's a gap worth filling, then ship a working, free, auto-updating page.
 
 ## Done
+
 - [x] Feasibility research: existing tools, data health, free stack ([feasibility.md](../feasibility.md))
 - [x] Shrimp-opening probe: temperature, not salinity, carries a weak signal ([0009](../decisions/0009-shrimp-lean-not-date.md))
 - [x] Region-agnostic pipeline: adapters, Parquet store, normals, indicators, build ([architecture.md](../architecture.md))
@@ -17,4 +18,5 @@
 - [x] Fixes found in CI: Node version pin, test storage bug, Astro 7 whitespace
 
 ## Outcome
-Live site updating every 3 hours from four public sources, with per-persona pages and tests gating deploys.
+
+Live site updating every 4 hours from four public sources, with per-persona pages and tests gating deploys.

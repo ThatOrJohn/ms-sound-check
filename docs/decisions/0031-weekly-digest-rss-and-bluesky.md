@@ -4,10 +4,12 @@
 - **Date:** 2026-10-28
 
 ## Context
-The roadmap asked for a weekly Bluesky post and RSS from the same build. The site is static and rebuilt every 3 hours,
+
+The roadmap asked for a weekly Bluesky post and RSS from the same build. The site is static and rebuilt every 4 hours,
 so a feed needs somewhere to keep past weeks, and posting needs credentials the repo doesn't hold.
 
 ## Decision
+
 - The scheduled build adds one entry per ISO week to `digest.json` in the data store, on the first run on or after
   Friday 6 AM Central (`digest` in `regions/ms.yaml`), keeping the last 12. A build with `--asof` never adds one.
 - An entry is the Coast headline plus up to three general-topic signals it doesn't already say (record lines before
@@ -19,11 +21,13 @@ so a feed needs somewhere to keep past weeks, and posting needs credentials the 
   `BLUESKY_APP_PASSWORD` secrets, and `continue-on-error`. Without the secrets it logs that an entry is ready.
 
 ## Why
+
 - Friday morning is when anglers and beachgoers plan the weekend; one post a week stays useful without becoming noise.
 - Building the post from the same JSON keeps the disclaimers and calm wording the site already has.
 - Plain HTTP to the AT Protocol endpoints avoids a new dependency for three calls.
 
 ## Consequences
+
 - Nothing is posted until someone creates a Bluesky account and adds the two secrets (an app password, not the
   account password).
 - If the post step fails, the entry stays unposted and is retried on the next scheduled run that day; after a day it's
