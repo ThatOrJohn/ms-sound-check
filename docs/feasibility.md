@@ -1,33 +1,33 @@
 # ms-sound-check: feasibility notes
 
-*Researched 2026-10-28. Seed idea: [`seed.md`](seed.md).*
+*Researched 2026-10-28, updated 2026-10-30 with what has been built. Seed idea: [`seed.md`](seed.md).
+What's next lives in [ROADMAP.md](ROADMAP.md).*
 
 ## The short version
 
-There is a real gap. Nobody turns Mississippi Sound water data into plain
-language for the people who fish it, eat from it, or live beside it. The
-plumbing exists and is free. The audience is small and local, and that is
-fine for a hobby.
+There was a real gap, and the site now fills it. Nobody turned Mississippi Sound water data into plain language
+for the people who fish it, eat from it, or live beside it. The plumbing exists and is free. The audience is small
+and local, and that is fine for a hobby.
 
-Three findings change the plan compared to the seed doc:
+Three findings shaped the plan compared to the seed doc. All three are now handled:
 
-1. **The station network is thinner than it looks.** Two of the five open-Sound
-   salinity stations have been dark since 2024. The project should build around
-   the three that still report, and say so on the page.
-2. **The USGS API the seed assumed is being retired** in the first quarter of 2027.
-   Build the live pipeline on the new API from day one.
-3. **An X bot is no longer free.** Bluesky and RSS are free. Treat X as an
-   optional, nearly free extra rather than the main channel.
+1. **The station network is thinner than it looks.** Two of the five open-Sound salinity stations have been dark
+   since 2024. The site is built around the three that still report and says so on the page. Gulfport Light is back
+   as a labeled estimate from its neighbors ([0007](decisions/0007-virtual-sensors.md)); East Ship Island can't be
+   estimated and shows as offline.
+2. **The USGS API the seed assumed is being retired** in the first quarter of 2027. The live pipeline and the
+   backfill were built on the new API from day one, and nothing in the repo calls the old service.
+3. **Social posting isn't free or needed.** The weekly digest is an RSS feed built with the site
+   ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)); no social account is planned.
 
-The most valuable single feature may not be shrimp prediction. It may be a
-**freshwater-stress counter** built on a published oyster threshold (see
-"Angles, re-ranked").
+The most valuable single feature turned out not to be shrimp prediction. It was the **freshwater-stress counter**
+built on a published oyster threshold, now an Oysters signal alongside the fresh-and-hot days count
+([0039](decisions/0039-fresh-and-hot-days-near-the-reefs.md)).
 
 ## Does something useful already exist?
 
-The test is not "is there a dashboard?" It is "can a shrimper, angler, or
-curious Biloxi local open one page and learn what the Sound is doing and
-whether that matters?" Today, nobody answers that.
+The test is not "is there a dashboard?" It is "can a shrimper, angler, or curious Biloxi local open one page and
+learn what the Sound is doing and whether that matters?" Before this site, nobody answered that.
 
 | What exists | What it actually gives you | Gap |
 |---|---|---|
@@ -38,20 +38,18 @@ whether that matters?" Today, nobody answers that.
 | USM msbCOAWST model | A daily hindcast running since Jan 2025, plus forecast maps | **No public portal.** It appears in presentations, and access is by contacting the team |
 | Spillway research (NGI / USM, 2026) | A concrete oyster tipping point, plus a call for real-time monitoring | The researchers call for this, but no public tool exists |
 
-ARCOS confirms that "raw dashboard" is the wrong product. It has better
-instruments than Mississippi and still doesn't explain anything. The
-opportunity is interpretation: "salinity at Merrill Shell is 6 ppt below
-normal for late October, the Pearl is running high, here's what that tends to
-mean."
+ARCOS confirms that "raw dashboard" is the wrong product. It has better instruments than Mississippi and still
+doesn't explain anything. The opportunity was interpretation: "salinity at Merrill Shell is 6 ppt below normal for
+late October, the Pearl is running high, here's what that tends to mean." That is what the headline, Signals and
+persona pages now do. Dauphin Island's daily salinity is used only as a reference at the map's east edge
+([0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
 
-**Red team on "useful":** The serious users (MDMR, oyster farmers, USM) already
-get this data from the source and won't need the site. The real audience is the
-casual middle: recreational anglers, seafood-curious locals, and coast people
-who heard "the spillway opened" and want to know what it means for the Sound. That
-audience exists, but it is small and seasonal. Engagement will spike around
-shrimp opening day and spillway events and be quiet otherwise. Design for
-that pattern (event alerts plus a weekly digest) rather than expecting daily
-visits.
+**Red team on "useful":** The serious users (MDMR, oyster farmers, USM) already get this data from the source and
+won't need the site. The real audience is the casual middle: recreational anglers, seafood-curious locals, and coast
+people who heard "the spillway opened" and want to know what it means for the Sound. That audience exists, but it is
+small and seasonal. Engagement will spike around shrimp opening day and spillway events and be quiet otherwise. The
+site is designed for that pattern (step-event signals, the spillway watch and a weekly digest) rather than expecting
+daily visits. No usage data exists yet; analytics are first on the roadmap.
 
 ## Data health check (as of 2026-10-28)
 
@@ -63,170 +61,122 @@ From the USGS series catalog for each MDMR/USGS station:
 | Biloxi Bay at Point Cadet (302318088512600) | since **2000** | since 2000 | ✅ reporting |
 | Round Island Light (301849088350000) | since 2009 (conductance only) | since 2009 | ✅ reporting |
 | East Pearl River at CSX (301141089320300) | since 2001 | since 2002 | ✅ reporting (river mouth) |
-| Gulfport Light (301912088583300) | 2009 – **Aug 2024** | to Oct 2025 | ❌ salinity dead |
-| East Ship Island Light (301527088521500) | 2008 – **Dec 2024** | to Jan 2026 | ❌ salinity dead |
+| Gulfport Light (301912088583300) | 2009 – **Aug 2024** | to Oct 2025 | ❌ salinity dead; shown as an estimate |
+| East Ship Island Light (301527088521500) | 2008 – **Dec 2024** | to Jan 2026 | ❌ salinity dead; can't be estimated |
 | St. Joseph Island Light (301104089253400) | — | — | active, no salinity |
 
-Rivers: Pearl River near Bogalusa (02489500, since 1938) and Pascagoula River at
-Merrill (02479000, since 1930) are both reporting daily discharge.
+Rivers: Pearl River near Bogalusa (02489500, since 1938) and Pascagoula River at Merrill (02479000, since 1930) are
+both reporting daily discharge. The Wolf and Biloxi rivers were added later as shown-but-not-weighed rivers
+([0021](decisions/0021-smaller-rivers-shown-not-weighed.md)).
 
-Two things follow from this:
+Two things followed from this:
 
-- **Derive salinity from conductance.** USGS's own salinity series only starts
-  in 2011 and is gappy. But conductance goes back to 1998–2009, and practical
-  salinity can be computed from specific conductance with the standard
-  formula (PSS-78, via the `gsw` package). That roughly doubles the history at
-  the best stations. The probe script already does this.
-- **The west/east split is covered, but the outer Sound is not.** Merrill Shell
-  (west, Pearl-influenced) and Round Island (east, Pascagoula-influenced)
-  bracket the Sound nicely, and Point Cadet covers Back Bay. With Gulfport
-  Light and East Ship dark, there is nothing out by the islands. Be honest on
-  the page about which water is being described.
+- **Salinity is derived from conductance** ([0006](decisions/0006-salinity-from-conductance.md)). USGS's own
+  salinity series only starts in 2011 and is gappy. Conductance goes back to 1998–2009, and practical salinity is
+  computed from specific conductance with the standard formula (PSS-78, via the `gsw` package). That roughly doubles
+  the history at the best stations and is what makes "28 years of the Sound" possible.
+- **The west/east split is covered, but the outer Sound is not.** Merrill Shell (west, Pearl-influenced) and Round
+  Island (east, Pascagoula-influenced) bracket the Sound, and Point Cadet covers Back Bay. With Gulfport Light and
+  East Ship dark, there is nothing measured out by the islands. The page says which water is being described.
 
-Worth adding later: the Grand Bay NERR water-quality sondes (east of
-Pascagoula) via NOAA's NERRS data system, and NOAA tide and buoy stations for
-wind and water level. Neither is needed for v1.
+Added since: NOAA tide predictions and measured water level (CO-OPS), NWS observations and forecasts, wind, the
+Pearl River stage forecast (NWPS), the Mississippi at New Orleans, CoastWatch satellite clarity and temperature, MDEQ
+beach status, and MDMR season notices. Still to add: the Grand Bay NERR water-quality sondes east of Pascagoula
+(roadmap, Next).
 
-**API migration (done: `backfill` now uses `waterdata.get_daily`; the experiment scripts still call the old service).** USGS will decommission `waterservices.usgs.gov` in Q1 2027,
-with removal work running from November 2026 through February 2027. The
-replacement is `api.waterdata.usgs.gov/ogcapi/`, which has `latest-continuous`,
-`continuous`, `daily`, and `time-series-metadata` collections. It accepts free
-api.data.gov keys for higher rate limits. The Python `dataretrieval` package
-has a `waterdata` module that wraps it. The one-off probe script uses the old
-service because it is familiar and only has to work once. The live pipeline
-should use the new one.
+**API migration (done).** USGS will decommission `waterservices.usgs.gov` in Q1 2027, with removal work running
+from November 2026 through February 2027. The replacement is `api.waterdata.usgs.gov/ogcapi/`, which has
+`latest-continuous`, `continuous`, `daily`, and `time-series-metadata` collections and accepts free api.data.gov keys
+for higher rate limits. The backfill uses `waterdata.get_daily` and the live pull uses `waterdata.get_continuous`,
+both from the `dataretrieval` package.
 
-## Angles, re-ranked
+## Angles and where they landed
 
-**1. Sound conditions, explained (the core product).** A weekly
-plain-language read plus a simple page. For each station it shows salinity,
-temperature, and a comparison to that station's normal for this week of the
-year (percentile band from 15 to 25 years of history). It also shows river flow
-compared to normal and one paragraph of "what this means." This is the thing
-that doesn't exist, and every other angle hangs off it.
+**1. Sound conditions, explained (the core product). Built.** The home page leads with a plain-language headline,
+Signals and one readings table. Each station shows salinity and temperature against its normal for this week of the
+year (percentile bands from 15 to 28 years of history), "in the record" lines when a reading ranks among the
+highest or lowest, and a salinity history picture back to 1998. River flow is compared to normal the same way.
 
-**2. Freshwater-stress counter (new, strongest single hook).** The 2026
-NGI/USM spillway work reported a concrete threshold: oysters die when Sound
-salinity stays **below 2 ppt for more than two weeks**. "Merrill Shell: 9
-consecutive days under 2 ppt" is clear, checkable, and newsworthy precisely
-when people care. It needs no model, just a running counter per station. It
-also pairs naturally with Bonnet Carré status. Caveats: the threshold comes from
-news coverage of the research, so get the actual report before stating it
-authoritatively. It is also an oyster threshold, not a shrimp or fish one.
+**2. Freshwater-stress counter. Built.** The 2026 NGI/USM spillway work reported a concrete threshold: oysters die
+when Sound salinity stays **below 2 ppt for more than two weeks**. Once a station has been under
+that line for five straight days, Signals count the days (stronger at 10 and 14). The Oysters page pairs it with the Bonnet Carré spillway watch
+([0022](decisions/0022-spillway-watch-from-the-river.md)) and days that are both fresh and hot
+([0039](decisions/0039-fresh-and-hot-days-near-the-reefs.md)). Caveat that still stands: the threshold comes from
+coverage of the research, and it is an oyster threshold, not a shrimp or fish one. The wording never says an area is
+closed; the closure watch compares the Pearl River to MDMR's own plan
+([0012](decisions/0012-oyster-watch-criteria.md)).
 
-**3. Shrimp opening forecast (fun, fragile).** It is still the best
-storytelling hook, and the probe will tell us if it is real. Fifteen seasons
-(2012–2026) are compiled in `data/shrimp_openings.csv` with sources. The
-spread is about 5 weeks (May 22 to June 23). The anecdotes line up with the hypothesis:
-the wet spring of 2013 and the spillway year of 2019 were both late. But
-anecdotes are exactly how you fool yourself with n=15.
+**3. Shrimp opening lean. Built, scored from spring 2027.** Published as early / normal / late from March–April
+water temperature, never as a date ([0009](decisions/0009-shrimp-lean-not-date.md)). See "Probe results" below.
+The Shrimp page also carries MDMR's season notices and a three-day wind outlook.
 
-Two structural problems to keep in mind:
+**4. Spillway / freshwater pulse alerts. Built as part of 1 and 2.** USACE still has no machine-readable structure
+status. The watch uses the Mississippi at New Orleans and the NWS forecast against the level where the Corps has
+opened the spillway, a hand-kept list of past openings, and side-by-side charts of what West Sound did each time
+([0038](decisions/0038-past-spillway-openings-side-by-side.md)).
 
-- MDMR sets the date from its own trawl sampling, so the official date is a
-  noisy, human-decided proxy for shrimp size. Weekday and holiday effects
-  probably add a few days of noise that water data can't explain.
-- The forecast is only interesting if it is made **well before** MDMR's
-  announcement, which comes roughly 1–2 weeks ahead of opening day. The probe
-  uses Mar–Apr data so the "prediction" would exist by May 1.
+**5. Fishing conditions. Built as an outlook, not a bite forecast.** The Fishing page gives wind, waves, sky, rain,
+tides, sun and moon, water temperature trend, clarity from satellite and where the saltiest and freshest water is
+([0040](decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md)). A test against 52,000 angler interviews found
+no condition worth turning into a "good bite" call (see "Angler catch vs conditions" below).
+**Dock prices** stay parked: they die without contributors, as the seed notes.
 
-**4. Spillway / freshwater pulse alerts.** These belong as a feature of #1 and
-#2, not a product of their own. USACE has no clean machine-readable status
-feed that I found. The practical signal is Mississippi River flow at
-Baton Rouge/Red River Landing plus news. Do this manually at first.
-
-**5. Fishing conditions and dock prices.** Park both. Fishing is a crowded
-space where trout behavior depends on much more than salinity. Dock prices
-die without contributors, as the seed notes.
-
-## Can it be free? Yes, with one asterisk
+## Can it be free? Yes
 
 | Piece | Choice | Cost |
 |---|---|---|
-| Scheduled ingest | GitHub Actions cron in a public repo, Python, every 1–3 h | $0 |
-| Storage | "Git scraping": commit small JSON/CSV snapshots to the repo, so history comes for free | $0 |
-| Normals | One-time backfill to Parquet in the repo, a few MB | $0 |
-| Site | Static site on Cloudflare Pages reading the JSON (Astro or plain HTML, Observable Plot for charts) | $0 |
-| Narrative text | Rule-based templates first, LLM summary later if wanted | $0 (templates) |
-| Bluesky posts | AT Protocol API from the same Action | $0 |
-| RSS / Atom feed | Generated with the site | $0 |
-| X posts | Pay-per-use API: about $0.015 per text post, about $0.20 if it contains a link | **~$1–2/mo** for text-only weekly posts plus alerts; keep links in the bio |
+| Scheduled ingest | GitHub Actions cron in a public repo, Python, every 4 h | $0 |
+| Storage | Parquet and JSON on a `data` branch, force-pushed as one commit each run ([0002](decisions/0002-parquet-store-on-data-branch.md)) | $0 |
+| Normals | One-time backfill to Parquet, recomputed monthly | $0 |
+| Site | Astro + React + ECharts, MapLibre with OpenFreeMap tiles, on GitHub Pages ([0004](decisions/0004-astro-react-echarts.md), [0005](decisions/0005-maplibre-openfreemap-noaa-depth.md)) | $0 |
+| Narrative text | Rule-based templates from `regions/ms.yaml`; no LLM | $0 |
+| Weekly digest | RSS feed generated with the site | $0 |
+| Custom domain and analytics | Planned: a domain plus Cloudflare Web Analytics | ~$12/yr |
 
-Asterisks and red-team notes on the stack:
+Red-team notes on the stack, and how each was handled:
 
-- **GitHub disables scheduled workflows in public repos after 60 days without
-  activity.** Git scraping commits keep the repo active, so this works itself out.
-  Still, add a heartbeat check so a silent stall gets noticed.
-- **Cron on GitHub is best-effort.** Runs can be delayed by tens of minutes
-  under load. That's fine for a weekly digest and acceptable for alerts.
-- **USGS data is provisional.** Values get revised and sondes foul. A few days
-  of junk (e.g., a sudden 0 ppt) will happen. Add simple sanity filters, and
-  never fire an alert on a single reading. Require persistence over at least 6–12 h.
-- **LLM-written narrative is a trap at first.** It is cheap, but it confidently
-  explains noise. Hand-written rules ("below the 10th percentile for this week")
-  are boring and honest. Add an LLM layer only to rephrase rule output, never
-  to decide what's notable.
+- **GitHub disables scheduled workflows in public repos after 60 days without activity.** The store lives on the
+  `data` branch, so `main` can go quiet; the health job (`python -m msc check`) is there so a silent stall gets
+  noticed.
+- **Cron on GitHub is best-effort.** Runs can be delayed by tens of minutes under load. That's fine for a 4-hour
+  cadence and a weekly digest.
+- **USGS data is provisional.** Values get revised and sondes foul. Sanity filters drop junk, data past its max age
+  hides instead of showing old numbers, and a salinity step at one station alone is never reported: it takes
+  matching steps at two or more stations ([0016](decisions/0016-step-events-need-matching-stations.md)).
+- **LLM-written narrative is a trap.** It is cheap, but it confidently explains noise. Every sentence comes from a
+  hand-written rule ("below the 10th percentile for this week"), which is boring and honest.
 
 ## Probe results (run 2026-10-28)
 
-**Verdict: shrimp is a footnote, not the headline.** The signal is real enough
-to publish as a seasonal lean (early / normal / late), but not good enough to
-publish as a date.
+**Verdict: shrimp is a footnote, not the headline.** The signal is real enough to publish as a seasonal lean
+(early / normal / late), but not good enough to publish as a date.
 
-- **Temperature, not salinity, carries the signal.** Warmer Mar–Apr water means
-  an earlier opening, about 6 days earlier per standard deviation of warmth. The
-  three-station composite (n=15, Spearman -0.57, permutation p≈0.03) cuts the
-  leave-one-out error from 8.5 to 6.1 days and lands within a week in 10 of 15
-  seasons, versus 7 of 15 for guessing the average. The mechanism is
-  plausible: MDMR has blamed a delayed season on cold water slow to reach 68°F,
-  the temperature at which shrimp grow well.
-- **Salinity was the original hypothesis and is weak.** It points the right way,
-  but adding it to temperature makes predictions worse (6.7 days), and it is
-  partly a proxy for temperature (r=0.42). Freshwater seems to matter only in
-  extremes: 2019, the spillway year, opened 11 days later than temperature
-  predicted. River flow shows nothing.
-- **Red team.** The hypothesis moved after seeing the data, and roughly 20
-  variants were tried. Mechanistic refinements (degree-days above 20°C, the
-  date the water crosses 20°C) did *not* beat the plain mean, which is a mild
-  warning sign. 2025 was a warm spring that opened 3.5 weeks late, and nothing
-  here explains it. Recent seasons (2022–2025) have the largest errors.
-- **What would make it credible.** Publish the lean on May 1 each year, before
-  MDMR announces, and score it in public. Spring 2027 is the first true
-  out-of-sample test.
+- **Temperature, not salinity, carries the signal.** Warmer Mar–Apr water means an earlier opening, about 6 days
+  earlier per standard deviation of warmth. The three-station composite (n=15, Spearman -0.57, permutation p≈0.03)
+  cuts the leave-one-out error from 8.5 to 6.1 days and lands within a week in 10 of 15 seasons, versus 7 of 15 for
+  guessing the average. The mechanism is plausible: MDMR has blamed a delayed season on cold water slow to reach
+  68°F, the temperature at which shrimp grow well.
+- **Salinity was the original hypothesis and is weak.** It points the right way, but adding it to temperature makes
+  predictions worse (6.7 days), and it is partly a proxy for temperature (r=0.42). Freshwater seems to matter only in
+  extremes: 2019, the spillway year, opened 11 days later than temperature predicted. River flow shows nothing.
+- **Red team.** The hypothesis moved after seeing the data, and roughly 20 variants were tried. Mechanistic
+  refinements (degree-days above 20°C, the date the water crosses 20°C) did *not* beat the plain mean, which is a
+  mild warning sign. 2025 was a warm spring that opened 3.5 weeks late, and nothing here explains it. Recent seasons
+  (2022–2025) have the largest errors.
+- **What would make it credible.** Publish the lean on May 1 each year, before MDMR announces, and score it in
+  public. Spring 2027 is the first true out-of-sample test.
 
-## Suggested build order
+Reproduce: `python scripts/probe_shrimp_signal.py`. Season dates and per-row sources: `data/shrimp_openings.csv`.
 
-1. ~~Run the probe~~ Done: shrimp is a footnote (see above).
-2. **Backfill normals** for the four live stations and two rivers, and compute
-   day-of-year percentile bands.
-3. **Ingest Action** on the new USGS API, writing `data/latest.json` hourly and a
-   weekly snapshot.
-4. **One static page**: four station cards plus river flow, each with "vs.
-   normal," a freshwater-stress counter, and a short text block.
-5. **Weekly Bluesky/RSS digest.** Add X only if the audience is there.
-6. **Shrimp lean** (early / normal / late from Mar–Apr water temperature),
-   published May 1, 2027 and scored publicly against MDMR's actual date.
+## Build order, as it went
 
-## Open questions for John
-
-- Who is the first reader you picture: your parents' neighbors, the X/Bluesky
-  crowd, or shrimpers at the harbor? That changes the tone and the cadence.
-- Is it worth emailing the msbCOAWST team (contact on their 2025 State of the
-  Coast slides) about a public feed of their forecast? A salinity *forecast*
-  would make this much more useful, and they may welcome a public front end.
-
-## Sources
-
-- [MDMR hydrological monitoring](https://dmr.ms.gov/hydrological-monitoring/)
-- [USGS MissS data release (data.gov)](https://catalog.data.gov/dataset/misss)
-- [DISL ARCOS](https://www.disl.edu/arcos/)
-- [msbCOAWST, State of the Coast 2025 slides](https://www.stateofthecoast.org/wp-content/uploads/2025/06/2025_Session-24_-Brandy-Armstrong.pdf)
-- [WDAM: spillway tipping points (Apr 2026)](https://www.wdam.com/2026/04/06/researchers-discuss-tipping-points-with-bonnet-carr-spillway)
-- [USGS: WaterServices decommission](https://waterdata.usgs.gov/blog/api-waterservices-decom/)
-- [USGS OGC API docs](https://api.waterdata.usgs.gov/docs/ogcapi/)
-- [X API in 2026 (OpenTweet)](https://opentweet.io/answers/is-the-x-api-free-in-2026)
-- USGS series catalog per station, via waterservices site service (queried 2026-10-28)
-- Shrimp opening dates: per-row sources in `data/shrimp_openings.csv`
+1. ~~Run the shrimp probe~~ Done: shrimp is a footnote (above).
+2. ~~Backfill normals~~ Done for the four live stations and the rivers, with day-of-year percentile bands.
+3. ~~Ingest on the new USGS API~~ Done, every 4 hours in GitHub Actions.
+4. ~~One static page~~ Grew into the home page, station pages and four persona pages (Coast, Oysters, Shrimp,
+   Fishing) set in config ([0010](decisions/0010-personas-as-config.md)).
+5. ~~Weekly digest~~ Done as RSS ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)).
+6. **Shrimp lean** scored publicly against MDMR's actual date: first true test May 1, 2027.
 
 ## ML experiments (2026-10-28)
 
@@ -251,15 +201,16 @@ with the 2019 and 2020 Bonnet Carre openings inside the test period.
 A perfect wind forecast adds a few percent more at most. On freshwater-event days (salinity < 8 ppt),
 every model is still worse than persistence without the oracle wind.
 
-**Decision:** don't ship a salinity forecast. The gains are on ordinary days, too small for readers to
-notice, and the models are weakest during the events that matter. Do add wind as data: for the virtual
-sensors, for explaining events ("south wind pushed Gulf water in"), and for the fishing outlook.
+**Decision:** don't ship a salinity forecast ([0008](decisions/0008-no-salinity-forecast.md)). The gains are on
+ordinary days, too small for readers to notice, and the models are weakest during the events that matter. Wind was
+added as data instead: for the virtual sensors, for explaining events ("south wind pushed Gulf water in",
+[0017](decisions/0017-step-events-describe-wind-and-rivers.md)), and for the fishing outlook and map.
 
 **Virtual sensors and step detection.** See `docs/architecture.md`. The neighbor-based estimate is
 good enough to publish for Gulfport Light (about 2.3 ppt typical error). Watching for sudden *steps* in
 a station's gap from its neighbors found exactly one event at Round Island in 17 years (+10 ppt, Oct 17,
 2026). Merrill Shell stepped +14 ppt a day earlier, which points to real Gulf water rather than a sensor
-fault. The rule to ship: a step at one station is suspect; matching steps at two or more stations within
+fault. The rule shipped: a step at one station is suspect; matching steps at two or more stations within
 a few days are an event worth reporting.
 
 Reproduce: run the `Update conditions` workflow with task `experiment`, or `python scripts/experiment_drivers.py`.
@@ -288,3 +239,15 @@ within-month, within-county pattern: trout catch one 4.5 points less often on th
 but too small to tell anyone.
 
 Reproduce: `python scripts/probe_mrip_bite.py` (downloads about 200 MB to `data/raw/mrip/`; outputs in `data/probe/mrip_*`).
+
+## Sources
+
+- [MDMR hydrological monitoring](https://dmr.ms.gov/hydrological-monitoring/)
+- [USGS MissS data release (data.gov)](https://catalog.data.gov/dataset/misss)
+- [DISL ARCOS](https://www.disl.edu/arcos/)
+- [msbCOAWST, State of the Coast 2025 slides](https://www.stateofthecoast.org/wp-content/uploads/2025/06/2025_Session-24_-Brandy-Armstrong.pdf)
+- [WDAM: spillway tipping points (Apr 2026)](https://www.wdam.com/2026/04/06/researchers-discuss-tipping-points-with-bonnet-carr-spillway)
+- [USGS: WaterServices decommission](https://waterdata.usgs.gov/blog/api-waterservices-decom/)
+- [USGS OGC API docs](https://api.waterdata.usgs.gov/docs/ogcapi/)
+- USGS series catalog per station, via waterservices site service (queried 2026-10-28)
+- Shrimp opening dates: per-row sources in `data/shrimp_openings.csv`
