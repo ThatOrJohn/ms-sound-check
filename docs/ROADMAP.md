@@ -79,6 +79,9 @@ or the plain, non-alarmist language.
   interval first (0033).
 - **Beach advisory heads-up after rain**: the effect in MDEQ's 2015-2025 samples faded after 2021 and shows no
   dose-response ([0029](decisions/0029-no-beach-rain-heads-up.md)). Retest in a year or two.
+- **Bite outlook from angler surveys**: in 52,000 MRIP dockside interviews (2000-2025), no condition improved on
+  month alone by even 1% at predicting whether an angler caught the fish they were after
+  ([0041](decisions/0041-no-bite-outlook-from-angler-surveys.md)). Rerun if MDMR publishes MS CREEL estimates.
 - **Salinity forecast**: no edge over persistence during the events that matter ([0008](decisions/0008-no-salinity-forecast.md)).
 - **Databricks**: free-tier limits and nothing to gain at this data size ([0003](decisions/0003-no-databricks.md)).
 - **Dock price tracker**: needs committed contributors ([seed.md](seed.md)).

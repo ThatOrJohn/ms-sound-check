@@ -8,7 +8,7 @@
 | [decisions/](decisions/) | Architecture decision records: one short file per significant choice and why. |
 | [../CHANGELOG.md](../CHANGELOG.md) | User-visible changes, newest first. |
 | [architecture.md](architecture.md) | How the system works today (pipeline, regions, indicators, site, CI). |
-| [feasibility.md](feasibility.md) | Original research, probe results and ML experiments. |
+| [feasibility.md](feasibility.md) | Original research, probe results, ML experiments and the angler-catch check. |
 | [seed.md](seed.md) | The original idea. |
 
 ## How the tracking works

@@ -263,3 +263,28 @@ fault. The rule to ship: a step at one station is suspect; matching steps at two
 a few days are an event worth reporting.
 
 Reproduce: run the `Update conditions` workflow with task `experiment`, or `python scripts/experiment_drivers.py`.
+
+## Angler catch vs conditions (2026-10-30)
+
+**Verdict: no usable signal.** Details and decision in
+[0041](decisions/0041-no-bite-outlook-from-angler-surveys.md).
+
+Mississippi's own catch reporting (Tails n' Scales, now the offshore landing permit and MS CREEL) publishes no data.
+NOAA's MRIP dockside interviews do: 51,958 Mississippi interviews, 2000-2025, with date, landing county, mode, the
+species the angler was fishing for, and catch. For anglers fishing for a species, "caught at least one" was compared
+against a season-only model (month, county, mode, area, year trend), leaving out one year at a time:
+
+| Species | Trips | Caught one | Best condition | Improvement |
+|---|---|---|---|---|
+| Speckled trout | 13,106 | 51% | mean wind | 0.18% |
+| Redfish | 7,755 | 30% | peak wind | 0.09% |
+| Flounder | 2,142 | 41% | mean wind | 0.48% |
+| White trout | 2,721 | 50% | none positive | - |
+| Sheepshead | 882 | 53% | south wind | 0.72% (better in 11 of 25 years) |
+| Red snapper | 2,546 | 71% | water level | 0.80% (better in 12 of 25 years) |
+
+The season model itself only improves on a flat average by about 2% (trout) and 4% (redfish). The steadiest
+within-month, within-county pattern: trout catch one 4.5 points less often on the saltiest third of days. Real, maybe,
+but too small to tell anyone.
+
+Reproduce: `python scripts/probe_mrip_bite.py` (downloads about 200 MB to `data/raw/mrip/`; outputs in `data/probe/mrip_*`).
