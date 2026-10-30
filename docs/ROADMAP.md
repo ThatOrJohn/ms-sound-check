@@ -14,12 +14,22 @@ Updated 2026-10-30. Process notes are in [docs/README.md](README.md).
 In this order. Usage numbers come first so they can steer the rest, including the moonshots.
 1. **Custom domain and Cloudflare Web Analytics** (about $12/yr; the owner picks and pays for the domain). No usage
    data exists yet for any of the 37 decisions' worth of features.
-2. **MDMR shellfish areas on the oyster map**: the molluscan shellfish and oyster growing waters classification areas
-   as a map layer (I-B, II-A and so on), so the closure table's area names point at places. Look for a public MDMR
-   feature service first, like the beach layer, and don't work around bot checks. If there isn't one, park it.
-3. **Grand Bay NERR water-quality sondes** as extra stations, from the public NERRS CDMO service: more coverage in the
+2. **MDMR shellfish areas on the oyster map**: the growing waters classification areas as a map layer (I-B, II-A and
+   so on), so the closure table's area names point at places. Found 2026-10-30: MDMR's public `Oyster_Harvest_Zones`
+   feature service on ArcGIS Online (`services5.arcgis.com/CYWvDQNfmlrPP5Rh`), 83 polygons with `ZONE_ID` and
+   `CONDITIONS` (approved, conditionally approved, restricted, prohibited, unclassified). Use `CONDITIONS` only: its
+   `Status` field is hand-kept and stale (last edited 2026-07-06, still "Closed" for areas MDMR reopened on
+   October 19), and showing it would break the oyster wording rule. The same account has the season's tonging boxes,
+   cultch-plant marker buoys and closed harvest areas (edited 2026-09-15); add them as reference shapes with MDMR's
+   names and dates, or leave them out.
+3. **MDMR season status in MDMR's words**, from the WordPress API the notices already use
+   ([0014](decisions/0014-mdmr-notices-from-wordpress-api.md)): the Shrimp & Crab page's open or closed status for
+   its three zones (north of the ICW, south of the ICW west of the Gulfport ship channel, the Biloxi conditional
+   area) on the Shrimp page, and the oyster season page's opening date, reopened areas and Sunday and holiday
+   closures on the Oysters page. Quote it with the page's modified date; it hides when stale like other snapshots.
+4. **Grand Bay NERR water-quality sondes** as extra stations, from the public NERRS CDMO service: more coverage in the
    eastern Sound and a closer reference than Dauphin Island ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
-4. Moonshots 1 and 2 below are built; 3 (low-oxygen watch) is next among them.
+5. Moonshots 1 and 2 below are built; 3 (low-oxygen watch) is next among them.
 
 ### Showing the Sound
 Built 2026-10-28 ([0032](decisions/0032-year-dots-from-the-record-indicator.md)-[0035](decisions/0035-home-map-first-and-one-instrument-table.md)):
@@ -31,6 +41,17 @@ Home height follow-up done: one history picture on home and a folded spillway se
 - **More page speed** (from the 0042 audit): fixed-height fallbacks for the `client:only` map and tide strip (desktop
   layout shift 0.12), a simplified `contours.geojson` loaded after the map is idle, WebP depth images, preloaded Geist
   fonts, and the salinity sketch built only when it's used.
+- **Reefs and public access on the Fishing map**: MDMR's inshore artificial reefs (63 sites with names and material)
+  and public access points (163 piers, launches and marinas with features and condition), both on the same ArcGIS
+  Online account as the oyster zones. The offshore reef layers live on `gis.dmr.ms.gov`, which returned a 520 on
+  2026-10-30; add them only if that server proves steady.
+- **Commercial quotas on the Fishing page**: MDMR's commercial quota page (WordPress API) gives the year's flounder,
+  red drum and speckled trout catch against their limits and open or closed. One line, e.g. "Commercial speckled
+  trout reached its 50,000 lb limit and is closed for 2026." Also add a fishing-seasons topic (red snapper and other
+  season openings and closings) to the MDMR notice feed.
+- **Shrimp landings by year**: NOAA FOSS commercial landings (open REST API, no key) give Mississippi shrimp pounds
+  per year to 2024 (13.0M lb in 2012, 5.1M in 2024), for a "how last season compared" line on the Shrimp page.
+  Not for oysters: FOSS withholds Mississippi oyster landings for 2019-2023.
 - **Per-beach RSS**: one feed per beach, alongside the weekly digest. Worth it if analytics show the digest is used.
 - **Chlorophyll map layer**: CoastWatch chlorophyll as a satellite layer, the same newest-clear-view approach as
   [0023](decisions/0023-satellite-layers-newest-clear-view.md). This is the realistic form of "harmful algal bloom
@@ -85,6 +106,8 @@ or the plain, non-alarmist language.
 - **Bite outlook from angler surveys**: in 52,000 MRIP dockside interviews (2000-2025), no condition improved on
   month alone by even 1% at predicting whether an angler caught the fish they were after
   ([0041](decisions/0041-no-bite-outlook-from-angler-surveys.md)). Rerun if MDMR publishes MS CREEL estimates.
+- **SEAMAP trawl surveys and the FDA certified shippers list**: checked 2026-10-30 for the Shrimp and Oysters pages.
+  SEAMAP is annual and published as reports, not a feed; the shippers list is PDF only.
 - **Salinity forecast**: no edge over persistence during the events that matter ([0008](decisions/0008-no-salinity-forecast.md)).
 - **Databricks**: free-tier limits and nothing to gain at this data size ([0003](decisions/0003-no-databricks.md)).
 - **Dock price tracker**: needs committed contributors ([seed.md](seed.md)).
