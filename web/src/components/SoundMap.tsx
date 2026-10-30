@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import "maplibre-gl/dist/maplibre-gl.css";
 import type { CanvasSource, Map as MLMap, MapLayerMouseEvent, Popup, StyleSpecification } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+import cssUrl from "maplibre-gl/dist/maplibre-gl.css?url";
 
 import type { ReferenceSite, Replay, ReplayIndex, ReplayWind, ReplayYear, SatelliteLayer } from "../lib/types";
 import { beachDetail } from "../lib/format";
@@ -51,7 +51,7 @@ const DEFAULTS: Record<LayerKey, boolean> = { depth: true, contours: true, river
 const FILLS: LayerKey[] = ["salinity", "clarity", "sst"];
 const SAT_KEYS = ["clarity", "sst"] as const;
 const VIEW: [[number, number], [number, number]] = [[-89.72, 30.13], [-88.42, 30.5]];
-const OFM = "https://tiles.openfreemap.org";
+export const OFM = "https://tiles.openfreemap.org";
 const FLOW_WORDS: Record<string, string> = { low: "very low", below: "a bit low", normal: "normal", above: "a bit high", high: "very high" };
 
 interface Meta { bounds: [number, number, number, number]; mask_size: [number, number]; attribution: string }
@@ -181,6 +181,33 @@ function beachPopup(p: Record<string, any>, link: boolean): HTMLElement {
   if (link && p.id) (add("a", "Details in Beaches below") as HTMLAnchorElement).href = `#beach-${p.id}`;
   return box;
 }
+/** Resolves once the page has loaded and gone idle (or 2 s on) and the map box is near the screen, or a replay day
+ *  is in the address (#YYYY-MM-DD, which scrolls to the map once it's ready). The map is the heaviest thing on the
+ *  page, so the headline and readings paint first. */
+function whenIdleAndNear(node: Element): Promise<void> {
+  const idle = new Promise<void>((done) => {
+    const go = () => ("requestIdleCallback" in window ? requestIdleCallback(() => done(), { timeout: 2000 }) : setTimeout(done, 200));
+    if (document.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+  });
+  const near = new Promise<void>((done) => {
+    const finish = () => { io.disconnect(); removeEventListener("hashchange", onHash); done(); };
+    const onHash = () => { if (DAY_HASH.test(location.hash)) finish(); };
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) finish(); }, { rootMargin: "200px" });
+    io.observe(node);
+    addEventListener("hashchange", onHash);
+    onHash();
+  });
+  return Promise.all([idle, near]).then(() => {});
+}
+function loadCss(url: string): Promise<void> {
+  const found = document.querySelector<HTMLLinkElement>(`link[href="${url}"]`);
+  if (found) return Promise.resolve();
+  return new Promise((done) => {
+    const link = Object.assign(document.createElement("link"), { rel: "stylesheet", href: url });
+    link.onload = link.onerror = () => done();
+    document.head.append(link);
+  });
+}
 function riverWidths(rivers: MapRiver[], pct: (r: MapRiver) => number | null | undefined): any[] {
   const match: any[] = ["match", ["get", "name"]];
   rivers.forEach((r) => r.osmNames.forEach((n) => match.push(n, riverWidth(pct(r)))));
@@ -230,7 +257,11 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     let cancelled = false;
     let cleanup = () => {};
     (async () => {
-      const ml = await import("maplibre-gl");
+      if (!el.current) return;
+      await whenIdleAndNear(el.current);
+      if (cancelled) return;
+      // The stylesheet is linked here, not imported, so Astro doesn't put it in <head> where it holds up the first paint.
+      const [ml] = await Promise.all([import("maplibre-gl"), loadCss(cssUrl)]);
       ml.setWorkerUrl(workerUrl);
       const m: Meta | null = await fetch(`${basemapBase}meta.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (cancelled || !el.current) return;

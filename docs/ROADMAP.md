@@ -1,9 +1,9 @@
 # Roadmap
 
-Updated 2026-10-29. Process notes are in [docs/README.md](README.md).
+Updated 2026-10-30. Process notes are in [docs/README.md](README.md).
 
 ## Now
-**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035), then a shorter home page (0036) and the Sound west to east as one bar ([0037](decisions/0037-the-sound-west-to-east.md)), then past spillway openings side by side ([0038](decisions/0038-past-spillway-openings-side-by-side.md)), and waves, sun and moon in the fishing outlook ([0040](decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md)).
+**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035), then a shorter home page (0036) and the Sound west to east as one bar ([0037](decisions/0037-the-sound-west-to-east.md)), then past spillway openings side by side ([0038](decisions/0038-past-spillway-openings-side-by-side.md)), and waves, sun and moon in the fishing outlook ([0040](decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md)), and a Lighthouse pass: the map loads after the page (home mobile 43 → 98, [0042](decisions/0042-map-loads-after-the-page.md)).
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -28,6 +28,9 @@ Home height follow-up done: one history picture on home and a folded spillway se
 [0036](decisions/0036-one-history-picture-and-a-folded-spillway.md)). Replay speed on a real phone is parked (below).
 
 ## Later
+- **More page speed** (from the 0042 audit): fixed-height fallbacks for the `client:only` map and tide strip (desktop
+  layout shift 0.12), a simplified `contours.geojson` loaded after the map is idle, WebP depth images, preloaded Geist
+  fonts, and the salinity sketch built only when it's used.
 - **Per-beach RSS**: one feed per beach, alongside the weekly digest. Worth it if analytics show the digest is used.
 - **Chlorophyll map layer**: CoastWatch chlorophyll as a satellite layer, the same newest-clear-view approach as
   [0023](decisions/0023-satellite-layers-newest-clear-view.md). This is the realistic form of "harmful algal bloom

@@ -51,9 +51,10 @@ test("dark theme applies and persists", async ({ page }) => {
 
 test("station charts render", async ({ page }) => {
   await page.goto("station/west-sound/");
+  // The charts hydrate when visible, so scroll to the (server-rendered) box before waiting for the drawing.
+  await page.locator(".chart-box").first().scrollIntoViewIfNeeded();
   const chart = page.locator(".chart-box svg");
-  await chart.scrollIntoViewIfNeeded();
-  await expect(chart).toBeVisible();
+  await expect(chart.first()).toBeVisible();
   await page.getByRole("button", { name: "1 year" }).click();
   await expect(page.getByRole("button", { name: "1 year" })).toHaveAttribute("aria-pressed", "true");
 });

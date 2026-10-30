@@ -2,6 +2,11 @@
 
 User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## 2026-10-30
+### Changed
+- Faster pages, especially on phones: the headline and readings show first, and the map loads once the page has settled and the map is about to scroll into view. Links to a replay day (`#2019-05-10`) still open the map right away. The "Updated" line no longer nudges the page down after it appears ([0042](docs/decisions/0042-map-loads-after-the-page.md)).
+- Phones now show "Mississippi Sound" beside the Sound Check name at the top, as on desktop.
+
 ## 2026-10-29
 ### Added
 - Waves, sun and moon in the fishing outlook: each day now gives the National Weather Service's wave forecast for the Sound ("In the Sound: waves 2 to 3 feet."), sunrise and sunset, and the moon's phase, how much of it is lit, and when it rises and sets ([0040](docs/decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md)).

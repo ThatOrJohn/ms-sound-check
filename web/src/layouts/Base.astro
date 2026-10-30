@@ -14,8 +14,10 @@ interface Props {
   ogImage?: string;
   /** What the share image shows, when it isn't the title and description. */
   ogAlt?: string;
+  /** Origins the page will fetch from early (map tiles), so the connection is ready when they're needed. */
+  preconnect?: string[];
 }
-const { title, description, regionName, current, ogImage, ogAlt } = Astro.props;
+const { title, description, regionName, current, ogImage, ogAlt, preconnect = [] } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 // The image changes every run under the same name, so the build time in the query keeps share caches honest.
 const ogUrl = ogImage && `${new URL(href(`og/${ogImage}.png`), Astro.site)}?v=${loadLatest().generated_at.replace(/\D/g, "").slice(0, 12)}`;
@@ -28,6 +30,7 @@ const ogUrl = ogImage && `${new URL(href(`og/${ogImage}.png`), Astro.site)}?v=${
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {preconnect.map((o) => <link rel="preconnect" href={o} crossorigin />)}
     <link rel="icon" href={href("favicon.svg")} type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title={`Sound Check: ${regionName} weekly`} href={href("digest.xml")} />
     <meta property="og:type" content="website" />
