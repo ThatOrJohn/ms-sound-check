@@ -81,8 +81,8 @@ Two things followed from this:
 
 Added since: NOAA tide predictions and measured water level (CO-OPS), NWS observations and forecasts, wind, the
 Pearl River stage forecast (NWPS), the Mississippi at New Orleans, CoastWatch satellite clarity and temperature, MDEQ
-beach status, and MDMR season notices. Still to add: the Grand Bay NERR water-quality sondes east of Pascagoula
-(roadmap, Next).
+beach status, MDMR season notices and pages, MDMR's oyster growing areas, and the Grand Bay NERR's Bangs Lake sonde
+east of Pascagoula as a reference reading ([0045](decisions/0045-grand-bay-as-reference-from-ndbc.md)).
 
 **API migration (done).** USGS will decommission `waterservices.usgs.gov` in Q1 2027, with removal work running
 from November 2026 through February 2027. The replacement is `api.waterdata.usgs.gov/ogcapi/`, which has

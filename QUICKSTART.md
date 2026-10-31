@@ -12,7 +12,7 @@ Separate views for the general public, oyster folks, shrimpers and anglers.
 ## The whole system in one picture
 
 ```
- Public data sources                 GitHub Actions (every 3 h)                  The site
+ Public data sources                 GitHub Actions (every 4 h)                  The site
  ───────────────────                 ──────────────────────────                  ────────
  USGS water stations ─┐
  NWS stage + forecast ┤              python -m msc run                          GitHub Pages

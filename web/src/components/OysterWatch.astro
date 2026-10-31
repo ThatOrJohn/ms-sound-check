@@ -1,11 +1,13 @@
 ---
 import type { Latest, OysterWatch } from "../lib/types";
-import { href } from "../lib/format";
+import { fmtDate, href } from "../lib/format";
 import MdmrNotices from "./MdmrNotices.astro";
 import OfficialSources from "./OfficialSources.astro";
 
 interface Props { watch: OysterWatch; gaugeSlug?: string; data: Latest }
 const { watch, gaugeSlug, data } = Astro.props;
+const page = watch.season;
+const changed = (d: string) => fmtDate(d, { month: "short", day: "numeric", year: "numeric" });
 const tz = "America/Chicago";
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", timeZone: tz });
@@ -81,6 +83,7 @@ const trend = g?.change_24h == null ? "" : Math.abs(g.change_24h) < 0.1 ? "stead
         </tbody>
       </table>
       {historyLine && <p class="oyster-notes">{historyLine}</p>}
+      {data.shellfish_areas && <p class="oyster-notes">{"These areas are outlined on the map above: turn on Oyster growing areas under Layers."}</p>}
       <p class="oyster-notes">
         {watch.rain?.yesterday_in != null && <>Rain in Hancock County yesterday: about {watch.rain.yesterday_in.toFixed(2)} in. </>}
         Our rain figure is an estimate; MDMR measures at the Hancock County Utility Authority gauge. Areas reopen once the
@@ -92,6 +95,27 @@ const trend = g?.change_24h == null ? "" : Math.abs(g.change_24h) < 0.1 ? "stead
   {watch.notices_available !== undefined && (
     <MdmrNotices notices={watch.notices ?? []} available={watch.notices_available} topic="oyster"
       link={watch.notices_link ?? watch.status_url ?? "https://dmr.ms.gov/shellfish/"} linkText="MDMR's shellfish page" />
+  )}
+  {page && (page.summary.length > 0 || page.orders.length > 0) && (
+    <>
+      <h3 class="notices-sub">{page.season ? `The ${page.season} season, from MDMR` : "This season, from MDMR"}</h3>
+      {page.summary.length > 0 && (
+        <blockquote class="mdmr-quote" cite={page.link}>{page.summary.map((t) => <p>{t}</p>)}</blockquote>
+      )}
+      {page.no_harvest && page.no_harvest.days.length > 0 && (
+        <div class="mdmr-quote">
+          <p>{page.no_harvest.lead}</p>
+          <ul>{page.no_harvest.days.map((d) => <li>{d}</li>)}</ul>
+        </div>
+      )}
+      {page.orders.length > 0 && (
+        <>
+          <p class="oyster-notes">{"MDMR's orders this season, newest first:"}</p>
+          <ol class="notices mdmr-orders">{page.orders.slice().reverse().map((o) => <li><a href={o.link}>{o.title}</a></li>)}</ol>
+        </>
+      )}
+      <p class="oyster-notes">{`Quoted from MDMR's season page, last changed ${changed(page.modified)}. A new order can come before the page catches up. `}<a href={page.link}>MDMR's season page</a>.</p>
+    </>
   )}
   <p class="oyster-notes">
     For what's open today: <a href={watch.status_url ?? "https://dmr.ms.gov/"}>MDMR shellfish</a>

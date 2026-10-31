@@ -89,6 +89,10 @@ def cmd_ingest(region, args):
     ref = _try("reference salinity", gcoos.daily, region)
     if ref is not None and not ref.empty:
         store.upsert_daily(region, ref)
+    from .adapters import ndbc
+    ref = _try("grand bay reference", ndbc.daily, region)
+    if ref is not None and not ref.empty:
+        store.upsert_daily(region, ref)
     from .adapters import coops
     level = _try("gulf water level", coops.recent, region)
     if level is not None and not level.empty:
@@ -105,6 +109,15 @@ def cmd_ingest(region, args):
     notices = _try("mdmr notices", mdmr.fetch, region)
     if notices:
         mdmr.save(region, notices)
+    pages = _try("mdmr season pages", mdmr.fetch_pages, region)
+    if pages:
+        mdmr.save_pages(region, pages)
+        for key in pages["failed"]:
+            _try.failures.append(f"mdmr page {key}")
+    from .adapters import shellfish
+    areas = _try("shellfish areas", shellfish.fetch, region)
+    if areas:
+        shellfish.save(region, areas)
     from .adapters import spillway
     river = _try("spillway river", spillway.fetch, region)
     if river:

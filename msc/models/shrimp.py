@@ -71,10 +71,11 @@ def section(region, asof):
     from ..adapters import mdmr
     m = mdmr.recent(region, "shrimp", asof, NOTICE_DAYS, NOTICE_COUNT)
     days = _wind_days(region, asof)
-    if not m["available"] and not days:
+    status = mdmr.page(region, "shrimp_status")     # MDMR's own open/closed box, quoted (decision 0044)
+    if not m["available"] and not days and not status:
         return None
     return {"notices": m["notices"], "notices_available": m["available"], "link": m["link"], "source": m["source"],
-            "days": days}
+            "days": days, "status": status}
 
 
 def headline(sec, asof) -> str | None:

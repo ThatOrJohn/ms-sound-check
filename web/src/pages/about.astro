@@ -9,7 +9,7 @@ const data = loadLatest();
     <h1>About the data</h1>
     <p>Sound Check turns public monitoring data into a plain-language read on the Mississippi Sound: how salty and how warm
       the water is, how hard the rivers are running, how much rain has fallen upstream, and whether any of it is unusual for
-      the time of year. It updates every three hours.</p>
+      the time of year. It updates every four hours.</p>
 
     <h2 id="official">Official sources and what Sound Check is</h2>
     <p>Sound Check is a free hobby project. It is not the system of record for anything on this site, and no agency
@@ -20,13 +20,13 @@ const data = loadLatest();
       <tbody>
         <tr><td>Beach advisories and closures</td>
           <td><a href="https://beaches.mdeq.ms.gov/">MDEQ Beach Monitoring Program</a></td>
-          <td>Every three hours our pipeline reads the public map service behind MDEQ's site and republishes each beach's status. We do not interpret sample results or issue advisories. A beach showing clear can have had no recent sample.</td></tr>
+          <td>Every four hours our pipeline reads the public map service behind MDEQ's site and republishes each beach's status. We do not interpret sample results or issue advisories. A beach showing clear can have had no recent sample.</td></tr>
         <tr><td>Oyster reef closures and openings</td>
           <td><a href="https://dmr.ms.gov/shellfish/">MDMR shellfish</a>, oyster information line 228-374-5167</td>
-          <td>We have no feed of MDMR's open or closed status. We read the Pearl River stage and forecast from the National Weather Service, estimate rain from Open-Meteo, and compare both with the criteria in MDMR's <a href="https://dmr.ms.gov/wp-content/uploads/2026/01/Molluscan-Shellfish-Growing-Waters-Management-Plan_12.2025-edits.pdf">management plan</a>. We never say an area is closed.</td></tr>
+          <td>We have no feed of MDMR's open or closed status. We quote MDMR's season page (its season text, orders and days with no harvest) with the date MDMR last changed it, and draw MDMR's growing-area classes on the map, which say what kind of area each is, not whether it's open today. We read the Pearl River stage and forecast from the National Weather Service, estimate rain from Open-Meteo, and compare both with the criteria in MDMR's <a href="https://dmr.ms.gov/wp-content/uploads/2026/01/Molluscan-Shellfish-Growing-Waters-Management-Plan_12.2025-edits.pdf">management plan</a>. We never say an area is closed.</td></tr>
         <tr><td>Shrimp seasons</td>
           <td><a href="https://dmr.ms.gov/shrimp/">MDMR shrimp information</a></td>
-          <td>We copy the title, date and opening lines of MDMR press releases that mention shrimp seasons. We do not work out which waters are open. The full notice is the rule.</td></tr>
+          <td>We copy the title, date and opening lines of MDMR press releases that mention shrimp seasons, and the open-or-closed board on MDMR's Shrimp &amp; Crab page with the date MDMR last changed it. We do not work out which waters are open ourselves. The full notice is the rule, and a new order can come before the page catches up.</td></tr>
         <tr><td>Bonnet Carré Spillway openings</td>
           <td><a href="https://www.mvn.usace.army.mil/Missions/Mississippi-River-Flood-Control/Bonnet-Carre-Spillway-Overview/">US Army Corps of Engineers, New Orleans District</a></td>
           <td>No public feed says whether the spillway is open. We compare the Mississippi at New Orleans (National Weather Service stage and forecast) with the level where the Corps has opened it before, and add openings to our list by hand. A river at that level doesn't mean it's open.</td></tr>
@@ -49,6 +49,8 @@ const data = loadLatest();
         <tr><td>Beach advisories and closures</td><td>Mississippi Department of Environmental Quality's Beach Monitoring Program, which samples 21 beaches for Enterococcus bacteria and posts advisories for bacteria, debris and algal blooms.</td></tr>
         <tr><td>Shrimp and oyster season notices</td><td>Mississippi Department of Marine Resources press releases. We show the title, date and opening lines and link to the full notice, which is the rule.</td></tr>
         <tr><td>Dauphin Island salinity (map, east edge)</td><td>Dauphin Island Sea Lab, served by GCOOS: a daily average of its quality-checked hourly readings. It sits on the Mobile Bay side, about 50 km east of our easternmost station, so it's shown for comparison only and never used to flag our stations.</td></tr>
+        <tr><td>Grand Bay salinity (map, east edge)</td><td>Grand Bay National Estuarine Research Reserve's Bangs Lake sonde, from NOAA's National Data Buoy Center: a daily average of its 15-minute readings. Bangs Lake is a marsh lagoon east of Pascagoula, not open Sound, so it's shown for comparison only, like Dauphin Island. Its record here starts in October 2026.</td></tr>
+        <tr><td>Oyster growing areas (map)</td><td>MDMR's public map of shellfish growing-water classes: approved, conditionally approved, restricted, prohibited and unclassified. We read only each area's name and class, and hide the layer if our copy is more than a week old. The class isn't whether an area is open today; MDMR decides that.</td></tr>
         <tr><td>Gulf water level (event notes)</td><td>NOAA's tide gauge at Dauphin Island, AL: the daily average water level, which cancels most of the tide and shows wind and the Gulf pushing water up or drawing it down. It's mentioned when salinity jumps or drops at several stations at once, as one more fact about the days before.</td></tr>
         <tr><td>Mississippi River at New Orleans</td><td>National Weather Service stage and two-week forecast at the Carrollton gauge (NORL1). Past spillway openings come from the Corps' operation history.</td></tr>
         <tr><td>Satellite water clarity and surface temperature</td><td>NOAA CoastWatch: VIIRS water clarity (Kd490) at 750 m and multi-satellite surface temperature at about 2 km. Each map layer is the newest cloud-free view of each spot over the last few days, and the map says which days. Clouds leave gaps.</td></tr>

@@ -34,3 +34,8 @@ East Sound"), and on phones as a line in the strip under the map. It has no dot 
 so it can't pass for one of our stations or bend the interpolation across a different part of the Sound. Its daily
 mean hides once it is more than 3 days old (`REFERENCE_MAX_DAYS` in `msc/build.py`) and during replay.
 
+
+## Update 2026-10-30: Grand Bay joins as a closer reference
+Grand Bay NERR's Bangs Lake sonde, 15 km east of Round Island, is now a second reference chip from NDBC
+([0045](0045-grand-bay-as-reference-from-ndbc.md)). It has no history yet, so the gap check this record revisits waits
+until it has a year or more.

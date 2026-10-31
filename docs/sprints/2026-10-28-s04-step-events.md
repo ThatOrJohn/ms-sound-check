@@ -45,6 +45,9 @@
 - [x] Moonshot 2, past spillway openings side by side: one West Sound chart per year since 2000 on shared axes, typical line, 2 ppt runs, `spillway.past` replaces `effects`; unit tests and e2e ([0038](../decisions/0038-past-spillway-openings-side-by-side.md))
 - [x] Moonshot 1, fresh-and-hot days near the reefs: thresholds checked against Gulf studies, under 5 ppt and above 25 °C at the four stations that measure both, this year against each station's own complete years to the same date, gappy years shown hollow; unit tests and e2e with axe in both themes ([0039](../decisions/0039-fresh-and-hot-days-near-the-reefs.md))
 - [x] Fishing outlook: NWS marine-zone wave wording (GMZ532) and sun and moon times computed with PyEphem, checked against USNO; no moon-phase tide claim, since the Sound's tides are diurnal; unit tests and e2e ([0040](../decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md))
+- [x] Oyster growing areas on the map: MDMR's classes from its ArcGIS Online layer, ink outlines by line pattern, area names, popups; the layer's stale `Status` field is never read; on by default for Oysters (0043)
+- [x] MDMR in its own words: the Shrimp & Crab status board on the Shrimp page and the oyster season page (text, orders, no-harvest days) on the Oysters page, each with the page's last-changed date (0044)
+- [x] Grand Bay NERR (Bangs Lake) as a reference chip from NDBC's realtime files; no history yet, so not a station (0045)
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN
@@ -55,7 +58,7 @@
 - 2026-10-28: Round Island went from 17.6 ppt to 36.2 ppt on Oct 14-15 and then read 37-40 ppt. Merrill Shell Bank
   stepped from 7 to 24 ppt on the same days while rivers were low and the wind was calm, so the jump looks real at
   two stations. 40 ppt is above what the Gulf should carry, so the Round Island numbers are still doubtful.
-- 2026-10-28: MDMR's shellfish area maps are wanted on the oyster map (roadmap, Later).
+- 2026-10-28: MDMR's shellfish area maps are wanted on the oyster map (roadmap, Later). Done 2026-10-30 (0043).
 - 2026-10-28: Round Island checked against NOAA/GCOOS data from Dauphin Island Sea Lab, about 45 km east (GCOOS ERDDAP,
   `DISL_DISL` and `DISL_KATA`, hourly, public, no key).
   - Dauphin Island and KATA read 23-29 ppt all October with no step on the 15th. KATA's highest daily value in

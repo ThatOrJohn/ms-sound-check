@@ -115,6 +115,7 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
     </div>
     <SoundMap client:only="react" stations={mapStations} rivers={mapRivers} ungauged={ungauged.flatMap((r) => r.osm_names)}
       basemapBase={href("basemap/")} beachesUrl={data.beaches ? href(`data/${data.region.id}/beaches.geojson`) : undefined}
+      shellfishUrl={data.shellfish_areas ? href(`data/${data.region.id}/shellfish.geojson`) : undefined} shellfish={data.shellfish_areas}
       personaId={persona.id} defaultLayers={persona.map_layers}
       satellite={data.satellite} dataBase={href(`data/${data.region.id}/`)} replay={data.replay} replayIndex={data.replay_index} replaySites={replaySites} beachLinks={showsBeaches}
       reference={data.reference} />

@@ -1,5 +1,6 @@
 ---
 import type { Latest, ShrimpSeason } from "../lib/types";
+import { fmtDate } from "../lib/format";
 import MdmrNotices from "./MdmrNotices.astro";
 import OfficialSources from "./OfficialSources.astro";
 
@@ -9,12 +10,25 @@ const verdictText: Record<string, string> = {
   light: "Light wind", moderate: "Moderate wind, some chop", breezy: "Breezy, rough in open water", windy: "Windy",
 };
 const mdmrLink = season.link ?? "https://dmr.ms.gov/";
+const board = season.status;
 ---
 <section class="group shrimp-season" aria-labelledby="g-shrimp">
   <h2 id="g-shrimp">Shrimp season</h2>
   <OfficialSources data={data} only="shrimp" />
   <p>MDMR opens and closes shrimping waters by area through the season. Below are its latest notices and the wind for
     the next three days. MDMR's notice is the rule, so read it before you go.</p>
+
+  {board && board.areas.length > 0 && (
+    <>
+      <h3 class="shrimp-sub">MDMR's status board</h3>
+      <ul class="mdmr-board" aria-label="Shrimping areas and their status on MDMR's page">
+        {board.areas.map((a) => (
+          <li data-status={a.status}><span>{a.footnote ? `${a.area}*` : a.area}</span><b>{a.status === "open" ? "Open" : "Closed"}</b></li>
+        ))}
+      </ul>
+      <p class="fish-src">{`${board.note ? `*${board.note}. ` : ""}As shown on MDMR's Shrimp & Crab page, last changed ${fmtDate(board.modified, { month: "short", day: "numeric", year: "numeric" })}. A new order can come before the page catches up. `}<a href={board.link}>MDMR's page</a>.</p>
+    </>
+  )}
 
   {season.days.length > 0 && (
     <>

@@ -52,10 +52,12 @@ def history(daily: pd.DataFrame, gid: str, thresholds: list[float], asof: pd.Tim
 
 
 def _notices(region: Region, asof: pd.Timestamp) -> dict:
-    """MDMR's own oyster season notices, repeated as published (openings, closures, area changes)."""
+    """MDMR's own oyster season notices and season page, repeated as published (openings, closures, area changes)."""
     from ..adapters import mdmr
     m = mdmr.recent(region, "oyster", asof, NOTICE_DAYS)
-    return {"notices": m["notices"], "notices_available": m["available"], "notices_link": m["link"]}
+    # MDMR's season page: its season text, orders and no-harvest days, quoted (decision 0044)
+    return {"notices": m["notices"], "notices_available": m["available"], "notices_link": m["link"],
+            "season": mdmr.page(region, "oyster_season")}
 
 
 def headline(sec, asof) -> str | None:

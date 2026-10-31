@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { CanvasSource, Map as MLMap, MapLayerMouseEvent, Popup, StyleSpecification } from "maplibre-gl";
+import type { CanvasSource, Map as MLMap, Popup, StyleSpecification } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import cssUrl from "maplibre-gl/dist/maplibre-gl.css?url";
 
-import type { ReferenceSite, Replay, ReplayIndex, ReplayWind, ReplayYear, SatelliteLayer } from "../lib/types";
+import type { ReferenceSite, Replay, ReplayIndex, ReplayWind, ReplayYear, SatelliteLayer, ShellfishAreas } from "../lib/types";
 import { beachDetail } from "../lib/format";
 import { hexRGB, salinityRGB } from "../lib/salinity";
 import { Sketch } from "../lib/sketch";
@@ -20,6 +20,8 @@ interface Props {
   /** OSM names of rivers with no flow gauge: drawn thin and named, never widened. */
   ungauged?: string[];
   beachesUrl?: string; personaId?: string; defaultLayers?: string[];
+  /** MDMR's growing-water classes (decision 0043): shapes at `shellfishUrl`, and the section for the key. */
+  shellfishUrl?: string; shellfish?: ShellfishAreas | null;
   /** The page has a Beaches section, so beach popups can link to each beach's row (#beach-<id>). */
   beachLinks?: boolean;
   /** Satellite layers and where their PNGs live (the region's data folder). */
@@ -35,9 +37,10 @@ interface Props {
 }
 const NO_RIVERS: string[] = [];
 
-type LayerKey = "depth" | "contours" | "salinity" | "rivers" | "wind" | "beaches" | "clarity" | "sst";
+type LayerKey = "depth" | "contours" | "salinity" | "rivers" | "wind" | "beaches" | "shellfish" | "clarity" | "sst";
 const LAYERS: { key: LayerKey; label: string; note?: string }[] = [
   { key: "beaches", label: "Beach status" },
+  { key: "shellfish", label: "Oyster growing areas", note: "MDMR's classes for each area. Not whether an area is open today." },
   { key: "depth", label: "Depth shading" },
   { key: "contours", label: "Depth contours (ft)" },
   { key: "rivers", label: "River flow" },
@@ -46,7 +49,15 @@ const LAYERS: { key: LayerKey; label: string; note?: string }[] = [
   { key: "clarity", label: "Water clarity (satellite)" },
   { key: "sst", label: "Surface temp (satellite)" },
 ];
-const DEFAULTS: Record<LayerKey, boolean> = { depth: true, contours: true, rivers: true, wind: false, salinity: false, beaches: false, clarity: false, sst: false };
+const DEFAULTS: Record<LayerKey, boolean> = { depth: true, contours: true, rivers: true, wind: false, salinity: false, beaches: false, shellfish: false, clarity: false, sst: false };
+/** What each growing-water class means, in MDMR's terms (its management plan). Never "open" or "closed". */
+export const SHELLFISH_WORDS: Record<string, { label: string; text: string }> = {
+  approved: { label: "Approved", text: "MDMR allows harvest here in season." },
+  conditional: { label: "Conditionally approved", text: "MDMR opens and closes it with Pearl River stage and rainfall." },
+  restricted: { label: "Restricted", text: "Not for direct harvest; relaying or depuration only, under MDMR permit." },
+  prohibited: { label: "Prohibited", text: "No harvest for food." },
+  unclassified: { label: "Unclassified", text: "Not surveyed; no harvest for food." },
+};
 /** Layers that fill the water: only one at a time, since each hides the others. */
 const FILLS: LayerKey[] = ["salinity", "clarity", "sst"];
 const SAT_KEYS = ["clarity", "sst"] as const;
@@ -169,6 +180,18 @@ function stationData(stations: MapStation[], t: Tokens) {
     })),
   };
 }
+/** Popup for one growing area: MDMR's name and class, and that the class isn't today's status. */
+function shellfishPopup(p: Record<string, any>): HTMLElement {
+  const box = document.createElement("div");
+  const add = (tag: string, text: string, cls?: string) => { const e = document.createElement(tag); e.textContent = text; if (cls) e.className = cls; box.append(e); return e; };
+  const w = SHELLFISH_WORDS[p.class];
+  add("strong", p.name ?? `Area ${p.zone}`);
+  add("span", w?.label ?? p.class, "beach-pop-where");
+  if (w) add("p", w.text);
+  add("p", "This is the area's class, not whether it's open today. MDMR decides that.", "beach-pop-where");
+  return box;
+}
+
 /** Popup for one beach segment. Built from DOM nodes, not HTML, since the names come from the feature service. */
 function beachPopup(p: Record<string, any>, link: boolean): HTMLElement {
   const box = document.createElement("div");
@@ -226,10 +249,11 @@ function readLayers(personaId: string | undefined, defaultLayers?: string[]): Re
 }
 
 export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basemapBase, beachesUrl, personaId, defaultLayers,
-  beachLinks = false, satellite, dataBase, replay, replayIndex, replaySites, reference }: Props) {
+  beachLinks = false, satellite, dataBase, replay, replayIndex, replaySites, reference, shellfishUrl, shellfish }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<Popup | null>(null);
+  const popupKindRef = useRef<"beaches" | "shellfish" | null>(null);   // which layer the open popup belongs to
   const tRef = useRef<Tokens | null>(null);
   const layersRef = useRef<Record<LayerKey, boolean>>(personaDefaults(defaultLayers));
   const replayingRef = useRef(false);
@@ -357,6 +381,21 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
           layout: { "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 12.5, "text-anchor": "left",
             "text-offset": [1.1, 0], "text-justify": "left", "text-line-height": 1.25, "text-allow-overlap": false },
           paint: { "text-color": t.ink, "text-halo-color": t.paper, "text-halo-width": 1.6 } });
+        if (shellfishUrl) {
+          // Growing-water classes (decision 0043): ink outlines only, so they sit over the salinity sketch and never look
+          // like a red/green open-or-closed map. Solid approved, dashed conditionally approved, dotted and faint otherwise.
+          map.addSource("shellfish", { type: "geojson", data: shellfishUrl, attribution: "Growing areas: MDMR" } as any);
+          const harvest = ["in", ["get", "class"], ["literal", ["approved", "conditional"]]];
+          map.addLayer({ id: "shellfish-hit", type: "fill", source: "shellfish", filter: harvest as any,
+            paint: { "fill-color": t.ink, "fill-opacity": 0 } }, "station-ring");
+          map.addLayer({ id: "shellfish-line", type: "line", source: "shellfish",
+            paint: { "line-color": t.ink, "line-opacity": ["case", harvest, 0.85, 0.4] as any,
+              "line-width": ["case", harvest, 1.8, 1] as any,
+              "line-dasharray": ["match", ["get", "class"], "approved", ["literal", [1, 0]], "conditional", ["literal", [3, 2]], ["literal", [0.5, 2]]] as any } }, "station-ring");
+          map.addLayer({ id: "shellfish-labels", type: "symbol", source: "shellfish", filter: ["has", "label"],
+            layout: { "text-field": ["get", "zone"], "text-font": ["Noto Sans Bold"], "text-size": 11.5 },
+            paint: { "text-color": t.ink, "text-halo-color": t.paper, "text-halo-width": 1.6 } });
+        }
         if (beachesUrl) {
           // Beach segments by status; drawn wide so they read at Sound-wide zoom. Color plus a line pattern
           // (solid clear, dashed advisory, dotted closed) and a word on flagged ones, so color isn't the only cue.
@@ -395,27 +434,36 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
       map.on("mouseenter", "stations", () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", "stations", () => (map.getCanvas().style.cursor = ""));
 
-      // Beach popups: hover where there's a mouse, tap anywhere; a tap pins one until the next tap off the beach.
+      // Beach and growing-area popups: hover where there's a mouse, tap anywhere; a tap pins one until the next tap off
+      // it. Beaches win where they overlap an area: they're the smaller target.
       const popup = new ml.Popup({ closeButton: false, closeOnClick: false, focusAfterOpen: false, maxWidth: "260px", offset: 12, className: "beach-pop" });
       popupRef.current = popup;
       let pinned = false;
       const canHover = matchMedia("(hover: hover)").matches;
-      const show = (e: MapLayerMouseEvent) => {
-        const f = e.features?.[0];
-        if (f) popup.setLngLat(e.lngLat).setDOMContent(beachPopup(f.properties, beachLinks)).addTo(map);
+      const HITS = ["beach-hit", "shellfish-hit"];
+      const onStation = (e: { point: any }) => map.getLayer("stations") && map.queryRenderedFeatures(e.point, { layers: ["stations"] }).length > 0;
+      const hitAt = (e: { point: any }) => {
+        if (onStation(e)) return undefined;
+        const layers = HITS.filter((id) => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
+        const fs = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
+        return fs.find((f) => f.layer.id === "beach-hit") ?? fs[0];
       };
-      const onStation = (e: MapLayerMouseEvent) => map.getLayer("stations") && map.queryRenderedFeatures(e.point, { layers: ["stations"] }).length > 0;
-      map.on("mousemove", "beach-hit", (e) => {
-        if (onStation(e)) return;
-        map.getCanvas().style.cursor = "pointer";
-        if (canHover && !pinned) show(e);
+      const show = (lngLat: any, f: any) => {
+        popupKindRef.current = f.layer.id === "beach-hit" ? "beaches" : "shellfish";
+        popup.setLngLat(lngLat).setDOMContent(f.layer.id === "beach-hit" ? beachPopup(f.properties, beachLinks) : shellfishPopup(f.properties)).addTo(map);
+      };
+      map.on("mousemove", (e) => {
+        if (onStation(e)) return;     // the stations' own handlers set the cursor there
+        const f = hitAt(e);
+        map.getCanvas().style.cursor = f ? "pointer" : "";
+        if (!canHover || pinned) return;
+        if (f) show(e.lngLat, f); else popup.remove();
       });
-      map.on("mouseleave", "beach-hit", () => { map.getCanvas().style.cursor = ""; if (!pinned) popup.remove(); });
+      map.on("mouseout", () => { if (!pinned) popup.remove(); });
       map.on("click", (e) => {
-        const hit = map.getLayer("beach-hit") && !onStation(e as MapLayerMouseEvent)
-          ? map.queryRenderedFeatures(e.point, { layers: ["beach-hit"] })[0] : undefined;
-        pinned = !!hit;
-        if (hit) show({ ...e, features: [hit] } as MapLayerMouseEvent); else popup.remove();
+        const f = hitAt(e);
+        pinned = !!f;
+        if (f) show(e.lngLat, f); else popup.remove();
       });
 
       const restyle = () => {
@@ -433,7 +481,7 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
       };
     })().catch(() => setFailed(true));
     return () => { cancelled = true; cleanup(); };
-  }, [stations, rivers, ungauged, basemapBase, beachesUrl, beachLinks, personaId, defaultLayers, satellite, dataBase, replaySites]);
+  }, [stations, rivers, ungauged, basemapBase, beachesUrl, beachLinks, personaId, defaultLayers, satellite, dataBase, replaySites, shellfishUrl]);
   const [redraw, setRedraw] = useState(0);
 
   /** While replaying a past day, today's-only layers (satellite fills, beaches, alert rings) are hidden so nothing mixes
@@ -448,7 +496,9 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     rivers.forEach((_, i) => set(`river-flow-${i}`, l.rivers));
     motionRef.current?.setShown({ wind: l.wind, rivers: l.rivers }); set("beaches", l.beaches && !past);
     set("beach-labels", l.beaches && !past); set("beach-hit", l.beaches && !past); set("station-ring", !past);
-    if (!l.beaches || past) popupRef.current?.remove();
+    for (const id of ["shellfish-line", "shellfish-labels", "shellfish-hit"]) set(id, l.shellfish && !past);
+    const kind = popupKindRef.current;
+    if (kind && (past || !l[kind])) popupRef.current?.remove();
   }
   function toggle(key: LayerKey) {
     const next = { ...layers, [key]: !layers[key] };
@@ -590,8 +640,9 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
         <summary>Layers</summary>
         {LAYERS.map((l) => {
           if (l.key === "beaches" && !beachesUrl) return null;
+          if (l.key === "shellfish" && !shellfishUrl) return null;
           if ((l.key === "clarity" || l.key === "sst") && !satellite?.[l.key]) return null;
-          const disabled = noBasemap && !["rivers", "beaches"].includes(l.key);
+          const disabled = noBasemap && !["rivers", "beaches", "shellfish"].includes(l.key);
           return (
             <label key={l.key} title={l.note} className={disabled ? "off" : undefined}>
               <input type="checkbox" checked={layers[l.key] && !disabled} disabled={disabled || !ready} onChange={() => toggle(l.key)} />
@@ -606,6 +657,16 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             <li><span className="swatch" data-status="closure" />Closed</li>
           </ul>
         )}
+        {layers.shellfish && shellfishUrl && (
+          <>
+            <ul className="beach-key" aria-label="Oyster growing area key">
+              <li><span className="swatch" data-class="approved" />Approved</li>
+              <li><span className="swatch" data-class="conditional" />Conditionally approved</li>
+              <li><span className="swatch" data-class="other" />Restricted, prohibited or unclassified</li>
+            </ul>
+            <p className="map-note">{`MDMR's growing-water classes${shellfish?.edited ? `, as MDMR's map stood ${fmtDay(shellfish.edited.slice(0, 10), true)}` : ""}. Not whether an area is open today: MDMR decides that.`}</p>
+          </>
+        )}
         {sat && fill && !noBasemap && !past && (
           <div className="sat-key">
             <span className="sat-ramp" data-layer={fill} aria-hidden="true" />
@@ -617,7 +678,7 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             <p className="map-note">{`Satellite, ${span}: the newest clear view of each spot. Gaps are clouds.`}</p>
           </div>
         )}
-        {past && (fill || layers.beaches) && <p className="map-note">Satellite fills and beach status show today only, so they're hidden while replaying.</p>}
+        {past && (fill || layers.beaches || layers.shellfish) && <p className="map-note">Satellite fills, beach status and growing areas show today only, so they're hidden while replaying.</p>}
         {layers.salinity && !noBasemap && <p className="map-note">{sketched
           ? `Estimated between a handful of stations${past ? ", from their measured readings that day" : ""}. A sketch, not a measurement.`
           : "Fewer than two stations reported on this day, so there's no sketch."}</p>}

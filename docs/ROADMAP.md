@@ -3,7 +3,7 @@
 Updated 2026-10-30. Process notes are in [docs/README.md](README.md).
 
 ## Now
-**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035), then a shorter home page (0036) and the Sound west to east as one bar ([0037](decisions/0037-the-sound-west-to-east.md)), then past spillway openings side by side ([0038](decisions/0038-past-spillway-openings-side-by-side.md)), and waves, sun and moon in the fishing outlook ([0040](decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md)), and a Lighthouse pass: the map loads after the page (home mobile 43 → 98, [0042](decisions/0042-map-loads-after-the-page.md)).
+**[Sprint 4: Step events](sprints/2026-10-28-s04-step-events.md)** (to 2026-11-04): matching salinity steps across stations (detector built), then wind causes. Also shipped: the Vibrio note ([0024](decisions/0024-vibrio-as-seasonal-note.md)), a tide strip under the map ([0025](decisions/0025-tide-strip-predictions-in-the-browser.md)), beach popups on the map, MDMR oyster notices, a shrimp-openings check in `msc check`, river flow on phones, Dauphin Island salinity at the map's east edge, share images for every page ([0026](decisions/0026-share-images-at-build-time.md)), the headline beside the map ([0027](decisions/0027-headline-beside-the-map.md)) "28 years of the Sound": the salinity history picture, "in the record" signals and years like this one ([0028](decisions/0028-every-year-on-record.md)), Gulf water level in event text ([0030](decisions/0030-gulf-water-level-in-event-text.md)) and the weekly digest feed ([0031](decisions/0031-weekly-digest-rss-and-bluesky.md)), and Showing the Sound: year dots, the long replay with the salinity sketch, wind and river motion, and the home layout (0032-0035), then a shorter home page (0036) and the Sound west to east as one bar ([0037](decisions/0037-the-sound-west-to-east.md)), then past spillway openings side by side ([0038](decisions/0038-past-spillway-openings-side-by-side.md)), and waves, sun and moon in the fishing outlook ([0040](decisions/0040-waves-sun-and-moon-in-the-fishing-outlook.md)), and a Lighthouse pass: the map loads after the page (home mobile 43 → 98, [0042](decisions/0042-map-loads-after-the-page.md)), then oyster growing areas on the map ([0043](decisions/0043-oyster-growing-areas-as-classes-not-status.md)), MDMR's shrimp status board and oyster season page quoted ([0044](decisions/0044-mdmr-season-pages-quoted.md)) and Grand Bay as a reference reading ([0045](decisions/0045-grand-bay-as-reference-from-ndbc.md)).
 
 ## Done
 - **[Sprint 3: Persona utility](sprints/2026-10-28-s03-persona-utility.md)**: oyster closure watch with typical-year context, fishing weekend outlook, wind data, shrimp in-season notices, live air temp, UI refresh.
@@ -14,22 +14,13 @@ Updated 2026-10-30. Process notes are in [docs/README.md](README.md).
 In this order. Usage numbers come first so they can steer the rest, including the moonshots.
 1. **Custom domain and Cloudflare Web Analytics** (about $12/yr; the owner picks and pays for the domain). No usage
    data exists yet for any of the 37 decisions' worth of features.
-2. **MDMR shellfish areas on the oyster map**: the growing waters classification areas as a map layer (I-B, II-A and
-   so on), so the closure table's area names point at places. Found 2026-10-30: MDMR's public `Oyster_Harvest_Zones`
-   feature service on ArcGIS Online (`services5.arcgis.com/CYWvDQNfmlrPP5Rh`), 83 polygons with `ZONE_ID` and
-   `CONDITIONS` (approved, conditionally approved, restricted, prohibited, unclassified). Use `CONDITIONS` only: its
-   `Status` field is hand-kept and stale (last edited 2026-07-06, still "Closed" for areas MDMR reopened on
-   October 19), and showing it would break the oyster wording rule. The same account has the season's tonging boxes,
-   cultch-plant marker buoys and closed harvest areas (edited 2026-09-15); add them as reference shapes with MDMR's
-   names and dates, or leave them out.
-3. **MDMR season status in MDMR's words**, from the WordPress API the notices already use
-   ([0014](decisions/0014-mdmr-notices-from-wordpress-api.md)): the Shrimp & Crab page's open or closed status for
-   its three zones (north of the ICW, south of the ICW west of the Gulfport ship channel, the Biloxi conditional
-   area) on the Shrimp page, and the oyster season page's opening date, reopened areas and Sunday and holiday
-   closures on the Oysters page. Quote it with the page's modified date; it hides when stale like other snapshots.
-4. **Grand Bay NERR water-quality sondes** as extra stations, from the public NERRS CDMO service: more coverage in the
-   eastern Sound and a closer reference than Dauphin Island ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
-5. Moonshots 1 and 2 below are built; 3 (low-oxygen watch) is next among them.
+2. Moonshots 1 and 2 below are built; 3 (low-oxygen watch) is next among them. Grand Bay's Bangs Lake file already
+   carries dissolved oxygen every 15 minutes ([0045](decisions/0045-grand-bay-as-reference-from-ndbc.md)).
+
+Done 2026-10-30 from this list: oyster growing areas on the map ([0043](decisions/0043-oyster-growing-areas-as-classes-not-status.md)),
+MDMR's season pages quoted ([0044](decisions/0044-mdmr-season-pages-quoted.md)), and Grand Bay as a reference chip
+rather than a station, since its history sits behind CDMO's registered-IP service
+([0045](decisions/0045-grand-bay-as-reference-from-ndbc.md)).
 
 ### Showing the Sound
 Built 2026-10-28 ([0032](decisions/0032-year-dots-from-the-record-indicator.md)-[0035](decisions/0035-home-map-first-and-one-instrument-table.md)):
@@ -52,6 +43,11 @@ Home height follow-up done: one history picture on home and a folded spillway se
 - **Shrimp landings by year**: NOAA FOSS commercial landings (open REST API, no key) give Mississippi shrimp pounds
   per year to 2024 (13.0M lb in 2012, 5.1M in 2024), for a "how last season compared" line on the Shrimp page.
   Not for oysters: FOSS withholds Mississippi oyster landings for 2019-2023.
+- **Grand Bay as a full station**: once it has a year or two of record here, or CDMO sends an export to backfill:
+  "vs. normal" bands, and a Round Island gap check like the one tried with Dauphin Island
+  ([0019](decisions/0019-disl-reference-data-no-auto-flag.md)).
+- **Season shapes on the oyster map**: MDMR's tonging boxes, cultch-plant marker buoys and closed harvest areas, from the
+  same ArcGIS account as the growing areas. They change each season and need their own wording ([0043](decisions/0043-oyster-growing-areas-as-classes-not-status.md)).
 - **Per-beach RSS**: one feed per beach, alongside the weekly digest. Worth it if analytics show the digest is used.
 - **Chlorophyll map layer**: CoastWatch chlorophyll as a satellite layer, the same newest-clear-view approach as
   [0023](decisions/0023-satellite-layers-newest-clear-view.md). This is the realistic form of "harmful algal bloom

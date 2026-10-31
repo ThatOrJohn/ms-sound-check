@@ -36,6 +36,8 @@ def daily(region: Region, start: str | None = None, days: int = 10) -> pd.DataFr
     start = start or (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)).strftime("%Y-%m-%d")
     out = []
     for ref in region.extras.get("reference", []):
+        if ref.get("source", "gcoos") != "gcoos":   # Grand Bay comes from NDBC (adapters/ndbc.py)
+            continue
         # ERDDAP rejects a raw ">" in the query, so the time constraint is hand-encoded
         r = requests.get(f"{ERDDAP}/{ref['dataset']}.csv?time,{VAR},{QC}&time%3E={start}T00:00:00Z",
                          timeout=120, headers={"User-Agent": "ms-sound-check"})

@@ -228,6 +228,21 @@ def _beaches(region, asof):
     return section, geo
 
 
+def _shellfish(region) -> tuple[dict | None, dict | None]:
+    """MDMR's growing-water classes for the map (decision 0043): a small section for the key, plus the shapes.
+    None while the snapshot is missing or stale, so the layer drops rather than show old classes."""
+    if not region.extras.get("shellfish_areas"):
+        return None, None
+    from .adapters import shellfish as src
+    snap = src.load(region)
+    if not snap:
+        return None, None
+    feats = snap["geojson"]["features"]
+    classes = sorted({f["properties"]["class"] for f in feats})
+    return ({"source": snap.get("source"), "link": snap.get("link"), "fetched_at": snap["fetched_at"],
+             "edited": snap.get("edited"), "classes": classes}, snap["geojson"])
+
+
 def _beach_reason(s: dict) -> str | None:
     if s["status"] == "clear":
         return None
@@ -253,7 +268,7 @@ def _reference(region, daily, asof) -> list[dict]:
             "nearest": near["short"] if near else None, "km": round(_km(ref, near) / 5) * 5 if near else None,
             "east": bool(near and ref["lon"] > near["lon"]),
         })
-    return out
+    return sorted(out, key=lambda r: r["lon"])     # west to east, so the nearer one comes first
 
 
 def _km(a, b) -> float:
@@ -607,6 +622,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
                                 for d, v in zip(pd.to_datetime(g.date), g.value)],
                        "total": fmt("rain", g.value.sum(), region.units)}
     beach_section, beach_geo = _beaches(region, asof)
+    shellfish_section, shellfish_geo = _shellfish(region)
     from .models import fishing, oyster, oyster_stress, shrimp
     oyster_section = oyster.section(region, daily, asof)
     stress_section = oyster_stress.section(region, daily, asof, suspect)
@@ -623,6 +639,7 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     latest = {
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
         "beaches": beach_section,
+        "shellfish_areas": shellfish_section,
         "oyster_watch": oyster_section,
         "oyster_stress": stress_section,
         "fishing_outlook": fishing_section,
@@ -649,6 +666,10 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
     }
     if beach_geo:
         (out / "beaches.geojson").write_text(json.dumps(beach_geo, separators=(",", ":")))
+    if shellfish_geo:
+        (out / "shellfish.geojson").write_text(json.dumps(shellfish_geo, separators=(",", ":")))
+    else:   # a stale layer must disappear, not linger
+        (out / "shellfish.geojson").unlink(missing_ok=True)
     (out / "latest.json").write_text(json.dumps(latest, default=str, separators=(",", ":")))
 
     start = asof - pd.Timedelta(days=HISTORY_DAYS)

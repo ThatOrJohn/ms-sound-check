@@ -231,6 +231,22 @@ mdmr_notices:
     oyster: {search: oyster, title: "oyster season|oyster harvest|oyster reefs|oyster relay|growing waters",
              exclude: "meeting|aquaculture|training|lease", link: "https://dmr.ms.gov/shellfish/"}
 
+# MDMR's own season pages (decision 0044), read through the same WordPress API: the Shrimp & Crab page's status box
+# (open or closed by area) and the newest public oyster season page (season text, orders, days with no harvest).
+mdmr_pages:
+  api: https://dmr.ms.gov/wp-json/wp/v2/pages
+  pages:
+    shrimp_status: {slug: shrimp-crab}
+    oyster_season: {search: public oyster season, slug_pattern: '\d{4}-\d{4}-public-oyster-season'}
+
+# MDMR's shellfish growing-water classes for the map (decision 0043). Only ZONE_ID and CONDITIONS are read: the
+# layer's Status field is hand-kept and lags MDMR's orders, and open or closed is MDMR's call.
+shellfish_areas:
+  name: Mississippi Department of Marine Resources
+  url: https://services5.arcgis.com/CYWvDQNfmlrPP5Rh/arcgis/rest/services/Oyster_Harvest_Zones/FeatureServer
+  layer: 0
+  link: https://dmr.ms.gov/shellfish/
+
 # Tide predictions (NOAA CO-OPS), west to east.
 # NWS coastal waters forecast zone for wave heights in the fishing outlook (api.weather.gov/zones/forecast/<id>).
 marine_zone: {id: GMZ532, name: Mississippi Sound}
@@ -240,7 +256,7 @@ tides:
   - {id: "8745557", name: Gulfport Harbor}
   - {id: "8741533", name: Pascagoula NOAA Lab}
 
-# Independent salinity references (GCOOS ERDDAP). Not shown as cards; a station listed in `checks` is flagged
+# Independent salinity references (GCOOS ERDDAP; NDBC for Grand Bay). Not shown as cards; a station listed in `checks` is flagged
 # suspect when it runs far saltier than its usual gap to the reference (msc/models/reference.py).
 reference:
   - id: GCOOS-DISL_DISL
@@ -251,6 +267,16 @@ reference:
     lon: -88.0778
     link: https://erddap.gcoos.org/erddap/tabledap/DISL_DISL.html
     checks: [USGS-301849088350000]
+  # Grand Bay NERR's Bangs Lake sonde, from NDBC's realtime files (decision 0045). A marsh lagoon east of Round Island,
+  # not open Sound; no history before its first run here.
+  - id: NDBC-GDQM6
+    source: ndbc
+    station: gdqm6
+    name: Grand Bay NERR, Bangs Lake
+    place: Grand Bay, MS
+    lat: 30.357
+    lon: -88.463
+    link: https://www.ndbc.noaa.gov/station_page.php?station=gdqm6
 
 # Bonnet Carré Spillway (decision 0022). The Corps opens it to keep the Mississippi at New Orleans near 1.25 million cfs,
 # about 17 ft on the Carrollton gauge, and the water reaches the western Sound through Lake Pontchartrain and Lake Borgne.
@@ -355,7 +381,7 @@ personas:
     blurb: Freshwater stress on reefs. Long stretches under 2 ppt are what kill oysters.
     focus: [oyster, general]
     card_order: [oyster_watch, oyster_stress, strip, spillway, sound, vibrio, river, history, rain, estuary, weather, beaches]
-    map_layers: [depth, contours, rivers, salinity]
+    map_layers: [depth, contours, rivers, salinity, shellfish]
     share: strip          # share image: the Sound west to east in place of the readout tiles (0037)
   - id: shrimp
     label: Shrimp

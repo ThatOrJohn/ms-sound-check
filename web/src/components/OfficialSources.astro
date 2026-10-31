@@ -23,12 +23,12 @@ const rows: { topic: Topic; what: string; who: string; href: string; link: strin
   {
     topic: "oyster", what: "Oyster reef closures and openings", who: "Mississippi Department of Marine Resources (MDMR)",
     href: watch?.status_url ?? "https://dmr.ms.gov/shellfish/", link: "MDMR shellfish",
-    how: `We repeat the title and opening lines of MDMR's oyster season press releases, but we never learn whether an area is open or closed today. We compare river stage (National Weather Service) and an estimated rain total with the criteria in MDMR's management plan, so a reading past a level means MDMR may close, and one below it doesn't mean open.${hotline ? ` MDMR's oyster information line is ${hotline}.` : ""}`,
+    how: `We repeat the title and opening lines of MDMR's oyster season press releases, quote its season page with the date MDMR last changed it, and draw its growing-area classes on the map. None of that tells us whether an area is open or closed today: a page can lag an order. We compare river stage (National Weather Service) and an estimated rain total with the criteria in MDMR's management plan, so a reading past a level means MDMR may close, and one below it doesn't mean open.${hotline ? ` MDMR's oyster information line is ${hotline}.` : ""}`,
   },
   {
     topic: "shrimp", what: "Shrimp season dates and areas", who: "Mississippi Department of Marine Resources (MDMR)",
     href: data.shrimp_season?.link ?? "https://dmr.ms.gov/shrimp/", link: "MDMR shrimp information",
-    how: "We repeat the title and opening lines of MDMR's press releases. Boundaries and dates are in the full notice, which is the rule. A notice we missed or a title we filter out won't appear.",
+    how: "We repeat the title and opening lines of MDMR's press releases, and the open-or-closed box on its Shrimp & Crab page with the date MDMR last changed it. Boundaries and dates are in the full notice, which is the rule. A notice we missed or a title we filter out won't appear, and the page can lag a new order.",
   },
   {
     topic: "spillway", what: "Bonnet Carré Spillway openings", who: "US Army Corps of Engineers, New Orleans District",

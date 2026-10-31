@@ -258,14 +258,59 @@ test("river flow shows on phones as a strip under the map", async ({ page, reque
   await expect(info.project.name === "phone" ? panel : strip).toBeHidden();
 });
 
-test("Dauphin Island shows at the map's east edge as a labeled reference, not a station", async ({ page, request }, info) => {
+test("Dauphin Island and Grand Bay show at the map's east edge as labeled references, not stations", async ({ page, request }, info) => {
   const latest = await (await request.get("data/ms/latest.json")).json();
-  const ref = latest.reference?.find((r: { salinity: number | null }) => r.salinity !== null);
-  test.skip(!ref, "no fresh reference reading in this build");
+  const refs = (latest.reference ?? []).filter((r: { salinity: number | null; east: boolean }) => r.salinity !== null && r.east);
+  test.skip(!refs.length, "no fresh reference reading in this build");
   await page.goto("");
-  const chip = page.locator(info.project.name === "phone" ? ".map-ref-row" : ".map-ref");
-  await expect(chip).toContainText(`${ref.salinity.toFixed(1)} ppt`, { timeout: 20_000 });
-  await expect(chip).toContainText(`Reference, ${ref.km} km east of ${ref.nearest}`);
+  const chips = page.locator(info.project.name === "phone" ? ".map-ref-row" : ".map-ref");
+  await expect(chips).toHaveCount(refs.length, { timeout: 20_000 });
+  for (const ref of refs) {
+    const chip = chips.filter({ hasText: ref.place ?? ref.name });
+    await expect(chip).toContainText(`${ref.salinity.toFixed(1)} ppt`);
+    await expect(chip).toContainText(`Reference, ${ref.km} km east of ${ref.nearest}`);
+  }
+});
+
+test("oyster map shows MDMR's growing-area classes, never open or closed (0043)", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  test.skip(!latest.shellfish_areas, "no fresh growing-area snapshot in this build");
+  const geo = await (await request.get("data/ms/shellfish.geojson")).json();
+  const props = geo.features.map((f: { properties: Record<string, unknown> }) => f.properties);
+  expect(props.length).toBeGreaterThan(0);
+  for (const p of props) expect(Object.keys(p).sort()).toEqual(expect.arrayContaining(["class", "name", "zone"]));
+  expect(props.some((p: Record<string, unknown>) => "Status" in p || "status" in p)).toBe(false);
+  await page.goto("for/oyster/");
+  const box = page.locator(".map-layers label", { hasText: "Oyster growing areas" }).locator("input");
+  await expect(box).toBeChecked({ timeout: 20_000 });    // on by default for Oysters
+  // A locator, not a role: on phones the Layers panel starts folded, which takes the key out of the accessibility tree.
+  const key = page.locator('ul[aria-label="Oyster growing area key"]');
+  await expect(key).toContainText("Conditionally approved");
+  await expect(page.locator(".map-layers")).toContainText("Not whether an area is open today");
+  await page.goto("");
+  await expect(page.locator(".map-layers label", { hasText: "Oyster growing areas" }).locator("input")).not.toBeChecked({ timeout: 20_000 });
+});
+
+test("shrimp page quotes MDMR's status board with the page's date (0044)", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const board = latest.shrimp_season?.status;
+  test.skip(!board, "no fresh MDMR shrimp page in this build");
+  await page.goto("for/shrimp/");
+  const list = page.getByRole("list", { name: "Shrimping areas and their status on MDMR's page" });
+  await expect(list.locator("li")).toHaveCount(board.areas.length);
+  await expect(list.locator("li").first()).toContainText(board.areas[0].status === "open" ? "Open" : "Closed");
+  await expect(page.locator(".shrimp-season")).toContainText("Shrimp & Crab page, last changed");
+});
+
+test("oysters page quotes MDMR's season page and its orders (0044)", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const season = latest.oyster_watch?.season;
+  test.skip(!season, "no fresh MDMR oyster season page in this build");
+  await page.goto("for/oyster/");
+  const section = page.locator(".oyster-watch");
+  await expect(section.getByRole("heading", { name: /season, from MDMR$/ })).toBeVisible();
+  await expect(section.locator(".mdmr-orders li")).toHaveCount(season.orders.length);
+  await expect(section).toContainText("Quoted from MDMR's season page, last changed");
 });
 
 test("every page has a share image that exists and is 1200x630", async ({ page, request }) => {

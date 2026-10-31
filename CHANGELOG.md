@@ -3,7 +3,13 @@
 User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## 2026-10-30
+### Added
+- Oyster growing areas on the map: MDMR's areas (I-B, II-E and so on) are outlined and named, solid for approved, dashed for conditionally approved and dotted for the rest. Tap or hover an area for its class and what it means. It's on by default on the Oysters page. The outlines show MDMR's classes, not whether an area is open today ([0043](docs/decisions/0043-oyster-growing-areas-as-classes-not-status.md)).
+- MDMR in its own words: the Shrimp page shows MDMR's status board (open or closed for each shrimping area) and the Oysters page quotes MDMR's season page (the season so far, the days with no harvest, and each opening and closing order), each with the date MDMR last changed the page ([0044](docs/decisions/0044-mdmr-season-pages-quoted.md)).
+- Grand Bay salinity at the map's east edge: the Grand Bay reserve's Bangs Lake reading, labeled as a reference 15 km east of our easternmost station, beside Dauphin Island ([0045](docs/decisions/0045-grand-bay-as-reference-from-ndbc.md)).
+
 ### Changed
+- About now says the site updates every four hours.
 - Faster pages, especially on phones: the headline and readings show first, and the map loads once the page has settled and the map is about to scroll into view. Links to a replay day (`#2019-05-10`) still open the map right away. The "Updated" line no longer nudges the page down after it appears ([0042](docs/decisions/0042-map-loads-after-the-page.md)).
 - Phones now show "Mississippi Sound" beside the Sound Check name at the top, as on desktop.
 

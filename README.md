@@ -2,7 +2,7 @@
 
 A free, plain-language read on what the Mississippi Sound is doing: salinity, water temperature, river flow, rain,
 beach advisories, oyster closure context, shrimp notices and a fishing outlook, built on public data and updated every
-three hours.
+four hours.
 
 **Live site: <https://thatorjohn.github.io/ms-sound-check/>**
 
@@ -12,7 +12,7 @@ three hours.
 
 ## How it works
 
-- A Python pipeline (`msc/`) runs in GitHub Actions every three hours, pulls public data, and writes JSON.
+- A Python pipeline (`msc/`) runs in GitHub Actions every four hours, pulls public data, and writes JSON.
 - An Astro + React site (`web/`) renders that JSON as static pages and deploys to GitHub Pages. There is no server.
 - The accumulated data store lives on the `data` branch; sites, personas and indicators are config in `regions/ms.yaml`.
 

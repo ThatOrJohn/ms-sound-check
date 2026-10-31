@@ -120,6 +120,22 @@ export interface OysterWatch {
   plan_name: string; plan_url: string; status_url?: string; hotline?: string;
   /** MDMR's own oyster season notices (openings, closures, area changes), newest first. */
   notices?: MdmrNotice[]; notices_available?: boolean; notices_link?: string | null;
+  /** MDMR's season page, quoted (0044); null when the snapshot is stale or the page didn't parse. */
+  season?: OysterSeasonPage | null;
+}
+/** MDMR page fields every quoted page carries: where it is and when MDMR last changed it. */
+interface MdmrPage { link: string; modified: string }
+export interface OysterSeasonPage extends MdmrPage {
+  season?: string; summary: string[]; orders: { title: string; link: string }[];
+  no_harvest: { lead: string; days: string[] } | null;
+}
+export interface ShrimpStatusPage extends MdmrPage {
+  areas: { area: string; status: "open" | "closed"; footnote: boolean }[]; note: string | null;
+}
+/** MDMR's growing-water classes for the map (0043). Never open or closed: that's MDMR's call. */
+export type ShellfishClass = "approved" | "conditional" | "restricted" | "prohibited" | "unclassified";
+export interface ShellfishAreas {
+  source: string | null; link: string | null; fetched_at: string; edited: string | null; classes: ShellfishClass[];
 }
 
 /** Fresh-and-hot days near the reefs (decision 0039). `to_date`: days up to today's day of the year. */
@@ -169,6 +185,8 @@ export interface ShrimpWindDay {
 }
 export interface ShrimpSeason {
   notices: MdmrNotice[]; notices_available: boolean; link: string | null; source: string | null; days: ShrimpWindDay[];
+  /** MDMR's open/closed box from its Shrimp & Crab page, quoted (0044). */
+  status?: ShrimpStatusPage | null;
 }
 
 export interface ReferenceSite {
@@ -268,6 +286,7 @@ export interface Latest {
   oyster_watch?: OysterWatch | null;
   oyster_stress?: OysterStress | null;
   beaches?: BeachSection | null;
+  shellfish_areas?: ShellfishAreas | null;
   region: { id: string; name: string; units: Record<string, string>; map: { center: [number, number]; zoom: number } };
   generated_at: string;
   asof: string;

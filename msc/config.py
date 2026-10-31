@@ -60,6 +60,6 @@ def load_region(region_id: str) -> Region:
         id=raw["id"], name=raw["name"], timezone=raw.get("timezone", "UTC"),
         units=raw.get("units", {}), sites=raw["sites"], personas=raw.get("personas", []),
         indicators=raw.get("indicators", []), map=raw.get("map", {}),
-        extras={k: raw[k] for k in ("beaches", "tides", "mdmr_notices", "reference", "ungauged_rivers",
+        extras={k: raw[k] for k in ("beaches", "tides", "mdmr_notices", "mdmr_pages", "shellfish_areas", "reference", "ungauged_rivers",
                                      "spillway", "satellite", "vibrio", "oyster_stress", "history", "similar_years", "digest", "marine_zone") if k in raw},
     )
