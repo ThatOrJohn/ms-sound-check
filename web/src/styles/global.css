@@ -184,8 +184,8 @@ select, .btn {
   backdrop-filter: saturate(1.5) blur(14px); -webkit-backdrop-filter: saturate(1.5) blur(14px);
   box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.35);
 }
-/* Right-edge column: Layers at the top, the reference chip at the bottom; the panel scrolls before they'd overlap.
-   Clicks pass through the gap between them to the map. */
+/* Right-edge column for the Layers panel; it scrolls before it would reach the zoom buttons.
+   Clicks pass through the column's empty space to the map. */
 .map-side { position: absolute; top: 12px; right: 12px; bottom: 34px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
 .map-side > * { pointer-events: auto; }
 .map-layers { margin: 0; padding: 9px 12px 10px; max-width: 230px; min-height: 0; overflow-y: auto; font-size: 0.82rem; display: grid; align-content: start; gap: 2px; }
@@ -234,11 +234,27 @@ select, .btn {
 .map-rivers .bar, .map-rivers-row .bar { display: inline-block; width: 4px; background: var(--fresh); border-radius: 2px; margin-right: 8px; vertical-align: middle; }
 .map-rivers b, .map-rivers-row b { font-weight: 600; }
 .map-rivers-row { display: none; }
-/* A reference site just past the east edge (Dauphin Island): text only, no dot, so it can't pass for a station. */
-.map-ref { margin: auto 40px 0 0; flex: none; display: grid; gap: 1px; justify-items: end;
-  padding: 7px 11px; font-size: 0.76rem; text-align: right; }
-.map-ref b { font: 600 0.86rem var(--mono); }
-.map-ref-note { color: var(--ink-soft); font-size: 0.7rem; }
+/* Reference sites (0047): a one-line tab on the map's edge, level with the site and pointing at it, like an off-screen
+   pointer. Text only, no dot, so it can't pass for a station. SoundMap places it; hidden until it has been placed. */
+.map-ref { position: absolute; left: 0; top: 0; z-index: 2; margin: 0; padding: 5px 9px; max-width: 220px;
+  display: grid; gap: 2px; font: inherit; font-size: 0.74rem; line-height: 1.25; color: var(--ink); text-align: left;
+  cursor: pointer; border-radius: 9px; visibility: hidden; }
+.map-ref[data-side] { visibility: visible; }
+.map-ref:hover, .map-ref:focus-visible { border-color: var(--accent); }
+.map-ref-line { white-space: nowrap; display: flex; align-items: baseline; gap: 6px; }
+.map-ref b { font: 600 0.8rem var(--mono); }
+.map-ref-tag { font: 500 0.6rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 2px 3px; }
+/* Folded, the note stays readable to screen readers; hover, focus or a tap opens it on screen. */
+.map-ref-note { color: var(--ink-soft); font-size: 0.7rem; white-space: normal; }
+.map-ref:not([aria-expanded="true"]):not(:hover):not(:focus-visible) .map-ref-note {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* The caret: on the edge facing the site, slid to --at so it points along the site's line. */
+.map-ref::after { content: ""; position: absolute; width: 0; height: 0; border: 6px solid transparent; }
+.map-ref[data-side="e"]::after { left: 100%; top: var(--at); margin-top: -6px; border-left-color: var(--ink-soft); border-right-width: 0; }
+.map-ref[data-side="w"]::after { right: 100%; top: var(--at); margin-top: -6px; border-right-color: var(--ink-soft); border-left-width: 0; }
+.map-ref[data-side="n"]::after { bottom: 100%; left: var(--at); margin-left: -6px; border-bottom-color: var(--ink-soft); border-top-width: 0; }
+.map-ref[data-side="s"]::after, .map-ref[data-side="in"]::after { top: 100%; left: var(--at); margin-left: -6px; border-top-color: var(--ink-soft); border-bottom-width: 0; }
 /* MapLibre's controls, in our palette (they ship light-only). */
 .sound .maplibregl-ctrl.maplibregl-ctrl-attrib,
 .sound .maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact { font-size: 10.5px; background: var(--glass); color: var(--ink-soft); border-radius: 8px; }
@@ -653,7 +669,7 @@ select, .btn {
   .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .readout { padding: 14px; }
   .map-wrap { height: 420px; }
-  /* The reference chip moves to the strip below, so the column only has to clear the zoom buttons. */
+  /* The reference tabs move to the strip below, so the column only has to clear the zoom buttons. */
   .map-side { top: 8px; right: 8px; bottom: 104px; }
   .map-layers { max-width: 190px; font-size: 0.8rem; }
   .map-layers[open] { width: 190px; }

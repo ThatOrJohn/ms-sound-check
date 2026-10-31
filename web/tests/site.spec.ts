@@ -258,7 +258,7 @@ test("river flow shows on phones as a strip under the map", async ({ page, reque
   await expect(info.project.name === "phone" ? panel : strip).toBeHidden();
 });
 
-test("Dauphin Island and Grand Bay show at the map's east edge as labeled references, not stations", async ({ page, request }, info) => {
+test("Dauphin Island and Grand Bay show as edge tabs pointing past the map, labeled references, not stations", async ({ page, request }, info) => {
   const latest = await (await request.get("data/ms/latest.json")).json();
   const refs = (latest.reference ?? []).filter((r: { salinity: number | null; east: boolean }) => r.salinity !== null && r.east);
   test.skip(!refs.length, "no fresh reference reading in this build");
@@ -270,6 +270,12 @@ test("Dauphin Island and Grand Bay show at the map's east edge as labeled refere
     await expect(chip).toContainText(`${ref.salinity.toFixed(1)} ppt`);
     await expect(chip).toContainText(`Reference, ${ref.km} km east of ${ref.nearest}`);
   }
+  if (info.project.name === "phone") return;
+  // Desktop (0047): edge tabs, placed on the map, clear of the Layers panel and of each other.
+  await expect(page.locator(".map-ref[data-side]")).toHaveCount(refs.length);
+  const boxes = await Promise.all([...await chips.all(), page.locator(".map-layers")].map(async (l) => (await l.boundingBox())!));
+  const hit = (a: typeof boxes[0], b: typeof boxes[0]) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) expect(hit(boxes[i], boxes[j])).toBe(false);
 });
 
 test("oyster map shows MDMR's growing-area classes, never open or closed (0043)", async ({ page, request }) => {

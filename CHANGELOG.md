@@ -4,6 +4,7 @@ User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md
 
 ## 2026-10-31
 ### Changed
+- Dauphin Island and Grand Bay on the map are now small one-line tabs at the map's edge, level with each site and pointing toward it. They follow the site as you pan and zoom and keep clear of the station labels. Hover or tap a tab for its note ([0047](docs/decisions/0047-reference-sites-as-edge-tabs.md)).
 - When a source like MDEQ's beach map or MDMR's website hasn't answered or can't be read, its section now says so and links the agency ("We couldn't get MDEQ's beach advisories in the last few updates…") instead of disappearing. The rest of the page keeps updating as normal ([0046](docs/decisions/0046-one-bad-source-hides-only-its-own-section.md)).
 
 ## 2026-10-30

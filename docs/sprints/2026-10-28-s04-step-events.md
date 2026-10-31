@@ -49,6 +49,7 @@
 - [x] MDMR in its own words: the Shrimp & Crab status board on the Shrimp page and the oyster season page (text, orders, no-harvest days) on the Oysters page, each with the page's last-changed date (0044)
 - [x] Grand Bay NERR (Bangs Lake) as a reference chip from NDBC's realtime files; no history yet, so not a station (0045)
 - [x] Source resilience: safe snapshot reads and atomic writes (`msc/snapshots.py`), each build section isolated, MDMR pages carried forward one at a time, "couldn't check" notes for sourced sections, health check names hidden MDMR pages; 51 of 63 bad-snapshot cases used to crash the build, now none do (0046)
+- [x] Reference sites as edge tabs: one line, on the map edge level with the site and pointing at it, following pan and zoom, clear of the panel, zoom buttons and station labels; note on hover, focus or tap (0047)
 
 ## Notes
 - 2026-10-28: The spillway's open/closed status isn't published anywhere we can read: the Corps' CWMS series for MVN

@@ -32,7 +32,7 @@ interface Props {
   replayIndex?: ReplayIndex | null;
   /** Every salinity station the replay can draw, retired ones included (they're shown on days they had readings). */
   replaySites?: MapStation[];
-  /** Reference sites past the map's east edge (Dauphin Island): a chip at that edge, never a station dot. */
+  /** Reference sites past the map's east edge (Dauphin Island, Grand Bay): an edge tab pointing at each, never a station dot. */
   reference?: ReferenceSite[];
 }
 const NO_RIVERS: string[] = [];
@@ -615,6 +615,79 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     history.replaceState(null, "", `${location.pathname}${location.search}#${set.days[frame]}`);
   }, [set, frame, playing]);
 
+  // ---------- reference sites (0047): an edge tab per site, like an off-screen pointer in a game. It sits on the map's
+  // edge level with the site and points at it, slides as the map pans and zooms, and lands on the spot if it comes
+  // into view. Folded to one line so it covers little; hover, focus or a tap opens the note.
+  const refEls = useRef(new Map<string, HTMLElement>());
+  const [refOpen, setRefOpen] = useState<string | null>(null);
+  const refKey = today ? (reference ?? []).filter((r) => r.salinity !== null && r.east).map((r) => r.id).join() : "";
+  useEffect(() => {
+    const map = mapRef.current, wrap = el.current?.parentElement;
+    if (!map || !ready || !refKey || !wrap) return;
+    const sites = (reference ?? []).filter((r) => refKey.split(",").includes(r.id));
+    const PAD = 12, GAP = 6, CARET = 10;
+    let raf = 0;
+    const place = () => {
+      raf = 0;
+      const wr = wrap.getBoundingClientRect(), W = wr.width, H = wr.height;
+      const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+      const boxes = sites.flatMap((r) => {
+        const node = refEls.current.get(r.id);
+        if (!node) return [];
+        const p = map.project([r.lon, r.lat]), w = node.offsetWidth, h = node.offsetHeight;
+        const side = p.x > W - PAD ? "e" : p.x < PAD ? "w" : p.y < PAD ? "n" : p.y > H - PAD ? "s" : "in";
+        let left = side === "e" ? W - PAD - w : side === "w" ? PAD : p.x - w / 2;
+        left = clamp(left, PAD, W - PAD - w);
+        const top = side === "n" ? PAD : side === "s" ? H - PAD - h : side === "in" ? p.y - h - CARET : p.y - h / 2;
+        return [{ node, p, w, h, side, left, top }];
+      }).sort((a, b) => a.top - b.top);
+      // Each tab looks for the nearest free spot level with its site: against the east edge, or just left of the Layers
+      // panel or zoom buttons when they're in the way, and clear of station dots and labels, the river panel and the
+      // other tabs. Failing that it takes its own line anyway; the map can always be dragged out from under it.
+      type Box = { left: number; top: number; w: number; h: number };
+      const keepOut: Box[] = [];
+      const add = (r: DOMRect | undefined) => { if (r?.height) keepOut.push({ left: r.left - wr.left, top: r.top - wr.top, w: r.width, h: r.height }); };
+      add(wrap.querySelector(".map-layers")?.getBoundingClientRect());
+      add(wrap.querySelector(".maplibregl-ctrl-bottom-right .maplibregl-ctrl-group")?.getBoundingClientRect());
+      add(wrap.querySelector(".map-rivers")?.getBoundingClientRect());
+      const blocks = [...keepOut];
+      for (const st of stations) {   // the dot, and its two-line label to the right of it
+        const q = map.project([st.lon, st.lat]);
+        blocks.push({ left: q.x - 12, top: q.y - 20, w: 135, h: 40 });
+      }
+      const over = (a: Box, z: Box) =>
+        a.left < z.left + z.w + GAP && a.left + a.w + GAP > z.left && a.top < z.top + z.h + GAP && a.top + a.h + GAP > z.top;
+      for (const b of boxes) {
+        const fit = (top: number) => {
+          const c = { ...b, top: clamp(top, PAD, H - 34 - b.h) };
+          for (let i = 0; i < 3; i++) for (const z of keepOut) if (over(c, z)) c.left = Math.max(PAD, z.left - GAP - c.w);
+          return c;
+        };
+        let best = fit(b.top);
+        for (let d = 0; d <= H; d += 8) {
+          const c = [fit(b.top + d), fit(b.top - d)].find((c) => !blocks.some((z) => over(c, z)));
+          if (c) { best = c; break; }
+        }
+        b.left = best.left; b.top = best.top;
+        blocks.push({ left: b.left, top: b.top, w: b.w, h: b.h });
+        // The caret slides along the tab's edge to point at the site's line, as far as the tab's corners allow.
+        const at = b.side === "e" || b.side === "w" ? clamp(b.p.y - b.top, 9, b.h - 9) : clamp(b.p.x - b.left, 12, b.w - 12);
+        b.node.style.transform = `translate(${Math.round(b.left)}px, ${Math.round(b.top)}px)`;
+        b.node.style.setProperty("--at", `${Math.round(at)}px`);
+        b.node.dataset.side = b.side;
+      }
+    };
+    const queue = () => { if (!raf) raf = requestAnimationFrame(place); };
+    place();
+    map.on("move", queue); map.on("resize", queue);
+    // Tabs grow when opened, and the Layers panel when it opens or a layer adds a note.
+    const ro = new ResizeObserver(queue);
+    refEls.current.forEach((n) => ro.observe(n));
+    const panelEl = wrap.querySelector(".map-layers");
+    if (panelEl) ro.observe(panelEl);
+    return () => { map.off("move", queue); map.off("resize", queue); ro.disconnect(); cancelAnimationFrame(raf); };
+  }, [ready, refKey, stations]);
+
   const noBasemap = meta === null;
   const past = !today;
   const fill = SAT_KEYS.find((k) => layers[k] && satellite?.[k]);
@@ -634,7 +707,7 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
     <div className="map-wrap">
       <div ref={el} className="map" />
       {failed && <p className="map-msg">The map couldn't load. The station list below has the same readings.</p>}
-      {/* One column down the right edge, so a tall Layers panel stacks above the reference chip instead of under it. */}
+      {/* The right-edge column; the reference tabs below keep clear of it as it grows. */}
       <div className="map-side">
       <details className="map-layers" open={panelOpen} onToggle={(e) => setPanelOpen((e.target as HTMLDetailsElement).open)}>
         <summary>Layers</summary>
@@ -687,14 +760,19 @@ export default function SoundMap({ stations, rivers, ungauged = NO_RIVERS, basem
             w ? `${fmtDay(w.day, set!.year !== null)}: ${windWords(w.w)}, daily average.` : "No wind reading for this day."}`}</p>; })()}
         {noBasemap && <p className="map-note">Depth layers need the one-time basemap prep.</p>}
       </details>
-      {refs.map((r) => (
-        <p key={r.id} className="map-ref" title={`${r.name}. Not one of our stations: shown for comparison only.`}>
-          <span className="map-ref-place">{`${r.place ?? r.name} `}<span aria-hidden="true">→</span></span>
-          <b>{`${r.salinity!.toFixed(1)} ppt`}</b>
-          <span className="map-ref-note">{`Reference, ${r.km} km east of ${r.nearest}`}</span>
-        </p>
-      ))}
       </div>
+      {refs.map((r) => (
+        <button key={r.id} type="button" className="map-ref" aria-expanded={refOpen === r.id}
+          ref={(n) => { if (n) refEls.current.set(r.id, n); else refEls.current.delete(r.id); }}
+          onClick={() => setRefOpen(refOpen === r.id ? null : r.id)}
+          title={`${r.name}. Not one of our stations: shown for comparison only.`}>
+          <span className="map-ref-line">
+            <span className="map-ref-tag">Ref</span>
+            {`${(r.place ?? r.name).split(",")[0]} `}<b>{`${r.salinity!.toFixed(1)} ppt`}</b>
+          </span>
+          <span className="map-ref-note">{`${r.place ?? r.name}. Reference, ${r.km} km east of ${r.nearest}`}</span>
+        </button>
+      ))}
       <div className="map-rivers" aria-hidden="true">{riverRows}</div>
     </div>
     {/* Phones: the same rows as a strip under the map, which is too small to float them over. */}
