@@ -480,11 +480,29 @@ test("the Oysters share image is the strip, at 1200x630", async ({ request }) =>
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
 });
 
-test("each Fishing day lists sun and moon times in words, and the NWS wave wording when there is one", async ({ page }) => {
+test("each Fishing day lists sun and moon times in words, and the NWS wave wording when there is one", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  test.skip(!latest.fishing_outlook, "no fresh forecast or tides in this build");
   await page.goto("for/fish/");
   for (const w of await page.locator(".fish-day .fish-waves").allTextContents())
     expect(w).toMatch(/^In the Sound: (waves|seas|bay waters) .+\.$/);
   const line = page.locator(".fish-day .fish-sun-moon").first();
   await expect(line).toHaveText(/^Sun up \d{1,2}:\d{2} AM, down \d{1,2}:\d{2} PM\. Moon: (new|full|(waxing|waning) (crescent|gibbous), \d+% lit|first quarter|last quarter)(, (rises|sets) \d{1,2}:\d{2} [AP]M)*\.$/);
   await expect(page.locator(".fishing .fish-src")).toContainText("US Naval Observatory");
+});
+
+test("a section whose source is down says so and points to the agency, in both themes", async ({ page, request }) => {
+  const latest = await (await request.get("data/ms/latest.json")).json();
+  const persona = latest.personas.find((p: { card_order: string[] }) =>
+    p.card_order.some((k) => (latest.unavailable ?? []).includes(k)));
+  test.skip(!persona, "every sourced section has current data in this build");
+  await page.goto(persona.id === "general" ? "" : `for/${persona.id}/`);
+  const note = page.locator("[data-unavailable]").first();
+  await expect(note).toContainText("couldn't get");
+  await expect(note.getByRole("link")).toHaveAttribute("href", /^https:\/\//);
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+    const axe = await new AxeBuilder({ page }).include("[data-unavailable]").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+    expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical"), scheme).toEqual([]);
+  }
 });

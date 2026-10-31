@@ -9,12 +9,12 @@ station per day to beach_history.parquet, so the page can say how long an adviso
 """
 from __future__ import annotations
 
-import json
 import logging
 
 import pandas as pd
 
 from ..config import Region
+from ..snapshots import read_json, read_parquet, write_json
 
 log = logging.getLogger(__name__)
 FIELDS = ["stationnumber", "name", "location", "county", "westend", "eastend", "active", "sortorder",
@@ -78,11 +78,20 @@ def normalize(stations_json: dict, segments_geojson: dict | None) -> dict:
 
 
 def fetch(region: Region) -> dict | None:
+    """Stations are the section; without them the run fails and the last snapshot stands until it ages out. The
+    segments only draw the map's lines, so if that query fails the stations still save and the old lines stay."""
     cfg = (region.extras or {}).get("beaches")
     if not cfg:
         return None
-    data = normalize(_query(cfg["url"], cfg.get("stations_layer", 0), geojson=False),
-                     _query(cfg["url"], cfg.get("segments_layer", 1), geojson=True))
+    stations = _query(cfg["url"], cfg.get("stations_layer", 0), geojson=False)
+    try:
+        segments = _query(cfg["url"], cfg.get("segments_layer", 1), geojson=True)
+    except Exception as e:  # noqa: BLE001
+        log.warning("beach segments failed, keeping the last ones: %s", e)
+        segments = None
+    data = normalize(stations, segments)
+    if not data["stations"]:
+        raise RuntimeError("no active beach stations in the response")
     data["fetched_at"] = pd.Timestamp.now(tz="UTC").isoformat()
     data["source"] = cfg.get("name", "Beach monitoring program")
     return data
@@ -90,22 +99,24 @@ def fetch(region: Region) -> dict | None:
 
 def save(region: Region, data: dict) -> None:
     d = region.data_dir
-    d.mkdir(parents=True, exist_ok=True)
-    (d / "beaches.json").write_text(json.dumps({k: v for k, v in data.items() if k != "segments"}, indent=1))
+    write_json(d / "beaches.json", {k: v for k, v in data.items() if k != "segments"}, indent=1)
     if data.get("segments"):
-        (d / "beaches.geojson").write_text(json.dumps(data["segments"], separators=(",", ":")))
+        write_json(d / "beaches.geojson", data["segments"], separators=(",", ":"))
     today = pd.Timestamp.now(tz=region.timezone).tz_localize(None).normalize()
     rows = pd.DataFrame([{"date": today, "id": s["id"], "status": s["status"], "event": s["event"]}
                          for s in data["stations"]])
     p = d / "beach_history.parquet"
-    if p.exists():
-        old = pd.read_parquet(p)
+    old = read_parquet(p, ["date", "id", "status"])   # unreadable history starts over rather than block the snapshot
+    if old is not None:
         rows = pd.concat([old, rows]).drop_duplicates(["date", "id"], keep="last")
     rows.to_parquet(p, index=False)
 
 
 def load(region: Region) -> tuple[dict | None, dict | None]:
+    """The snapshot and the map's segments, each None if missing or unreadable. The build checks the age."""
     d = region.data_dir
-    snap = json.loads((d / "beaches.json").read_text()) if (d / "beaches.json").exists() else None
-    seg = json.loads((d / "beaches.geojson").read_text()) if (d / "beaches.geojson").exists() else None
-    return snap, seg
+    snap = read_json(d / "beaches.json", need=("fetched_at", "stations"))
+    if snap and not isinstance(snap["stations"], list):
+        snap = None
+    seg = read_json(d / "beaches.geojson", need=("features",))
+    return snap, seg if seg and isinstance(seg["features"], list) else None

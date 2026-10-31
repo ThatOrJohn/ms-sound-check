@@ -11,6 +11,7 @@ import FishingOutlook from "./FishingOutlook.astro";
 import ShrimpSeason from "./ShrimpSeason.astro";
 import Spillway from "./Spillway.astro";
 import VibrioNote from "./VibrioNote.astro";
+import SectionUnavailable from "./SectionUnavailable.astro";
 import HistorySection from "./HistorySection.astro";
 import SoundStrip from "./SoundStrip.astro";
 import OfficialSources from "./OfficialSources.astro";
@@ -58,11 +59,13 @@ const ungauged = data.ungauged_rivers ?? [];
 const ungaugedNote = ungauged.length ? "Smaller rivers without a live flow gauge also reach the Sound: " +
   ungauged.map((r, i) => `${i && i === ungauged.length - 1 ? "and " : ""}the ${r.name} into ${r.into}`).join(ungauged.length > 2 ? ", " : " ") +
   ". They're drawn on the map." : null;
+const unavailable = new Set(data.unavailable ?? []);
 const groups = persona.card_order
-  .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind) }))
-  .filter((g) => g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
+  .map((kind) => ({ kind, ...(GROUPS[kind] ?? { title: kind, blurb: "" }), cards: data.cards.filter((c) => c.kind === kind),
+    missing: unavailable.has(kind) }))
+  .filter((g) => g.missing || (g.kind === "beaches" ? !!data.beaches : g.kind === "oyster_watch" ? !!data.oyster_watch
     : g.kind === "oyster_stress" ? !!data.oyster_stress?.stations.length
-    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.kind === "vibrio" ? !!data.vibrio : g.kind === "history" ? !!data.history : g.kind === "strip" ? true : g.cards.length);
+    : g.kind === "fishing_outlook" ? !!data.fishing_outlook : g.kind === "shrimp_season" ? !!data.shrimp_season : g.kind === "spillway" ? !!data.spillway : g.kind === "vibrio" ? !!data.vibrio : g.kind === "history" ? !!data.history : g.kind === "strip" ? true : g.cards.length));
 // Stations, rivers, rain and weather share one instrument table (decision 0035), placed where the first of them comes
 // in this persona's card_order and grouped in that order.
 const TABLE_KINDS = ["sound", "estuary", "river", "rain", "weather"];
@@ -145,7 +148,8 @@ const alertCount = findings.filter((f) => SEV_RANK[f.severity] >= 2).length;
 </div>
 
 <div class="sections">
-{groups.map((g) => g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} data={data} />
+{groups.map((g) => g.missing ? <SectionUnavailable kind={g.kind} />
+  : g.kind === "beaches" ? <BeachStatus beaches={data.beaches!} data={data} />
   : g.kind === "oyster_watch" ? <OysterWatch watch={data.oyster_watch!} gaugeSlug={gaugeSlug} data={data} />
   : g.kind === "oyster_stress" ? <OysterStress stress={data.oyster_stress!} asof={data.asof} />
   : g.kind === "fishing_outlook" ? <FishingOutlook outlook={data.fishing_outlook!} data={data} />

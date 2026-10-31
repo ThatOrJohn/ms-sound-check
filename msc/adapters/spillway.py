@@ -5,11 +5,10 @@ context for one section, not a reading of the Sound. Saved as data/<region>/spil
 """
 from __future__ import annotations
 
-import json
-
 import pandas as pd
 
 from ..config import Region
+from ..snapshots import read_json, write_json
 from .nwps import API, _series
 
 KEEP_DAYS = 30
@@ -34,10 +33,9 @@ def fetch(region: Region) -> dict | None:
 
 
 def save(region: Region, snap: dict) -> None:
-    region.data_dir.mkdir(parents=True, exist_ok=True)
-    (region.data_dir / "spillway.json").write_text(json.dumps(snap))
+    write_json(region.data_dir / "spillway.json", snap)
 
 
 def load(region: Region) -> dict | None:
-    p = region.data_dir / "spillway.json"
-    return json.loads(p.read_text()) if p.exists() else None
+    """The snapshot as saved, or None if missing or unreadable. The section checks its age."""
+    return read_json(region.data_dir / "spillway.json", need=("fetched_at",))

@@ -6,6 +6,7 @@ import logging
 import pandas as pd
 
 from ..config import Region
+from ..snapshots import read_json, write_json
 
 log = logging.getLogger(__name__)
 UA = {"User-Agent": "ms-sound-check (https://github.com/; hobby coastal conditions page)",
@@ -116,38 +117,21 @@ def parse_marine(js: dict, tz: str) -> dict:
 
 
 def save_marine(region: Region, fc: dict) -> None:
-    import json
-    region.data_dir.mkdir(parents=True, exist_ok=True)
-    (region.data_dir / "marine_forecast.json").write_text(json.dumps(
-        {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), **fc}))
+    write_json(region.data_dir / "marine_forecast.json", {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), **fc})
 
 
 def load_marine(region: Region) -> list[dict]:
-    """Marine forecast periods, or [] if missing or older than two days, like the land forecast."""
-    import json
-    p = region.data_dir / "marine_forecast.json"
-    if not p.exists():
-        return []
-    js = json.loads(p.read_text())
-    if pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > MAX_AGE:
-        return []
-    return js["periods"]
+    """Marine forecast periods, or [] if missing, unreadable or older than two days, like the land forecast."""
+    js = read_json(region.data_dir / "marine_forecast.json", MAX_AGE, need=("fetched_at", "periods"))
+    return js["periods"] if js and isinstance(js["periods"], list) else []
 
 
 def save_forecast(region: Region, rows: list[dict]) -> None:
-    import json
-    region.data_dir.mkdir(parents=True, exist_ok=True)
-    (region.data_dir / "weather_forecast.json").write_text(json.dumps(
-        {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), "periods": rows}))
+    write_json(region.data_dir / "weather_forecast.json",
+               {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), "periods": rows})
 
 
 def load_forecast(region: Region) -> list[dict]:
-    """Forecast periods, or [] if missing or older than two days (a stale forecast is worse than none)."""
-    import json
-    p = region.data_dir / "weather_forecast.json"
-    if not p.exists():
-        return []
-    js = json.loads(p.read_text())
-    if isinstance(js, list) or pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > MAX_AGE:
-        return []
-    return js["periods"]
+    """Forecast periods, or [] if missing, unreadable or older than two days (a stale forecast is worse than none)."""
+    js = read_json(region.data_dir / "weather_forecast.json", MAX_AGE, need=("fetched_at", "periods"))
+    return js["periods"] if js and isinstance(js["periods"], list) else []

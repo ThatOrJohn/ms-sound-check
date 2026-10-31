@@ -143,7 +143,12 @@ HTML with the current numbers already in it.
   Ctrl+scroll gestures keep the map from trapping page scroll. A west-to-east station list sits under the map
   as the accessible version.
 - **Honesty states.** Every reading can show as normal, unusual, stale ("station quiet since…") or suspect
-  ("possibly a sensor problem"). The freshness line warns if the page itself hasn't refreshed in 12 hours.
+  ("possibly a sensor problem"). The freshness line warns if the page itself hasn't refreshed in 12 hours. A section
+  whose source is down or unreadable is replaced by a line saying we couldn't check, with the agency's link
+  ([0046](decisions/0046-one-bad-source-hides-only-its-own-section.md)).
+- **One bad source, one hidden section.** Snapshots are read through `msc/snapshots.py` (a bad file reads as missing)
+  and written atomically; each section of `latest.json` is built inside `_section` in `msc/build.py`, so a failure
+  leaves that section out and the rest of the page updates.
 - **Fonts** are self-hosted (Fontsource), so there are no third-party requests.
 
 The headline is composed in `msc/build.py`. Anything at watch level or above leads. Otherwise it's a plain
@@ -162,8 +167,9 @@ sentence about the rivers and what that means for the Sound, plus a persona-spec
 - deploys `web/dist` to GitHub Pages straight from the run; built JSON is never
   committed
 - runs a health check (`python -m msc check`) that fails the run, so GitHub
-  emails you, if the newest water reading is more than 2 days old; the page
-  still deploys and shows its own staleness warning
+  emails you, if the newest water reading is more than 2 days old or a sourced
+  section, MDMR notice topic or MDMR page is hidden; the page still deploys and
+  shows its own staleness warning
 - on pull requests: builds and tests only, with no data push and no deploy
 
 It costs nothing for a public repo. Cloudflare Pages works too, via direct

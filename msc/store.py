@@ -11,6 +11,7 @@ from __future__ import annotations
 import pandas as pd
 
 from .config import VARIABLES, Region
+from .snapshots import read_parquet
 
 DAILY_COLS = ["site", "var", "date", "value", "source"]
 RECENT_COLS = ["site", "var", "time", "value", "source"]
@@ -49,10 +50,10 @@ def upsert_daily(region: Region, new: pd.DataFrame) -> int:
 
 
 def read_recent(region: Region) -> pd.DataFrame:
-    p = region.data_dir / "recent.parquet"
-    if not p.exists():
-        return pd.DataFrame(columns=RECENT_COLS)
-    df = pd.read_parquet(p)
+    """Missing or unreadable reads as empty: it's a rolling 45-day cache that the next ingest refills."""
+    df = read_parquet(region.data_dir / "recent.parquet", RECENT_COLS)
+    if df is None:
+        return pd.DataFrame({c: pd.Series(dtype="datetime64[ns, UTC]" if c == "time" else object) for c in RECENT_COLS})
     df["time"] = pd.to_datetime(df["time"], utc=True)
     return df
 

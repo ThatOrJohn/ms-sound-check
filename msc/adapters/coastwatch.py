@@ -7,12 +7,14 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 
 import numpy as np
 import pandas as pd
 
 from ..config import Region
 
+log = logging.getLogger(__name__)
 ERDDAP = "https://coastwatch.noaa.gov/erddap/griddap"
 
 
@@ -84,8 +86,13 @@ def save(region: Region, layers: dict[str, dict]) -> None:
 
 
 def load(region: Region, lid: str) -> dict | None:
+    """One layer's composite, or None if missing or unreadable (that layer drops off the map; the others stay)."""
     p = region.data_dir / "satellite" / f"{lid}.npz"
     if not p.exists():
         return None
-    z = np.load(p)
-    return {"values": z["values"], "lats": z["lats"], "lons": z["lons"], "when": z["when"], **json.loads(str(z["meta"]))}
+    try:
+        z = np.load(p)
+        return {"values": z["values"], "lats": z["lats"], "lons": z["lons"], "when": z["when"], **json.loads(str(z["meta"]))}
+    except Exception as e:  # noqa: BLE001
+        log.warning("satellite layer %s unreadable, ignored: %s", lid, e)
+        return None

@@ -6,6 +6,7 @@ site/data/<region>/sites/<id>.json    one year of daily values + normal bands, f
 from __future__ import annotations
 
 import json
+import logging
 import re
 
 import numpy as np
@@ -15,12 +16,38 @@ from . import normals as nm
 from . import store
 from .config import REFERENCE, SITE_OUT, VARIABLES, Region
 from .indicators import SEVERITY, _sites_for, evaluate, is_suspect, record_means
+from .snapshots import read_parquet
 from .units import convert, fmt, season_phrase, unit_label
 
 SPARK_DAYS = 30
 HISTORY_DAYS = 365
 NOW_MAX_AGE = pd.Timedelta(hours=4)   # a "now" reading older than this is hidden, not shown
 REFERENCE_MAX_DAYS = 3                # a reference site's daily mean older than this is hidden
+log = logging.getLogger(__name__)
+# Sections a source feeds (decision 0046): when one comes out empty the page says it couldn't check, rather than go
+# quiet. Seasonal or derived sections (vibrio, oyster stress, history) are absent by design at times, so they aren't here.
+SOURCED = ("beaches", "oyster_watch", "shrimp_season", "fishing_outlook", "spillway")
+
+
+def _section(label: str, fn, *a, default=None):
+    """One section of latest.json. A section that raises is logged, listed in `_section.failures`, and left out
+    (`default`), so one source with a bad snapshot or an odd value can't stop the rest of the page from updating."""
+    try:
+        return fn(*a)
+    except Exception:  # noqa: BLE001
+        log.exception("section %s failed; left out of this build", label)
+        _section.failures.append(label)
+        return default
+_section.failures = []
+
+
+def _unavailable(region, sections: dict) -> list[str]:
+    """Configured sections that came out empty this build."""
+    from .models import oyster
+    configured = {"beaches": bool(region.extras.get("beaches")), "oyster_watch": bool(oyster._cfg(region)),
+                  "shrimp_season": bool(region.extras.get("mdmr_notices")), "fishing_outlook": True,
+                  "spillway": bool(region.extras.get("spillway"))}
+    return [k for k in SOURCED if configured[k] and sections.get(k) is None]
 
 
 def _r(v, nd=2):
@@ -198,10 +225,9 @@ def _beaches(region, asof):
     if fetched is None or pd.Timestamp.now(tz="UTC") - fetched > pd.Timedelta(days=2):
         return None, None   # hide rather than show advisories that may have changed
     stations = snap["stations"]
-    hist = region.data_dir / "beach_history.parquet"
+    h = read_parquet(region.data_dir / "beach_history.parquet", ["date", "id", "status"])
     days_flagged = {}
-    if hist.exists():   # how long each current advisory has been showing in our snapshots
-        h = pd.read_parquet(hist)
+    if h is not None:   # how long each current advisory has been showing in our snapshots
         for s in stations:
             if s["status"] != "clear":
                 hs = h[h.id == s["id"]].sort_values("date")
@@ -419,6 +445,8 @@ def _similar_years(region, daily, asof) -> dict | None:
         return pd.Series(np.log10(w.values), index=w.index.strftime("%m-%d"))
 
     series = {sid: history.series(daily, sid, "flow", asof) for sid in cfg["rivers"]}
+    if any(s.empty for s in series.values()):
+        return None
     now = {sid: window(s, asof.year) for sid, s in series.items()}
     if any(len(w) < need for w in now.values()):
         return None
@@ -621,21 +649,27 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
             fc[sid] = {"days": [[d.strftime("%Y-%m-%d"), _r(convert("rain", v, region.units))]
                                 for d, v in zip(pd.to_datetime(g.date), g.value)],
                        "total": fmt("rain", g.value.sum(), region.units)}
-    beach_section, beach_geo = _beaches(region, asof)
-    shellfish_section, shellfish_geo = _shellfish(region)
+    _section.failures = []
+    beach_section, beach_geo = _section("beaches", _beaches, region, asof, default=(None, None))
+    shellfish_section, shellfish_geo = _section("shellfish areas", _shellfish, region, default=(None, None))
     from .models import fishing, oyster, oyster_stress, shrimp
-    oyster_section = oyster.section(region, daily, asof)
-    stress_section = oyster_stress.section(region, daily, asof, suspect)
-    fishing_section = fishing.section(region, daily, asof, cards, forecast)
-    shrimp_section = shrimp.section(region, asof)
+    oyster_section = _section("oyster watch", oyster.section, region, daily, asof)
+    stress_section = _section("oyster stress", oyster_stress.section, region, daily, asof, suspect)
+    fishing_section = _section("fishing outlook", fishing.section, region, daily, asof, cards, forecast)
+    shrimp_section = _section("shrimp season", shrimp.section, region, asof)
     from .models import satellite, spillway, vibrio
-    spillway_section = spillway.section(region, daily, asof, normals)
-    vibrio_section = vibrio.section(region, daily, asof, suspect)
+    spillway_section = _section("spillway", spillway.section, region, daily, asof, normals)
+    vibrio_section = _section("vibrio", vibrio.section, region, daily, asof, suspect)
     out = SITE_OUT / region.id
     (out / "sites").mkdir(parents=True, exist_ok=True)
     for old in out.glob("sat-*.png"):     # a layer that went stale must disappear, not linger
         old.unlink()
-    satellite_layers = satellite.build(region, out)
+    satellite_layers = _section("satellite", satellite.build, region, out, default={})
+    sections = {"beaches": beach_section, "oyster_watch": oyster_section, "fishing_outlook": fishing_section,
+                "shrimp_season": shrimp_section, "spillway": spillway_section}
+    headline = lambda p: _section(f"headline {p['id']}", _headline, region, findings, p, asof, cards, beach_section,
+                                  oyster_section, fishing_section, shrimp_section,
+                                  default=_conditions(cards, season_phrase(asof)))
     latest = {
         "region": {"id": region.id, "name": region.name, "units": region.units, "map": region.map},
         "beaches": beach_section,
@@ -643,21 +677,22 @@ def build(region: Region, daily: pd.DataFrame, normals: pd.DataFrame, asof: pd.T
         "oyster_watch": oyster_section,
         "oyster_stress": stress_section,
         "fishing_outlook": fishing_section,
-        "tide_strip": _tide_strip(region),
+        "tide_strip": _section("tide strip", _tide_strip, region),
         "shrimp_season": shrimp_section,
         "spillway": spillway_section,
         "vibrio": vibrio_section,
         "satellite": satellite_layers,
-        "reference": _reference(region, daily, asof),
-        "replay": _replay(region, daily, normals, asof),
-        "replay_index": _replay_years(region, daily, normals, asof, out),
-        "history": _history(region, daily, asof, qcs, out),
-        "similar_years": _similar_years(region, daily, asof),
+        "reference": _section("reference sites", _reference, region, daily, asof, default=[]),
+        "replay": _section("replay", _replay, region, daily, normals, asof, default={}),
+        "replay_index": _section("replay years", _replay_years, region, daily, normals, asof, out),
+        "history": _section("history", _history, region, daily, asof, qcs, out),
+        "similar_years": _section("similar years", _similar_years, region, daily, asof),
+        "unavailable": _unavailable(region, sections),
         "generated_at": generated_at.isoformat(),
         "asof": asof.strftime("%Y-%m-%d"),
         "season": season_phrase(asof),
         "personas": region.personas,
-        "headlines": {p["id"]: _headline(region, findings, p, asof, cards, beach_section, oyster_section, fishing_section, shrimp_section) for p in region.personas},
+        "headlines": {p["id"]: headline(p) for p in region.personas},
         "findings": findings,
         "cards": cards,
         "ungauged_rivers": region.extras.get("ungauged_rivers", []),

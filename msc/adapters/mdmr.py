@@ -11,12 +11,15 @@ drops the notices rather than show a list that may have missed a closure.
 from __future__ import annotations
 
 import html
-import json
+import logging
 import re
 
 import pandas as pd
 
 from ..config import Region
+from ..snapshots import read_json, write_json
+
+log = logging.getLogger(__name__)
 
 UA = {"User-Agent": "ms-sound-check (https://github.com/; hobby coastal conditions page)"}
 MAX_AGE = pd.Timedelta(days=2)
@@ -70,19 +73,14 @@ def fetch(region: Region) -> dict | None:
 
 
 def save(region: Region, data: dict) -> None:
-    region.data_dir.mkdir(parents=True, exist_ok=True)
-    (region.data_dir / "mdmr_notices.json").write_text(json.dumps(data, indent=1))
+    write_json(region.data_dir / "mdmr_notices.json", data, indent=1)
 
 
 def load(region: Region, topic: str) -> list[dict] | None:
-    """Notices for one topic, or None if never fetched or the snapshot is older than MAX_AGE."""
-    p = region.data_dir / "mdmr_notices.json"
-    if not p.exists():
-        return None
-    js = json.loads(p.read_text())
-    if pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > MAX_AGE:
-        return None
-    return js["topics"].get(topic)
+    """Notices for one topic, or None if never fetched, unreadable, or the snapshot is older than MAX_AGE."""
+    js = read_json(region.data_dir / "mdmr_notices.json", MAX_AGE, need=("fetched_at", "topics"))
+    notices = js["topics"].get(topic) if js and isinstance(js["topics"], dict) else None
+    return notices if isinstance(notices, list) else None
 
 
 def recent(region: Region, topic: str, asof: pd.Timestamp, days: int = 365, count: int = 5) -> dict:
@@ -169,48 +167,62 @@ def oyster_season(rendered: str) -> dict:
 PARSERS = {"shrimp_status": shrimp_status, "oyster_season": oyster_season}
 
 
-def fetch_pages(region: Region) -> dict | None:
-    """Each configured page, found by slug (or the newest page whose slug matches a pattern) and parsed. A page that
-    fails to parse is left out; the others still save."""
+def _fetch_page(cfg: dict, key: str, p: dict) -> dict:
     import requests
+    params = {"_fields": "slug,link,modified,content", "per_page": 20, "orderby": "modified", "order": "desc"}
+    params.update({"slug": p["slug"]} if p.get("slug") else {"search": p["search"]})
+    r = requests.get(cfg["api"], params=params, headers=UA, timeout=60)
+    r.raise_for_status()
+    hits = [x for x in r.json() if p.get("slug") or re.fullmatch(p["slug_pattern"], x.get("slug", ""))]
+    if not hits:
+        raise RuntimeError("no matching page")
+    page = hits[0]
+    body = PARSERS[key](page["content"]["rendered"])
+    season = re.match(r"(\d{4})-(\d{4})", page["slug"])
+    return {**body, "link": page["link"], "modified": page["modified"][:10],
+            **({"season": f"{season.group(1)}–{season.group(2)}"} if season else {})}
+
+
+def fetch_pages(region: Region, previous: dict | None = None) -> dict | None:
+    """Each configured page, found by slug (or the newest page whose slug matches a pattern) and parsed. Any failure
+    (the request, the JSON, the layout) is that page's alone: the others still save, and the failed one keeps its last
+    good copy with that copy's own fetched_at, so it hides only once that is older than PAGES_MAX_AGE."""
     cfg = (region.extras or {}).get("mdmr_pages")
     if not cfg:
         return None
+    now = pd.Timestamp.now(tz="UTC").isoformat()
+    old = (previous or {}).get("pages") or {}
     pages, failed = {}, []
     for key, p in cfg["pages"].items():
-        params = {"_fields": "slug,link,modified,content", "per_page": 20, "orderby": "modified", "order": "desc"}
-        params.update({"slug": p["slug"]} if p.get("slug") else {"search": p["search"]})
-        r = requests.get(cfg["api"], params=params, headers=UA, timeout=60)
-        r.raise_for_status()
-        hits = [x for x in r.json() if p.get("slug") or re.fullmatch(p["slug_pattern"], x.get("slug", ""))]
-        if not hits:
-            failed.append(key)
-            continue
-        page = hits[0]
         try:
-            body = PARSERS[key](page["content"]["rendered"])
-        except RuntimeError:
+            pages[key] = {**_fetch_page(cfg, key, p), "fetched_at": now}
+        except Exception as e:  # noqa: BLE001
+            log.warning("mdmr page %s failed: %s", key, e)
             failed.append(key)
-            continue
-        season = re.match(r"(\d{4})-(\d{4})", page["slug"])
-        pages[key] = {**body, "link": page["link"], "modified": page["modified"][:10],
-                      **({"season": f"{season.group(1)}–{season.group(2)}"} if season else {})}
-    if failed and not pages:
+            if isinstance(old.get(key), dict) and old[key].get("fetched_at"):
+                pages[key] = old[key]
+    if len(failed) == len(cfg["pages"]):
         raise RuntimeError(f"no MDMR page parsed ({', '.join(failed)})")
-    return {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), "pages": pages, "failed": failed}
+    return {"fetched_at": now, "pages": pages, "failed": failed}
+
+
+def load_pages(region: Region) -> dict | None:
+    """The whole pages snapshot as saved (no age check), for carrying good pages forward."""
+    return read_json(region.data_dir / "mdmr_pages.json", need=("pages",))
 
 
 def save_pages(region: Region, data: dict) -> None:
-    region.data_dir.mkdir(parents=True, exist_ok=True)
-    (region.data_dir / "mdmr_pages.json").write_text(json.dumps(data, indent=1))
+    write_json(region.data_dir / "mdmr_pages.json", data, indent=1)
 
 
 def page(region: Region, key: str) -> dict | None:
-    """One parsed page, or None if never fetched, not parsed last time, or the snapshot is older than PAGES_MAX_AGE."""
-    p = region.data_dir / "mdmr_pages.json"
-    if not p.exists():
+    """One parsed page, or None if never fetched, unreadable, or that page's copy is older than PAGES_MAX_AGE."""
+    js = load_pages(region)
+    pg = js["pages"].get(key) if js and isinstance(js["pages"], dict) else None
+    if not isinstance(pg, dict):
         return None
-    js = json.loads(p.read_text())
-    if pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > PAGES_MAX_AGE:
+    try:
+        fetched = pd.Timestamp(pg.get("fetched_at") or js["fetched_at"])   # older snapshots dated the file, not the page
+    except Exception:  # noqa: BLE001
         return None
-    return js["pages"].get(key)
+    return None if pd.Timestamp.now(tz="UTC") - fetched > PAGES_MAX_AGE else pg

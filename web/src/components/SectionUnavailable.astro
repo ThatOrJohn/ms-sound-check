@@ -1,0 +1,20 @@
+---
+// A section whose source didn't answer (or parse) recently (decision 0046). We hide its old numbers, but say so and
+// point to the agency: an empty spot where the beaches were reads as "no advisories", which may not be true.
+interface Props { kind: string }
+const { kind } = Astro.props;
+const COPY: Record<string, { title: string; what: string; href: string; link: string }> = {
+  beaches: { title: "Beaches", what: "MDEQ's beach advisories", href: "https://beaches.mdeq.ms.gov/", link: "Check MDEQ beach monitoring before you swim" },
+  oyster_watch: { title: "Oyster closure watch", what: "the Pearl River gauge MDMR's closure criteria use", href: "https://dmr.ms.gov/shellfish/", link: "Check MDMR shellfish" },
+  shrimp_season: { title: "Shrimp season", what: "MDMR's shrimp notices or the wind forecast", href: "https://dmr.ms.gov/shrimp/", link: "Check MDMR shrimp information" },
+  fishing_outlook: { title: "Fishing outlook", what: "the National Weather Service forecast or NOAA tide predictions", href: "https://www.weather.gov/mob/", link: "Check the NWS Mobile forecast" },
+  spillway: { title: "Bonnet Carré Spillway", what: "the Corps' spillway openings list", href: "https://www.mvn.usace.army.mil/", link: "Check the Corps' spillway information" },
+};
+const c = COPY[kind];
+---
+{c && (
+  <section class="group unavailable" aria-labelledby={`g-${kind}-unavailable`} data-unavailable={kind}>
+    <h2 id={`g-${kind}-unavailable`}>{c.title}</h2>
+    <p class="quiet-note">{`We couldn't get ${c.what} in the last few updates, so this section is hidden rather than showing something that may have changed. `}<a href={c.href}>{c.link}</a>.</p>
+  </section>
+)}

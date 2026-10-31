@@ -287,6 +287,8 @@ export interface Latest {
   oyster_stress?: OysterStress | null;
   beaches?: BeachSection | null;
   shellfish_areas?: ShellfishAreas | null;
+  /** Sourced sections that are configured but came out empty this build (decision 0046): the page says it couldn't check. */
+  unavailable?: string[];
   region: { id: string; name: string; units: Record<string, string>; map: { center: [number, number]; zoom: number } };
   generated_at: string;
   asof: string;

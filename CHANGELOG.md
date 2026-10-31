@@ -2,6 +2,10 @@
 
 User-visible changes, newest first. Internal work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## 2026-10-31
+### Changed
+- When a source like MDEQ's beach map or MDMR's website hasn't answered or can't be read, its section now says so and links the agency ("We couldn't get MDEQ's beach advisories in the last few updates…") instead of disappearing. The rest of the page keeps updating as normal ([0046](docs/decisions/0046-one-bad-source-hides-only-its-own-section.md)).
+
 ## 2026-10-30
 ### Added
 - Oyster growing areas on the map: MDMR's areas (I-B, II-E and so on) are outlined and named, solid for approved, dashed for conditionally approved and dotted for the rest. Tap or hover an area for its class and what it means. It's on by default on the Oysters page. The outlines show MDMR's classes, not whether an area is open today ([0043](docs/decisions/0043-oyster-growing-areas-as-classes-not-status.md)).

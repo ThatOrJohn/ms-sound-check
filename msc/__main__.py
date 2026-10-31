@@ -11,7 +11,7 @@
   python -m msc basemap                   one-time: depth shading + contours for the map (commit the output)
   python -m msc rivers                    one-time: river lines for the map from OpenStreetMap (commit the output)
 
-Every source is independent: if one is down, the rest still update, and the
+Every source is independent: if one is down or saves something unreadable, the rest still update, and the
 page shows that source's data as stale instead of breaking.
 """
 from __future__ import annotations
@@ -26,6 +26,7 @@ from . import normals as nm
 from . import store
 from .build import build
 from .config import load_region
+from .snapshots import read_parquet
 
 log = logging.getLogger("msc")
 
@@ -109,7 +110,7 @@ def cmd_ingest(region, args):
     notices = _try("mdmr notices", mdmr.fetch, region)
     if notices:
         mdmr.save(region, notices)
-    pages = _try("mdmr season pages", mdmr.fetch_pages, region)
+    pages = _try("mdmr season pages", mdmr.fetch_pages, region, mdmr.load_pages(region))
     if pages:
         mdmr.save_pages(region, pages)
         for key in pages["failed"]:
@@ -142,9 +143,11 @@ def cmd_build(region, args):
     else:
         asof = pd.Timestamp.now(tz=region.timezone).tz_localize(None).normalize()
     fc_path = region.data_dir / "rain_forecast.parquet"
-    fc = pd.read_parquet(fc_path) if fc_path.exists() else None
+    fc = read_parquet(fc_path, ["site", "date", "value"])
     latest = build(region, daily, normals, asof, fc)
     log.info("built %s: %d findings, asof %s", region.id, len(latest["findings"]), latest["asof"])
+    from .build import _section
+    _try.failures += [f"section {label}" for label in _section.failures]
     if not args.asof:   # a look at a past date never adds to the digest
         from . import digest
         _try("weekly digest", digest.update, region, latest)
@@ -164,6 +167,18 @@ def cmd_check(region, args) -> int:
     healthy = age is not None and age <= args.max_age_days
     msg = f"newest water reading {newest} ({age} days old)" if newest else "no water readings at all"
     (log.info if healthy else log.error)("health: %s", msg)
+    # A section whose source has been out past its max age is hidden on the page; say which, so it gets looked at
+    # (a WordPress redesign won't fix itself). Any of them fails the check, which is what emails the owner.
+    from .adapters import mdmr
+    hidden = [f"{s} section" for s in latest.get("unavailable", [])]
+    hidden += [f"MDMR {t} notices" for t in (region.extras.get("mdmr_notices") or {}).get("topics", {})
+               if mdmr.load(region, t) is None]
+    hidden += [f"MDMR page {k}" for k in (region.extras.get("mdmr_pages") or {}).get("pages", {})
+               if mdmr.page(region, k) is None]
+    for what in hidden:
+        problem = f"{what} hidden: its source hasn't answered or parsed recently"
+        log.error("health: %s", problem)
+        healthy, msg = False, f"{msg}; {problem}"
     # Reference data kept by hand: a new MDMR shrimp opening must reach the CSV the season lean trains on.
     from .models import shrimp
     for problem in shrimp.openings_check(region):

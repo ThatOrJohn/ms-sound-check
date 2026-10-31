@@ -1,11 +1,10 @@
 """Tide predictions (highs and lows) from NOAA CO-OPS. Free, no key."""
 from __future__ import annotations
 
-import json
-
 import pandas as pd
 
 from ..config import Region
+from ..snapshots import read_json, write_json
 
 API = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
 
@@ -37,17 +36,10 @@ MAX_AGE = pd.Timedelta(days=2)
 
 
 def save(region: Region, rows: list[dict]) -> None:
-    region.data_dir.mkdir(parents=True, exist_ok=True)
-    (region.data_dir / "tides.json").write_text(json.dumps(
-        {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), "predictions": rows}))
+    write_json(region.data_dir / "tides.json", {"fetched_at": pd.Timestamp.now(tz="UTC").isoformat(), "predictions": rows})
 
 
 def load(region: Region) -> list[dict]:
-    """Tide predictions, or [] if missing or fetched more than two days ago."""
-    p = region.data_dir / "tides.json"
-    if not p.exists():
-        return []
-    js = json.loads(p.read_text())
-    if isinstance(js, list) or pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > MAX_AGE:
-        return []
-    return js["predictions"]
+    """Tide predictions, or [] if missing, unreadable or fetched more than two days ago."""
+    js = read_json(region.data_dir / "tides.json", MAX_AGE, need=("fetched_at", "predictions"))
+    return js["predictions"] if js and isinstance(js["predictions"], list) else []

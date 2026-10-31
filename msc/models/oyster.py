@@ -9,6 +9,7 @@ import pandas as pd
 
 from .. import store
 from ..config import Region
+from ..snapshots import read_parquet
 
 NEAR_FT = 2.0
 MM_PER_IN = 25.4
@@ -93,7 +94,8 @@ def section(region: Region, daily: pd.DataFrame, asof: pd.Timestamp) -> dict | N
     stale = time is not None and (now - pd.Timestamp(time).tz_convert("UTC")) > pd.Timedelta(hours=36)
 
     fc_path = region.data_dir / "stage_forecast.parquet"
-    fc = pd.read_parquet(fc_path) if fc_path.exists() else pd.DataFrame()
+    fc = read_parquet(fc_path, ["site", "time", "value"])
+    fc = fc if fc is not None else pd.DataFrame()
     if len(fc):
         fc = fc[(fc.site == gid)].copy()
         fc["time"] = pd.to_datetime(fc["time"], utc=True)

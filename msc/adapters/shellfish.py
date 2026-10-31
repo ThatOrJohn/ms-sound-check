@@ -9,12 +9,12 @@ ignored, so the map drops the layer rather than show classes that may have chang
 """
 from __future__ import annotations
 
-import json
 import re
 
 import pandas as pd
 
 from ..config import Region
+from ..snapshots import read_json, write_json
 
 MAX_AGE = pd.Timedelta(days=7)
 CLASSES = {"approved": "approved", "conditionally approved": "conditional", "restricted": "restricted",
@@ -86,16 +86,10 @@ def fetch(region: Region) -> dict | None:
 
 
 def save(region: Region, data: dict) -> None:
-    region.data_dir.mkdir(parents=True, exist_ok=True)
-    (region.data_dir / "shellfish_areas.json").write_text(json.dumps(data, separators=(",", ":")))
+    write_json(region.data_dir / "shellfish_areas.json", data, separators=(",", ":"))
 
 
 def load(region: Region) -> dict | None:
-    """The snapshot, or None if never fetched or older than MAX_AGE."""
-    p = region.data_dir / "shellfish_areas.json"
-    if not p.exists():
-        return None
-    js = json.loads(p.read_text())
-    if pd.Timestamp.now(tz="UTC") - pd.Timestamp(js["fetched_at"]) > MAX_AGE:
-        return None
-    return js
+    """The snapshot, or None if never fetched, unreadable, empty or older than MAX_AGE."""
+    js = read_json(region.data_dir / "shellfish_areas.json", MAX_AGE, need=("fetched_at", "geojson"))
+    return js if js and isinstance(js["geojson"], dict) and js["geojson"].get("features") else None
