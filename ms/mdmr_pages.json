@@ -1,0 +1,66 @@
+{
+ "fetched_at": "2026-10-31T14:34:47.217729+00:00",
+ "pages": {
+  "shrimp_status": {
+   "areas": [
+    {
+     "area": "Mississippi waters north of Intracoastal Waterway (ICW)",
+     "status": "open",
+     "footnote": false
+    },
+    {
+     "area": "Mississippi waters south of ICW & west of Gulfport ship channel",
+     "status": "open",
+     "footnote": true
+    },
+    {
+     "area": "Conditional area near Biloxi channel markers 18-26",
+     "status": "open",
+     "footnote": false
+    }
+   ],
+   "note": "Waters south of the ICW and east of Gulfport Ship Channel remain open year-round",
+   "link": "https://dmr.ms.gov/shrimp-crab/",
+   "modified": "2026-10-16"
+  },
+  "oyster_season": {
+   "summary": [
+    "On October 1, 2026, the 2026-2027 public oyster season opened for harvest of market-sized oysters. Effective October 19, 2026, Area I \u201cB\u201d, Area II \u201cB\u201d, Area II \u201cE\u201d, and Area V \u201cA\u201d reopened for commercial and recreational harvesting. All harvesting shall begin no earlier than legal sunrise and must cease prior to 12:00 PM."
+   ],
+   "orders": [
+    {
+     "title": "Order Opening the 2026 \u2013 2027 Public Mississippi Oyster Season for the Harvest of Oysters in Certain Areas",
+     "link": "https://dmr.ms.gov/wp-content/uploads/2026/09/2026-2027-MS-Public-Oyster-Season_Opening-Order.pdf"
+    },
+    {
+     "title": "Order Closing Areas I \u201cB\u201d, II \u201cB\u201d, II \u201cE\u201d, and V \u201cA\u201d Conditionally Approved Waters to the Harvest of Oysters",
+     "link": "https://dmr.ms.gov/wp-content/uploads/2026/10/Closing-Order_Area-1B-2B-2E-5A_10-4-26.pdf"
+    },
+    {
+     "title": "Order Reopening Area I \u201cB\u201d Conditionally Approved Waters to the Harvest of Oysters",
+     "link": "https://dmr.ms.gov/wp-content/uploads/2026/10/Reopening-Order_Area-1B_10.15.pdf"
+    },
+    {
+     "title": "Order Reopening Area V \u201cA\u201d Conditionally Approved Waters to the Harvest of Oysters",
+     "link": "https://dmr.ms.gov/wp-content/uploads/2026/10/Reopening-Order_Area-5A_10.16.pdf"
+    },
+    {
+     "title": "Order Reopening Areas II \u201cB\u201d and Area II \u201cE\u201d Conditionally Approved Waters to the Harvest of Oysters",
+     "link": "https://dmr.ms.gov/wp-content/uploads/2026/10/Repening_Areas-2B_2E_10.19.pdf"
+    }
+   ],
+   "no_harvest": {
+    "lead": "All Mississippi waters and public reef areas therein shall remain closed on Sundays and the following days:",
+    "days": [
+     "Thanksgiving Day, Thursday, November 26, 2026",
+     "Christmas closure: harvest shall cease and all vessels shall check out no later than 12:00 p.m. on Christmas Eve, Thursday, December 24, 2026. All waters shall remain closed through Sunday, December 27, 2026, and shall reopen at legal sunrise on Monday, December 28, 2026.",
+     "New Year closure: harvest shall cease and all vessels shall check out no later than 12:00 p.m. on New Year\u2019s Eve, Thursday, December 31, 2026. All waters shall remain closed through Sunday, January 3, 2027, and shall reopen at legal sunrise on Monday, January 4, 2027."
+    ]
+   },
+   "link": "https://dmr.ms.gov/shellfish/2026-2027-public-oyster-season/",
+   "modified": "2026-10-22",
+   "season": "2026\u20132027"
+  }
+ },
+ "failed": []
+}
