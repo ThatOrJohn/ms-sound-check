@@ -344,8 +344,9 @@ test("salinity history: home section, table alternative, and a picked year on th
   await expect(hist.getByRole("combobox")).toHaveValue("2019");
   await hist.getByText("Show as table").click();
   await expect(hist.getByRole("rowheader", { name: "2019" })).toBeVisible();
-  await page.locator(".chart-box").scrollIntoViewIfNeeded();
+  // Wait for the chart to settle on the picked year before touching it; scrolling first can catch it mid-re-render.
   await expect(page.locator(".chart-note").first()).toContainText("2019 on the same dates");
+  await page.locator(".chart-box").first().scrollIntoViewIfNeeded();
   for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });   // no mid-transition colors for axe
     const axe = await new AxeBuilder({ page }).include("#history").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
@@ -493,7 +494,7 @@ test("each Fishing day lists sun and moon times in words, and the NWS wave wordi
   for (const w of await page.locator(".fish-day .fish-waves").allTextContents())
     expect(w).toMatch(/^In the Sound: (waves|seas|bay waters) .+\.$/);
   const line = page.locator(".fish-day .fish-sun-moon").first();
-  await expect(line).toHaveText(/^Sun up \d{1,2}:\d{2} AM, down \d{1,2}:\d{2} PM\. Moon: (new|full|(waxing|waning) (crescent|gibbous), \d+% lit|first quarter|last quarter)(, (rises|sets) \d{1,2}:\d{2} [AP]M)*\.$/);
+  await expect(line).toHaveText(/^Sun up \d{1,2}:\d{2} AM, down \d{1,2}:\d{2} PM\. Moon: (new|full|((waxing|waning) (crescent|gibbous)|first quarter|last quarter), \d+% lit)(, (rises|sets) \d{1,2}:\d{2} [AP]M)*\.$/);
   await expect(page.locator(".fishing .fish-src")).toContainText("US Naval Observatory");
 });
 
